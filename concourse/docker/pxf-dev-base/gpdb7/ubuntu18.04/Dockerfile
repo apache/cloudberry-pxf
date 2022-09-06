@@ -14,12 +14,21 @@ RUN mkdir -p /tmp/pxf_src/ && cd /tmp \
     && rm -rf /usr/local/go && tar -C /usr/local -xzf go.tgz && rm go.tgz
 
 # install dependencies that are missing on the base images
+# install a specific version of perl for tinc
+
+ARG MAVEN_VERSION=3.6.3
+ARG USER_HOME_DIR="/root"
+ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
+
 RUN apt-get update -y \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y python-dev curl sudo jq openjdk-8-jdk openjdk-11-jdk \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    && mkdir -p /usr/share/apache-maven-*/ref \
-    && ln -s /usr/share/apache-maven-*/bin/mvn /usr/bin/mvn
+    && mkdir -p /usr/share/maven /usr/share/maven/ref \
+    && curl -fsSL -o /tmp/apache-maven.tar.gz ${BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+    && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
+    && rm -f /tmp/apache-maven.tar.gz \
+    && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
 
 # create user gpadmin since GPDB cannot run under root
 RUN locale-gen en_US.UTF-8 \
@@ -42,6 +51,8 @@ RUN locale-gen en_US.UTF-8 \
     && echo "gpadmin:password" | chpasswd 2> /dev/null \
     && { ssh-keyscan localhost; ssh-keyscan 0.0.0.0; } >> /home/gpadmin/.ssh/known_hosts \
     && chown -R gpadmin:gpadmin /home/gpadmin \
+    # install dependencies as gpadmin
+    && su gpadmin -c "pip install paramiko --no-cache-dir" \
     # configure gpadmin limits
     && echo >> /etc/security/limits.d/gpadmin-limits.conf 'gpadmin soft core unlimited' \
     && echo >> /etc/security/limits.d/gpadmin-limits.conf 'gpadmin soft nproc 131072' \
@@ -57,8 +68,7 @@ RUN locale-gen en_US.UTF-8 \
     && echo >> ~gpadmin/.pxfrc 'export PXF_HOME=/usr/local/pxf-gp7' \
     && echo >> ~gpadmin/.pxfrc 'export PXF_CONF=/home/gpadmin/pxf' \
     && echo >> ~gpadmin/.pxfrc 'export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64' \
-    && echo >> ~gpadmin/.pxfrc 'export PG_CONFIG=${GPHOME}/bin/pg_config' \
-    && echo >> ~gpadmin/.pxfrc 'export PATH=${PXF_HOME}/bin:${GOPATH}/bin:/usr/local/go/bin:$PATH' \
+    && echo >> ~gpadmin/.pxfrc 'export PATH=${GPHOME}/bin:${PXF_HOME}/bin:${GOPATH}/bin:/usr/local/go/bin:$JAVA_HOME/bin:$PATH' \
     && ln -s ~gpadmin/.pxfrc ~root \
     && echo >> ~gpadmin/.bashrc 'source ~/.pxfrc' \
     && echo >> ~gpadmin/.bash_profile '[[ -f ~/.bashrc ]] && . ~/.bashrc' \
