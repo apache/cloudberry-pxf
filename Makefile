@@ -13,28 +13,8 @@ ifndef PGXS
 endif
 include $(PGXS)
 
-# variables that control whether the FDW extension will be built and packaged,
-# if left empty there is no skipping, otherwise a value should contain a reason for skipping
-ifeq ($(shell test $(GP_MAJORVERSION) -lt 6; echo $$?),0)
-	SKIP_FDW_BUILD_REASON := "GPDB version $(GP_MAJORVERSION) is less than 6."
-endif
-ifeq ($(shell test $(GP_MAJORVERSION) -lt 7; echo $$?),0)
-	SKIP_FDW_PACKAGE_REASON := "GPDB version $(GP_MAJORVERSION) is less than 7."
-endif
-
-ifeq ($(BLD_ARCH),)
-	GP_BUILD_ARCH := $(PORTNAME)-$(subst _,-,$(host_cpu))
-else
-	GP_BUILD_ARCH := $(subst _,-,$(BLD_ARCH))
-endif
-
-export SKIP_FDW_BUILD_REASON
-export SKIP_FDW_PACKAGE_REASON
-export GP_MAJORVERSION
-export GP_BUILD_ARCH
-
-PXF_PACKAGE_NAME := pxf-gpdb$(GP_MAJORVERSION)-$(PXF_VERSION)-$(GP_BUILD_ARCH)
-export PXF_PACKAGE_NAME
+SOURCE_EXTENSION_DIR = external-table
+TARGET_EXTENSION_DIR = gpextable
 
 LICENSE ?= ASL 2.0
 VENDOR ?= Open Source
@@ -53,21 +33,24 @@ external-table cli server:
 	make -C $@
 
 fdw:
-ifeq ($(SKIP_FDW_BUILD_REASON),)
-	@echo "===> Compiling [$@] module <==="
+ifneq ($(FDW_SUPPORT),)
 	make -C fdw
-else
-	@echo "Skipping building FDW extension because $(SKIP_FDW_BUILD_REASON)"
 endif
+
+cli:
+	make -C cli/go/src/pxf-cli
+
+server:
+	make -C server
 
 clean:
 	rm -rf build
-	set -e ;\
-	for module in $${PXF_MODULES[@]}; do \
-		echo "===> Cleaning [$${module}] module <===" ;\
-		make -C $${module} clean-all ;\
-	done ;\
-	echo "===> PXF cleaning is complete <==="
+	make -C $(SOURCE_EXTENSION_DIR) clean-all
+	make -C cli/go/src/pxf-cli clean
+	make -C server clean
+ifneq ($(FDW_SUPPORT),)
+	make -C fdw clean
+endif
 
 test:
 ifeq ($(SKIP_FDW_BUILD_REASON),)
@@ -82,16 +65,12 @@ it:
 	make -C automation TEST=$(TEST)
 
 install:
-ifneq ($(SKIP_FDW_BUILD_REASON),)
-	@echo "Skipping installing FDW extension because $(SKIP_FDW_BUILD_REASON)"
-	$(eval PXF_MODULES := $(filter-out fdw,$(PXF_MODULES)))
+	make -C $(SOURCE_EXTENSION_DIR) install
+	make -C cli/go/src/pxf-cli install
+	make -C server install
+ifneq ($(FDW_SUPPORT),)
+	make -C fdw install
 endif
-	set -e ;\
-	for module in $${PXF_MODULES[@]}; do \
-		echo "===> Installing [$${module}] module <===" ;\
-		make -C $${module} install ;\
-	done ;\
-	echo "===> PXF installation is complete <==="
 
 install-server:
 	make -C server install-server

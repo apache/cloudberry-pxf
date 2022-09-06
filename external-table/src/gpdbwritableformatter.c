@@ -343,13 +343,17 @@ boolArrayToByteArray(bool *data, int len, int validlen, int *outlen, TupleDesc t
 	*outlen = getNullByteArraySize(validlen);
 	result = palloc0(*outlen * sizeof(bits8));
 
+
 	for (i = 0, j = 0, k = 7; i < len; i++)
 	{
 		/* Ignore dropped attributes. */
-		Form_pg_attribute attr = TupleDescAttr(tupdesc, i);
+        #if PG_VERSION_NUM > 90400
+            Form_pg_attribute attr = &tupdesc->attrs[i];
+        #else
+            Form_pg_attribute attr = tupdesc->attrs[i];
+        #endif
 
-		if (attr->attisdropped)
-			continue;
+		if (attr->attisdropped) continue;
 
 		result[j] |= (data[i] ? 1 : 0) << k--;
 		if (k < 0)
@@ -392,7 +396,11 @@ byteArrayToBoolArray(bits8 *data, int data_len, int len, bool **booldata, int bo
 	for (i = 0, j = 0, k = 7; i < boollen; i++)
 	{
 		/* Ignore dropped attributes. */
-		Form_pg_attribute attr = TupleDescAttr(tupdesc, i);
+        #if PG_VERSION_NUM > 90400
+            Form_pg_attribute attr = &tupdesc->attrs[i];
+        #else
+            Form_pg_attribute attr = tupdesc->attrs[i];
+        #endif
 
 		if (attr->attisdropped)
 		{
@@ -432,11 +440,14 @@ verifyExternalTableDefinition(int16 ncolumns_remote, AttrNumber nvalidcolumns, A
 	/* Extract Column Type and check against External Table definition */
 	for (i = 0; i < ncolumns; i++)
 	{
-		Form_pg_attribute attr = TupleDescAttr(tupdesc, i);
+        #if PG_VERSION_NUM > 90400
+            Form_pg_attribute attr = &tupdesc->attrs[i];
+        #else
+            Form_pg_attribute attr = tupdesc->attrs[i];
+        #endif
 
 		/* Ignore dropped attributes. */
-		if (attr->attisdropped)
-			continue;
+		if (attr->attisdropped) continue;
 
 		input_type = 0;
 		defined_type = attr->atttypid;
@@ -501,7 +512,11 @@ gpdbwritableformatter_export(PG_FUNCTION_ARGS)
 	nvalidcolumns = 0;
 	for (i = 0; i < ncolumns; i++)
 	{
-		Form_pg_attribute attr = TupleDescAttr(tupdesc, i);
+        #if PG_VERSION_NUM > 90400
+            Form_pg_attribute attr = &tupdesc->attrs[i];
+        #else
+            Form_pg_attribute attr = tupdesc->attrs[i];
+        #endif
 
 		if (!attr->attisdropped)
 			nvalidcolumns++;
@@ -530,7 +545,11 @@ gpdbwritableformatter_export(PG_FUNCTION_ARGS)
 		/* setup the text/binary input function */
 		for (i = 0; i < ncolumns; i++)
 		{
-			Form_pg_attribute attr = TupleDescAttr(tupdesc, i);
+            #if PG_VERSION_NUM > 90400
+                Form_pg_attribute attr = &tupdesc->attrs[i];
+            #else
+                Form_pg_attribute attr = tupdesc->attrs[i];
+            #endif
 
 			Oid			type = attr->atttypid;
 			bool		isvarlena;
@@ -588,7 +607,11 @@ gpdbwritableformatter_export(PG_FUNCTION_ARGS)
 	 */
 	for (i = 0; i < ncolumns; i++)
 	{
-		Form_pg_attribute attr = TupleDescAttr(tupdesc, i);
+        #if PG_VERSION_NUM > 90400
+            Form_pg_attribute attr = &tupdesc->attrs[i];
+        #else
+            Form_pg_attribute attr = tupdesc->attrs[i];
+        #endif
 
 		/* Ignore dropped attributes. */
 		if (attr->attisdropped) continue;
@@ -674,7 +697,11 @@ gpdbwritableformatter_export(PG_FUNCTION_ARGS)
 	/* Write col type for columns that have not been dropped */
 	for (i = 0; i < ncolumns; i++)
 	{
-		Form_pg_attribute attr = TupleDescAttr(tupdesc, i);
+        #if PG_VERSION_NUM > 90400
+            Form_pg_attribute attr = &tupdesc->attrs[i];
+        #else
+            Form_pg_attribute attr = tupdesc->attrs[i];
+        #endif
 
 		/* Ignore dropped attributes. */
 		if (!attr->attisdropped)
@@ -691,7 +718,11 @@ gpdbwritableformatter_export(PG_FUNCTION_ARGS)
 	/* Column Value */
 	for (i = 0; i < ncolumns; i++)
 	{
-		Form_pg_attribute attr = TupleDescAttr(tupdesc, i);
+        #if PG_VERSION_NUM > 90400
+            Form_pg_attribute attr = &tupdesc->attrs[i];
+        #else
+            Form_pg_attribute attr = tupdesc->attrs[i];
+        #endif
 
 		/* Ignore dropped attributes and null values. */
 		if (!attr->attisdropped && !myData->nulls[i])
@@ -758,7 +789,12 @@ gpdbwritableformatter_import(PG_FUNCTION_ARGS)
 	/* Get the number of valid columns, excluding dropped columns */
 	for (i = 0; i < ncolumns; i++)
 	{
-		Form_pg_attribute attr = TupleDescAttr(tupdesc, i);
+        #if PG_VERSION_NUM > 90400
+            Form_pg_attribute attr = &tupdesc->attrs[i];
+        #else
+            Form_pg_attribute attr = tupdesc->attrs[i];
+        #endif
+
 		if (!attr->attisdropped)
 			nvalidcolumns++;
 	}
@@ -784,7 +820,11 @@ gpdbwritableformatter_import(PG_FUNCTION_ARGS)
 
 		for (i = 0; i < ncolumns; i++)
 		{
-			Form_pg_attribute attr = TupleDescAttr(tupdesc, i);
+			#if PG_VERSION_NUM > 90400
+				Form_pg_attribute attr = &tupdesc->attrs[i];
+			#else
+				Form_pg_attribute attr = tupdesc->attrs[i];
+			#endif
 
 			Oid type = attr->atttypid;
 
