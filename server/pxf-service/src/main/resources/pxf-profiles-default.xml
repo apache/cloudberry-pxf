@@ -836,7 +836,7 @@ under the License.
             <resolver>org.greenplum.pxf.plugins.json.JsonResolver</resolver>
         </plugins>
         <handler>org.greenplum.pxf.plugins.json.JsonProtocolHandler</handler>
-        <protocol>abfss</protocol>
+        <protocol>adl</protocol>
     </profile>
     <profile>
         <name>wasbs:json</name>
