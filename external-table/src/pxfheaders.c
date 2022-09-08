@@ -21,9 +21,9 @@
 #include "pxfheaders.h"
 #include "commands/defrem.h"
 #if PG_VERSION_NUM >= 120000
+#include "utils/timestamp.h"
 #include "access/external.h"
 #include "extension/gp_exttable_fdw/extaccess.h"
-#include "executor/execExpr.h"
 #else
 #include "access/fileam.h"
 #include "catalog/pg_exttable.h"
@@ -272,7 +272,11 @@ add_tuple_desc_httpheader(CHURL_HEADERS headers, Relation rel)
 	/* Iterate attributes */
 	for (i = 0, attrIx = 0; i < tuple->natts; ++i)
 	{
-		FormData_pg_attribute *attribute = TupleDescAttr(tuple, i);
+		#if PG_VERSION_NUM >= 120000
+			Form_pg_attribute attribute = &tuple->attrs[i];
+		#else
+			Form_pg_attribute attribute = tuple->attrs[i];
+		#endif
 
 		/* Ignore dropped attributes. */
 		if (attribute->attisdropped)
@@ -570,8 +574,13 @@ add_projection_desc_httpheaders(CHURL_HEADERS headers,
 
 	for (i = 1; i <= tupdesc->natts; i++)
 	{
+        #if PG_VERSION_NUM >= 120000
+            Form_pg_attribute attr = &tupdesc->attrs[i];
+        #else
+            Form_pg_attribute attr = tupdesc->attrs[i];
+        #endif
 		/* Ignore dropped attributes. */
-		if (TupleDescAttr(tupdesc, i - 1)->attisdropped)
+		if (attr->attisdropped)
 		{
 			/* keep a counter of the number of dropped attributes */
 			droppedCount++;

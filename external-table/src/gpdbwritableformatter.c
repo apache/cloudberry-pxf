@@ -347,7 +347,7 @@ boolArrayToByteArray(bool *data, int len, int validlen, int *outlen, TupleDesc t
 	for (i = 0, j = 0, k = 7; i < len; i++)
 	{
 		/* Ignore dropped attributes. */
-        #if PG_VERSION_NUM > 90400
+        #if PG_VERSION_NUM >= 120000
             Form_pg_attribute attr = &tupdesc->attrs[i];
         #else
             Form_pg_attribute attr = tupdesc->attrs[i];
@@ -396,7 +396,7 @@ byteArrayToBoolArray(bits8 *data, int data_len, int len, bool **booldata, int bo
 	for (i = 0, j = 0, k = 7; i < boollen; i++)
 	{
 		/* Ignore dropped attributes. */
-        #if PG_VERSION_NUM > 90400
+        #if PG_VERSION_NUM >= 120000
             Form_pg_attribute attr = &tupdesc->attrs[i];
         #else
             Form_pg_attribute attr = tupdesc->attrs[i];
@@ -440,7 +440,7 @@ verifyExternalTableDefinition(int16 ncolumns_remote, AttrNumber nvalidcolumns, A
 	/* Extract Column Type and check against External Table definition */
 	for (i = 0; i < ncolumns; i++)
 	{
-        #if PG_VERSION_NUM > 90400
+        #if PG_VERSION_NUM >= 120000
             Form_pg_attribute attr = &tupdesc->attrs[i];
         #else
             Form_pg_attribute attr = tupdesc->attrs[i];
@@ -512,7 +512,7 @@ gpdbwritableformatter_export(PG_FUNCTION_ARGS)
 	nvalidcolumns = 0;
 	for (i = 0; i < ncolumns; i++)
 	{
-        #if PG_VERSION_NUM > 90400
+        #if PG_VERSION_NUM >= 120000
             Form_pg_attribute attr = &tupdesc->attrs[i];
         #else
             Form_pg_attribute attr = tupdesc->attrs[i];
@@ -545,7 +545,7 @@ gpdbwritableformatter_export(PG_FUNCTION_ARGS)
 		/* setup the text/binary input function */
 		for (i = 0; i < ncolumns; i++)
 		{
-            #if PG_VERSION_NUM > 90400
+            #if PG_VERSION_NUM >= 120000
                 Form_pg_attribute attr = &tupdesc->attrs[i];
             #else
                 Form_pg_attribute attr = tupdesc->attrs[i];
@@ -607,7 +607,7 @@ gpdbwritableformatter_export(PG_FUNCTION_ARGS)
 	 */
 	for (i = 0; i < ncolumns; i++)
 	{
-        #if PG_VERSION_NUM > 90400
+        #if PG_VERSION_NUM >= 120000
             Form_pg_attribute attr = &tupdesc->attrs[i];
         #else
             Form_pg_attribute attr = tupdesc->attrs[i];
@@ -697,7 +697,7 @@ gpdbwritableformatter_export(PG_FUNCTION_ARGS)
 	/* Write col type for columns that have not been dropped */
 	for (i = 0; i < ncolumns; i++)
 	{
-        #if PG_VERSION_NUM > 90400
+        #if PG_VERSION_NUM >= 120000
             Form_pg_attribute attr = &tupdesc->attrs[i];
         #else
             Form_pg_attribute attr = tupdesc->attrs[i];
@@ -718,7 +718,7 @@ gpdbwritableformatter_export(PG_FUNCTION_ARGS)
 	/* Column Value */
 	for (i = 0; i < ncolumns; i++)
 	{
-        #if PG_VERSION_NUM > 90400
+        #if PG_VERSION_NUM >= 120000
             Form_pg_attribute attr = &tupdesc->attrs[i];
         #else
             Form_pg_attribute attr = tupdesc->attrs[i];
@@ -789,7 +789,7 @@ gpdbwritableformatter_import(PG_FUNCTION_ARGS)
 	/* Get the number of valid columns, excluding dropped columns */
 	for (i = 0; i < ncolumns; i++)
 	{
-        #if PG_VERSION_NUM > 90400
+        #if PG_VERSION_NUM >= 120000
             Form_pg_attribute attr = &tupdesc->attrs[i];
         #else
             Form_pg_attribute attr = tupdesc->attrs[i];
@@ -820,7 +820,7 @@ gpdbwritableformatter_import(PG_FUNCTION_ARGS)
 
 		for (i = 0; i < ncolumns; i++)
 		{
-			#if PG_VERSION_NUM > 90400
+			#if PG_VERSION_NUM >= 120000
 				Form_pg_attribute attr = &tupdesc->attrs[i];
 			#else
 				Form_pg_attribute attr = tupdesc->attrs[i];
@@ -942,7 +942,11 @@ gpdbwritableformatter_import(PG_FUNCTION_ARGS)
 	/* extract column value */
 	for (i = 0; i < ncolumns; i++)
 	{
-		Form_pg_attribute attr = TupleDescAttr(tupdesc, i);
+		#if PG_VERSION_NUM >= 120000
+			Form_pg_attribute attr = &tupdesc->attrs[i];
+		#else
+			Form_pg_attribute attr = tupdesc->attrs[i];
+		#endif
 
 		/* Ignore dropped attributes. */
 		if (attr->attisdropped)
