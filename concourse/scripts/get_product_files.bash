@@ -32,12 +32,30 @@ versions=$(echo "${versions}" | grep -v "${GPDB_VERSION}\.99\.99")
 num_gpdb_versions=$(echo "${versions}" | wc -l)
 echo "Number of versions: ${num_gpdb_versions}"
 
-# if `VERSIONS_BEFORE_LATEST` is out of range, use the oldest available version
-if ((VERSIONS_BEFORE_LATEST >= num_gpdb_versions)); then
-	echo "VERSION_BEFORE_LATEST (${VERSIONS_BEFORE_LATEST}) exceeds number of versions (${num_gpdb_versions}) on GCS for Greenplum ${GPDB_VERSION}"
-	VERSIONS_BEFORE_LATEST=$((num_gpdb_versions - 1))
-	echo "Update VERSIONS_BEFORE_LATEST to ${VERSIONS_BEFORE_LATEST}"
-fi
+	if [[ -z "${id}" ]]; then
+		echo "Did not find '${file}' in product files for GPDB '${gpdb_version}'"
+
+		case "${file}" in
+			*rhel7*) existing_file="$(find ${product_dirs[$i]}/ -name *rhel7*.rpm)" ;;
+			*rhel8*) existing_file="$(find ${product_dirs[$i]}/ -name *rhel8*.rpm)" ;;
+			*ubuntu18*) existing_file="$(find ${product_dirs[$i]}/ -name *ubuntu18*.deb)" ;;
+			*)
+				echo "Unexpected file: ${file}"
+				exit 1;;
+		esac
+
+		echo "Keeping existing file: ${existing_file}"
+		continue
+	fi
+	echo "Cleaning ${product_dirs[$i]} and downloading ${file} with id ${id} to ${product_dirs[$i]}..."
+	rm -f "${product_dirs[$i]}"/*.{rpm,deb}
+	pivnet download-product-files \
+		"--download-dir=${product_dirs[$i]}" \
+		"--product-slug=${PRODUCT_SLUG}" \
+		"--release-version=${gpdb_version}" \
+		"--product-file-id=${id}" >/dev/null 2>&1 &
+	pids+=($!)
+done
 
 # get the `VERSIONS_BEFORE_LATEST`-th (zero-based index) latest version
 target_version=$(echo "${versions}" | awk -v i=${VERSIONS_BEFORE_LATEST} 'NR == i+1')
