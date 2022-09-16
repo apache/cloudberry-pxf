@@ -274,7 +274,7 @@ add_tuple_desc_httpheader(CHURL_HEADERS headers, Relation rel)
 		#if PG_VERSION_NUM >= 120000
 			Form_pg_attribute attribute = &tuple->attrs[i];
 		#else
-			Form_pg_attribute attribute = tuple->attrs[i];
+			FormData_pg_attribute *attribute = tuple->attrs[i];
 		#endif
 
 		/* Ignore dropped attributes. */
@@ -501,25 +501,51 @@ add_projection_desc_httpheaders(CHURL_HEADERS headers,
 							   Relation rel)
 {
 	int			   i;
-	int			   droppedCount;  // count of dropped attributes
-	int			   headerCount;   // count of created http headers
-	char		   long_number[sizeof(int32) * 8];
-	int			   numSimpleVars; // number of pre-computed simple vars
-	int			   *varNumbers;   // pre-computed array of simple var attrnos
+	int			   dropped_count;
+	int			   number;
+	int			   numTargetList;
+#if PG_VERSION_NUM < 90400
+	int			   numSimpleVars;
+#endif
+	char			long_number[sizeof(int32) * 8];
+	/* FIXME: to get it to compile assign it to NULL */
+	// pi_varNumbers is not available anymore in the postgters code
+	// https://doxygen.postgresql.org/structProjectionInfo.html
+	//int				*varNumbers = projInfo->pi_varNumbers;
+#if PG_VERSION_NUM < 120000
+    int				*varNumbers = projInfo->pi_varNumbers;
+    List *targetList = projInfo->pi_targetlist;
+#else
+	int				*varNumbers = NULL; //TODO Need to find a proper value here
+	List *targetList = (List *)projInfo->pi_state.resultslot;
+#endif
 
-	Bitmapset	   *attrs_used;   // hashset to keep and de-dup collected attrnos
+	Bitmapset		*attrs_used;
 	StringInfoData	formatter;
 	List		   *targetList;   // targetList from the query plan
 	TupleDesc	   tupdesc;
 
 	// STEP 0: initialize variables
 	initStringInfo(&formatter);
-	attrs_used = NULL;
-	targetList = getTargetList(projInfo);
-	varNumbers = getVarNumbers(projInfo);
+	numTargetList = 0;
+#if PG_VERSION_NUM >= 90400
+	/*
+	 * Non-simpleVars are added to the targetlist
+	 * we use expression_tree_walker to access attrno information
+	 * we do it through a helper function add_attnums_from_targetList
+	 */
+	/* FIXME: commenting this out for compilation success */
+	// pi_targetlist is not available anymore in the postgters code
+	// https://doxygen.postgresql.org/structProjectionInfo.html
+	//if (projInfo->pi_targetlist)
 
-	// STEP 1: collect attribute numbers (attrno) from the targetList, if necessary
-	if (needToIterateTargetList(targetList, varNumbers)) {
+	if (targetList)
+	{
+#else
+	numSimpleVars = 0;
+
+	if (!varNumbers)
+	{
 		/*
 		 * we use expression_tree_walker to access attrno information
 		 * we do it through a helper function add_attnums_from_targetList
@@ -527,12 +553,14 @@ add_projection_desc_httpheaders(CHURL_HEADERS headers,
 		List     *l = lappend_int(NIL, 0);
 		ListCell *lc1;
 
+		/* FIXME: commenting this out to make it compile */
+#if PG_VERSION_NUM < 120000
 		foreach(lc1, targetList)
 		{
-			Node *node = getTargetListEntryExpression(lc1);
-			add_attnums_from_targetList(node, l);
+			GenericExprState *gstate = (GenericExprState *) lfirst(lc1);
+			add_attnums_from_targetList((Node *) gstate->arg->expr, l);
 		}
-
+#endif
 		foreach(lc1, l)
 		{
 			int attno = lfirst_int(lc1);
@@ -547,8 +575,30 @@ add_projection_desc_httpheaders(CHURL_HEADERS headers,
 		list_free(l);
 	}
 
-	// STEP 2: collect attribute numbers from pre-computed list of varNumbers (if available) of simpleVars
-	numSimpleVars = getNumSimpleVars(projInfo);
+	number = numTargetList +
+#if PG_VERSION_NUM >= 90400 && PG_VERSION_NUM < 120000
+		// FIXME: Commenting this out for compilation success
+		// pi_numSimpleVars is not available anymore in the postgters 12 code
+		// https://doxygen.postgresql.org/structProjectionInfo.html
+		projInfo->pi_numSimpleVars +
+#else
+		numSimpleVars +
+#endif
+		list_length(qualsAttributes);
+	if (number == 0)
+		return;
+
+	attrs_used = NULL;
+
+	/* Convert the number of projection columns to a string */
+	pg_ltoa(number, long_number);
+	churl_headers_append(headers, "X-GP-ATTRS-PROJ", long_number);
+
+#if PG_VERSION_NUM >=90400
+	/* FIXME: commenting out to get compile to work */
+	//for (i = 0; i < projInfo->pi_numSimpleVars; i++)
+	for (i = 0; i < projInfo->pi_numSimpleVars; i++)
+#else
 	for (i = 0; varNumbers && i < numSimpleVars; i++)
 	{
 		attrs_used =
@@ -574,9 +624,9 @@ add_projection_desc_httpheaders(CHURL_HEADERS headers,
 	for (i = 1; i <= tupdesc->natts; i++)
 	{
         #if PG_VERSION_NUM >= 120000
-            Form_pg_attribute attr = &tupdesc->attrs[i];
+            Form_pg_attribute attr = &tupdesc->attrs[i-1];
         #else
-            Form_pg_attribute attr = tupdesc->attrs[i];
+            FormData_pg_attribute *attr = tupdesc->attrs[i-1];
         #endif
 		/* Ignore dropped attributes. */
 		if (attr->attisdropped)
