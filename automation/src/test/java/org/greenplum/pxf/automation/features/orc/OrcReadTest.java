@@ -175,6 +175,12 @@ public class OrcReadTest extends BaseFeature {
         runSqlTest("features/orc/read/null_in_string");
     }
 
+    @Test(groups = {"features", "gpdb", "security", "hcfs"})
+    public void orcReadStringsContainingNullByte() throws Exception {
+        prepareReadableExternalTable("pxf_orc_null_in_string", ORC_NULL_IN_STRING_COLUMNS, hdfsPath + ORC_NULL_IN_STRING);
+        runTincTest("pxf.features.orc.read.null_in_string.runTest");
+    }
+
     private void prepareReadableExternalTable(String name, String[] fields, String path) throws Exception {
         prepareReadableExternalTable(name, fields, path, false);
     }
