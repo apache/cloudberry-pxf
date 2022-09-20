@@ -504,8 +504,8 @@ add_projection_desc_httpheaders(CHURL_HEADERS headers,
 	int			   dropped_count;
 	int			   number;
 	int			   numTargetList;
-#if PG_VERSION_NUM < 90400
-	int			   numSimpleVars;
+#if PG_VERSION_NUM < 90400 || PG_VERSION_NUM == 120000
+	int			   numSimpleVars = 0;
 #endif
 	char			long_number[sizeof(int32) * 8];
 	/* FIXME: to get it to compile assign it to NULL */
@@ -554,13 +554,18 @@ add_projection_desc_httpheaders(CHURL_HEADERS headers,
 		ListCell *lc1;
 
 		/* FIXME: commenting this out to make it compile */
-#if PG_VERSION_NUM < 120000
+
 		foreach(lc1, targetList)
 		{
+		#if PG_VERSION_NUM >= 120000
+		    ExprState *gstate = (ExprState *) lfirst(lc1);
+            add_attnums_from_targetList((Node *) gstate->expr, l);
+		#else
 			GenericExprState *gstate = (GenericExprState *) lfirst(lc1);
 			add_attnums_from_targetList((Node *) gstate->arg->expr, l);
+		#endif
 		}
-#endif
+
 		foreach(lc1, l)
 		{
 			int attno = lfirst_int(lc1);
@@ -574,11 +579,21 @@ add_projection_desc_httpheaders(CHURL_HEADERS headers,
 
 		list_free(l);
 	}
+#if PG_VERSION_NUM < 90400 || PG_VERSION_NUM >= 120000
+	else
+	{
+		#if PG_VERSION_NUM >= 120000
+			numSimpleVars = list_length(targetList);
+		#else
+			numSimpleVars = list_length(projInfo->pi_targetlist);
+		#endif
+	}
+#endif
 
 	number = numTargetList +
-#if PG_VERSION_NUM < 120000
 
-    #if PG_VERSION_NUM >= 90400
+
+    #if PG_VERSION_NUM >= 90400 && PG_VERSION_NUM < 120000
             // FIXME: Commenting this out for compilation success
             // pi_numSimpleVars is not available anymore in the postgters 12 code
             // https://doxygen.postgresql.org/structProjectionInfo.html
@@ -586,7 +601,6 @@ add_projection_desc_httpheaders(CHURL_HEADERS headers,
     #else
             numSimpleVars +
     #endif
-#endif
 
 		list_length(qualsAttributes);
 	if (number == 0)
@@ -599,15 +613,10 @@ add_projection_desc_httpheaders(CHURL_HEADERS headers,
 	churl_headers_append(headers, "X-GP-ATTRS-PROJ", long_number);
 
 
-#if PG_VERSION_NUM >= 90400
-
-    #if PG_VERSION_NUM >= 120000
-        for (i = 0; i < sizeof(targetList) ; i++)
-    #else
+#if PG_VERSION_NUM >= 90400 && PG_VERSION_NUM < 120000
         /* FIXME: commenting out to get compile to work */
         //for (i = 0; i < projInfo->pi_numSimpleVars; i++)
         for (i = 0; i < projInfo->pi_numSimpleVars; i++)
-    #endif
 #else
 	for (i = 0; varNumbers && i < numSimpleVars; i++)
 	{
