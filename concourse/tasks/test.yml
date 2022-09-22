@@ -15,6 +15,8 @@ inputs:
   optional: true
 - name: pxf_gp7_headerfile
   optional: true
+- name: gp6-python-libs # TODO : Conflict with Alex's PR need to remove later.
+  optional: true
 
 params:
   ACCESS_KEY_ID:
