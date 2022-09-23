@@ -10,6 +10,9 @@
 -- m/,.*line (.*)/
 -- s/,.*line (.*)//g
 --
+-- m/ALTER/
+-- s/ALTER EXTERNAL TABLE/ALTER FOREIGN TABLE/g
+--
 -- end_matchsubs
 
 -- sets the bytea output to the expected by the tests
