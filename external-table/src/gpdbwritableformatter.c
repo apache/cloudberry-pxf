@@ -512,11 +512,30 @@ gpdbwritableformatter_export(PG_FUNCTION_ARGS)
 	 */
 	if (myData == NULL)
 	{
-		if (FORMATTER_GET_EXTENCODING(fcinfo) != PG_UTF8)
-		{
-		     ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
-		            errmsg(FORMATTER_ENCODING_ERR_MSG, "export")));
-		}
+        // In GP7 FORMATTER_GET_EXTENCODING(fcinfo) gets the database encoding which may not match the table encoding
+        // and thus results in exception here. So getting the table encoding from the ExtTableEntry
+#if PG_VERSION_NUM < 120000
+        if (FORMATTER_GET_EXTENCODING(fcinfo) != PG_UTF8)
+        {
+                 ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
+                            errmsg("gpdbwritable formatter can only export UTF8 formatted data. Define the external table with ENCODING UTF8")));
+        }
+#else
+        Relation rel = FORMATTER_GET_RELATION(fcinfo);
+        if(rel != NULL)
+        {
+            ExtTableEntry *exttbl = GetExtTableEntry(rel->rd_id);
+            if (exttbl->encoding != PG_UTF8) {
+                ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
+                        errmsg("gpdbwritable formatter can only export UTF8 formatted data. Define the external table with ENCODING UTF8")));
+            }
+        }
+        // TODO: If for some reason the Relation is null here, then shall we throw an error anyways ??
+        else{
+            ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
+                    errmsg("gpdbwritable formatter can only export UTF8 formatted data. Define the external table with ENCODING UTF8")));
+        }
+#endif
 
 		myData = palloc(sizeof(format_t));
 		myData->values = palloc(sizeof(Datum) * ncolumns);
@@ -769,11 +788,29 @@ gpdbwritableformatter_import(PG_FUNCTION_ARGS)
 	 */
 	if (myData == NULL)
 	{
-		if (FORMATTER_GET_EXTENCODING(fcinfo) != PG_UTF8)
-		{
-			ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
-							errmsg(FORMATTER_ENCODING_ERR_MSG, "import")));
-		}
+        // In GP7 FORMATTER_GET_EXTENCODING(fcinfo) gets the database encoding which may not match the table encoding
+        // and thus results in exception here. So getting the table encoding from the ExtTableEntry
+#if PG_VERSION_NUM < 120000
+            if (FORMATTER_GET_EXTENCODING(fcinfo) != PG_UTF8)
+            {
+                     ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
+                                errmsg("gpdbwritable formatter can only import UTF8 formatted data. Define the external table with ENCODING UTF8")));
+            }
+#else
+        Relation rel = FORMATTER_GET_RELATION(fcinfo);
+        if(rel != NULL) {
+            ExtTableEntry *exttbl = GetExtTableEntry(rel->rd_id);
+            if (exttbl->encoding != PG_UTF8) {
+                ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
+                        errmsg("gpdbwritable formatter can only import UTF8 formatted data. Define the external table with ENCODING UTF8")));
+            }
+        }
+        // TODO: If for some reason the Relation is null here, then shall we throw an error anyways ??
+        else{
+            ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
+                    errmsg("gpdbwritable formatter can only import UTF8 formatted data. Define the external table with ENCODING UTF8")));
+        }
+#endif
 
 		myData = palloc(sizeof(format_t));
 		myData->values = palloc(sizeof(Datum) * ncolumns);
