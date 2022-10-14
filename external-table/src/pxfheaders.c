@@ -1176,4 +1176,13 @@ parseCopyFormatString(Relation rel, char *fmtstr, char fmttype)
 			        errmsg("external table internal parse error at end of line")));
 }
 
+/*
+ * This function is copied from fileam.c in the 6X_STABLE branch.
+ * In version 6, this function is no longer required to be copied.
+ */
+static List *
+appendCopyEncodingOption(List *copyFmtOpts, int encoding)
+{
+	return lappend(copyFmtOpts, makeDefElem("encoding", (Node *)makeString((char *)pg_encoding_to_char(encoding))));
+}
 #endif

@@ -57,11 +57,7 @@ if [[ "${pxf_gpdb_major_version}" != "${gp_version%%.*}" ]]; then
     exit 1
 fi
 
-if [[ "${gp_version}" = 5* ]]; then
-    master_data_dir_query="SELECT fselocation FROM pg_catalog.pg_filespace_entry WHERE fsedbid = 1 AND fsefsoid = (SELECT oid FROM pg_catalog.pg_filespace WHERE fsname = 'pg_system')"
-else
-    master_data_dir_query="SELECT datadir FROM pg_catalog.gp_segment_configuration WHERE dbid = 1"
-fi
+master_data_dir_query="SELECT datadir FROM pg_catalog.gp_segment_configuration WHERE dbid = 1"
 export MASTER_DATA_DIRECTORY="${MASTER_DATA_DIRECTORY:-$(psql --no-align --tuples-only --command "${master_data_dir_query}")}"
 echo "GPDB master data directory is '${MASTER_DATA_DIRECTORY}'" >>"${log_file}"
 

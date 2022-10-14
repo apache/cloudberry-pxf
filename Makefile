@@ -6,12 +6,8 @@ export PXF_MODULES
 PXF_VERSION ?= $(shell cat version)
 export PXF_VERSION
 
-PG_CONFIG ?= pg_config
-PGXS := $(shell $(PG_CONFIG) --pgxs)
-ifndef PGXS
-	$(error Make sure the Greenplum installation binaries are in your PATH. i.e. export PATH=<path to your Greenplum installation>/bin:$$PATH)
-endif
-include $(PGXS)
+FDW_SUPPORT = $(shell $(PG_CONFIG) --version | egrep "PostgreSQL 1[2-5]")
+FDW_SUPPORT =
 
 SOURCE_EXTENSION_DIR = external-table
 TARGET_EXTENSION_DIR = gpextable
@@ -82,12 +78,13 @@ ifneq ($(SKIP_FDW_PACKAGE_REASON),)
 	$(eval PXF_MODULES := $(filter-out fdw,$(PXF_MODULES)))
 endif
 	set -e ;\
-	mkdir -p build/stage/$${PXF_PACKAGE_NAME}/pxf ;\
-	for module in $${PXF_MODULES[@]}; do \
-		echo "===> Staging [$${module}] module <===" ;\
-		make -C $${module} stage ;\
-		cp -a "$${module}"/build/stage/* "build/stage/$${PXF_PACKAGE_NAME}/pxf" ;\
-	done ;\
+	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
+	GP_BUILD_ARCH=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/build_arch) ;\
+	PXF_PACKAGE_NAME=pxf-cbdb$${GP_MAJOR_VERSION}-$${PXF_VERSION}-$${GP_BUILD_ARCH} ;\
+	mkdir -p build/stage/$${PXF_PACKAGE_NAME} ;\
+	cp -a $(SOURCE_EXTENSION_DIR)/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
+	cp -a cli/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
+	cp -a server/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
 	echo $$(git rev-parse --verify HEAD) > build/stage/$${PXF_PACKAGE_NAME}/pxf/commit.sha ;\
 	cp package/install_binary build/stage/$${PXF_PACKAGE_NAME}/install_component ;\
 	echo "===> PXF staging is complete <==="
@@ -98,8 +95,18 @@ tar: stage
 	tar -czf build/dist/$(PXF_PACKAGE_NAME).tar.gz -C build/stage $(PXF_PACKAGE_NAME)
 	echo "===> PXF TAR file with binaries creation is complete <==="
 
-rpm: stage
-	rm -rf build/rpmbuild
+gppkg-rpm: rpm
+	rm -rf gppkg
+	mkdir -p gppkg/deps
+	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version)
+	cat package/gppkg_spec.yml.in | sed "s,#arch,`arch`," | sed "s,#os,$(TEST_OS)," | sed "s,#gppkgver,1.0," | sed "s,#gpver,1," > gppkg/gppkg_spec.yml
+	find build/rpmbuild/RPMS -name pxf-cbdb$(GP_MAJOR_VERSION)-*.rpm -exec cp {} gppkg/ \;
+	source $(GPHOME)/greenplum_path.sh && gppkg --build gppkg
+
+rpm:
+	make -C $(SOURCE_EXTENSION_DIR) stage
+	make -C cli/go/src/pxf-cli stage
+	make -C server stage
 	set -e ;\
 	PXF_MAIN_VERSION=$${PXF_VERSION//-SNAPSHOT/} ;\
 	if [[ $${PXF_VERSION} == *"-SNAPSHOT" ]]; then PXF_RELEASE=SNAPSHOT; else PXF_RELEASE=1; fi ;\
@@ -112,14 +119,14 @@ rpm: stage
 	--define "pxf_release $${PXF_RELEASE}" \
 	--define "license ${LICENSE}" \
 	--define "vendor ${VENDOR}" \
-	-bb $${PWD}/build/rpmbuild/SPECS/pxf-gp$${GP_MAJORVERSION}.spec ;\
-	echo "===> PXF RPM package creation is complete <==="
+	-bb $${PWD}/build/rpmbuild/SPECS/pxf-cbdb$${GP_MAJOR_VERSION}.spec
 
 rpm-tar: rpm
 	rm -rf build/{stagerpm,distrpm}
 	mkdir -p build/{stagerpm,distrpm}
 	set -e ;\
-	PXF_RPM_FILE=$$(find build/rpmbuild/RPMS -name pxf-gp$${GP_MAJORVERSION}-*.rpm) ;\
+	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
+	PXF_RPM_FILE=$$(find build/rpmbuild/RPMS -name pxf-cbdb$${GP_MAJOR_VERSION}-*.rpm) ;\
 	PXF_RPM_BASE_NAME=$$(basename $${PXF_RPM_FILE%*.rpm}) ;\
 	PXF_PACKAGE_NAME=$${PXF_RPM_BASE_NAME%.*} ;\
 	mkdir -p build/stagerpm/$${PXF_PACKAGE_NAME} ;\
@@ -133,21 +140,24 @@ deb: stage
 	set -e ;\
 	PXF_MAIN_VERSION=$${PXF_VERSION//-SNAPSHOT/} ;\
 	if [[ $${PXF_VERSION} == *"-SNAPSHOT" ]]; then PXF_RELEASE=SNAPSHOT; else PXF_RELEASE=1; fi ;\
-	mkdir -p build/debbuild/usr/local/pxf-gp$${GP_MAJORVERSION} ;\
-	cp -a build/stage/$${PXF_PACKAGE_NAME}/pxf/* build/debbuild/usr/local/pxf-gp$${GP_MAJORVERSION} ;\
+	rm -rf build/debbuild ;\
+	mkdir -p build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION}/$(TARGET_EXTENSION_DIR) ;\
+	cp -a $(SOURCE_EXTENSION_DIR)/build/stage/* build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION}/$(TARGET_EXTENSION_DIR) ;\
+	cp -a cli/build/stage/pxf/* build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION} ;\
+	cp -a server/build/stage/pxf/* build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION} ;\
+	echo $$(git rev-parse --verify HEAD) > build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION}/commit.sha ;\
 	mkdir build/debbuild/DEBIAN ;\
 	cp -a package/DEBIAN/* build/debbuild/DEBIAN/ ;\
 	sed -i -e "s/%VERSION%/$${PXF_MAIN_VERSION}-$${PXF_RELEASE}/" -e "s/%MAINTAINER%/${VENDOR}/" build/debbuild/DEBIAN/control ;\
 	dpkg-deb --build build/debbuild ;\
-	mv build/debbuild.deb build/pxf-gp$${GP_MAJORVERSION}-$${PXF_MAIN_VERSION}-$${PXF_RELEASE}-ubuntu18.04-amd64.deb ;\
-	echo "===> PXF DEB package creation is complete <==="
-
+	mv build/debbuild.deb build/pxf-cbdb$${GP_MAJOR_VERSION}-$${PXF_MAIN_VERSION}-$${PXF_RELEASE}-ubuntu18.04-amd64.deb
 
 deb-tar: deb
 	rm -rf build/{stagedeb,distdeb}
 	mkdir -p build/{stagedeb,distdeb}
 	set -e ;\
-	PXF_DEB_FILE=$$(find build/ -name pxf-gp$${GP_MAJORVERSION}*.deb) ;\
+	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
+	PXF_DEB_FILE=$$(find build/ -name pxf-cbdb$${GP_MAJOR_VERSION}*.deb) ;\
 	PXF_PACKAGE_NAME=$$(dpkg-deb --field $${PXF_DEB_FILE} Package)-$$(dpkg-deb --field $${PXF_DEB_FILE} Version)-ubuntu18.04 ;\
 	mkdir -p build/stagedeb/$${PXF_PACKAGE_NAME} ;\
 	cp $${PXF_DEB_FILE} build/stagedeb/$${PXF_PACKAGE_NAME} ;\
