@@ -67,6 +67,65 @@ function run_pg_regress() {
 	su gpadmin -c ~gpadmin/run_pxf_automation_test.sh
 }
 
+function run_pxf_automation() {
+	# Let's make sure that automation/singlecluster directories are writeable
+	chmod a+w pxf_src/automation /singlecluster || true
+	find pxf_src/automation/tinc* -type d -exec chmod a+w {} \;
+
+	local extension_name="pxf"
+	if [[ ${USE_FDW} == "true" ]]; then
+		extension_name="pxf_fdw"
+	fi
+
+	#TODO: remove once exttable tests with GP7 are set
+	if [[ ${GROUP} == fdw_gpdb_schedule ]]; then
+		extension_name="pxf_fdw"
+	fi
+
+	su gpadmin -c "
+		source '${GPHOME}/greenplum_path.sh' &&
+		psql -p ${PGPORT} -d template1 -c 'CREATE EXTENSION ${extension_name}'
+	"
+	# prepare certification output directory
+	mkdir -p certification
+	chmod a+w certification
+
+	cat > ~gpadmin/run_pxf_automation_test.sh <<-EOF
+		#!/usr/bin/env bash
+		set -exo pipefail
+
+		source ~gpadmin/.pxfrc
+
+		export PATH=\$PATH:${GPHD_ROOT}/bin
+		export GPHD_ROOT=${GPHD_ROOT}
+		export PXF_HOME=${PXF_HOME}
+		export PGPORT=${PGPORT}
+		export USE_FDW=${USE_FDW}
+
+		cd pxf_src/automation
+		time make GROUP=${GROUP} test
+
+		# if the test is successful, create certification file
+		gpdb_build_from_sql=\$(psql -c 'select version()' | grep Greenplum | cut -d ' ' -f 6,8)
+		gpdb_build_clean=\${gpdb_build_from_sql%)}
+		pxf_version=\$(< ${PXF_HOME}/version)
+		echo "GPDB-\${gpdb_build_clean/ commit:/-}-PXF-\${pxf_version}" > "${PWD}/certification/certification.txt"
+		echo
+		echo '****************************************************************************************************'
+		echo "Wrote certification : \$(< ${PWD}/certification/certification.txt)"
+		echo '****************************************************************************************************'
+	EOF
+
+	chown gpadmin:gpadmin ~gpadmin/run_pxf_automation_test.sh
+	chmod a+x ~gpadmin/run_pxf_automation_test.sh
+
+	if [[ ${ACCEPTANCE} == true ]]; then
+		echo 'Acceptance test pipeline'
+		exit 1
+	fi
+
+	su gpadmin -c ~gpadmin/run_pxf_automation_test.sh
+}
 
 function generate_extras_fat_jar() {
 	mkdir -p /tmp/fatjar
@@ -137,7 +196,6 @@ if [[ ${GP_VER} -ge 7 ]]; then
   cp ${HEADER_FILE_GP7}/extaccess.h  ${GPHOME}/include/postgresql/server/extension/gp_exttable_fdw
 fi
 
-
 	# Install PXF
 	if [[ -d pxf_package ]]; then
 		# forward compatibility pipeline works with PXF rpms, not rpm tarballs
@@ -203,15 +261,12 @@ fi
 
 	inflate_dependencies
 
-  # TODO : Conflict with Alex's PR need to remove later.
-  # To run Tinc against GP7 we need to modify PYTHONPATH in $GPHOME/greenplum_path.sh since Tinc calls that script
-  # we will set PYTHONPATH to point to the set of python libs compiled with Python2 for GP6
-  if [[ ${GP_VER} == 7 ]]; then
-    local gp6_python_libs=~gpadmin/python
-    echo "export PYTHONPATH=${gp6_python_libs}" >> /usr/local/greenplum-db/greenplum_path.sh
-  fi
-
-
+	# To run Tinc against GP7 we need to modify PYTHONPATH in $GPHOME/greenplum_path.sh since Tinc calls that script
+	# we will set PYTHONPATH to point to the set of python libs compiled with Python2 for GP6
+	if [[ ${GP_VER} == 7 ]]; then
+	  local gp6_python_libs=~gpadmin/python
+	  echo "export PYTHONPATH=${gp6_python_libs}" >> /usr/local/greenplum-db/greenplum_path.sh
+	fi
 
 	ln -s "${PWD}/pxf_src" ~gpadmin/pxf_src
 
