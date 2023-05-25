@@ -112,6 +112,10 @@ configure(javaProjects) {
             // revert once springboot provided postgresql is upgraded to bundle postgresql:42.7.2+
             dependency("org.postgresql:postgresql:42.7.2")
 
+            dependency("org.apache.tomcat.embed:tomcat-embed-core:9.0.72")
+            dependency("org.apache.tomcat.embed:tomcat-embed-el:9.0.72")
+            dependency("org.apache.tomcat.embed:tomcat-embed-websocket:9.0.72")
+
             dependency("org.simplify4u:slf4j-mock:2.3.0")
             dependency("org.threeten:threeten-extra:1.5.0")
             dependency("org.tukaani:xz:1.8")
