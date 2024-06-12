@@ -13,24 +13,18 @@ PXF is an extensible framework that allows a distributed database like Greenplum
 PXF includes built-in connectors for accessing data that exists inside HDFS files, Hive tables, HBase tables, JDBC-accessible databases and more.
 Users can also create their own connectors to other data storage or processing engines.
 
+This project is forked from [greenplum/pxf](https://github.com/greenplum-db/pxf-archive) and customized for Cloudberry Database.
+
 ## Repository Contents
 
-* `external-table/`  
-    Contains the CloudberryDB extension implementing an External Table protocol handler
-* `fdw/`    
-    Contains the CloudberryDB extension implementing a Foreign Data Wrapper (FDW) for PXF
-* `server/`  
-    Contains the server side code of PXF along with the PXF Service and all the Plugins
-* `cli/`    
-    Contains command line interface code for PXF
-* `automation/`  
-    Contains the automation and integration tests for PXF against the various datasources
-* `singlecluster/`  
-    Hadoop testing environment to exercise the pxf automation tests
-* `regression/`  
-    Contains the end-to-end (integration) tests for PXF against the various datasources, utilizing the PostgreSQL testing framework `pg_regress`
-* `downloads/`  
-    An empty directory that serves as a staging location for CloudberryDB RPMs for the development Docker image
+* `external-table/` : Contains the CloudberryDB extension implementing an External Table protocol handler
+* `fdw/` : Contains the CloudberryDB extension implementing a Foreign Data Wrapper (FDW) for PXF
+* `server/` : Contains the server side code of PXF along with the PXF Service and all the Plugins
+* `cli/` : Contains command line interface code for PXF
+* `automation/` : Contains the automation and integration tests for PXF against the various datasources
+* `singlecluster/` : Hadoop testing environment to exercise the pxf automation tests
+* `regression/` : Contains the end-to-end (integration) tests for PXF against the various datasources, utilizing the PostgreSQL testing framework `pg_regress`
+* `downloads/` : An empty directory that serves as a staging location for CloudberryDB RPMs for the development Docker image
 
 ## PXF Development
 
@@ -56,9 +50,9 @@ To build PXF, you must have:
 
     Either download and install CloudberryDB RPM or build CloudberryDB from the source by following instructions in the [CloudberryDB](https://github.com/cloudberrydb/cloudberrydb).
 
-    Assuming you have installed CloudberryDB into `/usr/local/cloudberry-db` directory, run its environment script:
+    Assuming you have installed CloudberryDB into `/usr/local/cloudberrydb` directory, run its environment script:
     ```
-    source /usr/local/cloudberry-db/greenplum_path.sh
+    source /usr/local/cloudberrydb/greenplum_path.sh
     ```
 
 3. JDK 1.8 or JDK 11 to compile/run
@@ -81,7 +75,7 @@ To build PXF, you must have:
     Once you have installed Go, you will need the `ginkgo` tool which runs Go tests,
     respectively. Assuming `go` is on your `PATH`, you can run:
     ```
-    go get github.com/onsi/ginkgo/ginkgo
+    go install github.com/onsi/ginkgo/ginkgo@latest
     ```
 
 5. cURL (7.29 or later):
@@ -106,10 +100,10 @@ make test
 
 ### How to Install PXF
 
-To install PXF, first make sure that the user has sufficient permissions in the `$GPHOME` and `$PXF_HOME` directories to perform the installation. It's recommended to change ownership to match the installing user. For example, when installing PXF as user `gpadmin` under `/usr/local/cloudberry-db`:
+To install PXF, first make sure that the user has sufficient permissions in the `$GPHOME` and `$PXF_HOME` directories to perform the installation. It's recommended to change ownership to match the installing user. For example, when installing PXF as user `gpadmin` under `/usr/local/cloudberrydb`:
 
 ```bash
-export GPHOME=/usr/local/cloudberry-db
+export GPHOME=/usr/local/cloudberrydb
 export PXF_HOME=/usr/local/pxf
 export PXF_BASE=${HOME}/pxf-base
 chown -R gpadmin:gpadmin "${GPHOME}" "${PXF_HOME}"
@@ -180,14 +174,14 @@ cp ${PXF_HOME}/templates/*-site.xml ${PXF_BASE}/servers/default
 
 The quick and easy is to download the CloudberryDB RPM from GitHub and move it into the `/downloads` folder. Then run `./dev/start.bash` to get a docker image with a running CloudberryDB, Hadoop cluster and an installed PXF.
 
-#### Setup GPDB in the Docker image
+#### Setup CloudberryDB in the Docker image
 
-Configure, build and install GPDB. This will be needed only when you use the container for the first time with GPDB source.
+Configure, build and install CloudberryDB. This will be needed only when you use the container for the first time with CloudberryDB source.
 
 ```bash
 ~/workspace/pxf/dev/build_gpdb.bash
-sudo mkdir /usr/local/greenplum-db-devel
-sudo chown gpadmin:gpadmin /usr/local/greenplum-db-devel
+sudo mkdir /usr/local/cloudberry-db-devel
+sudo chown gpadmin:gpadmin /usr/local/cloudberry-db-devel
 ~/workspace/pxf/dev/install_gpdb.bash
 ```
 
@@ -328,7 +322,7 @@ no JDK set for Gradle. Just cancel and retry. It goes away the second time.
 - Save the configuration
 - Restart PXF in DEBUG Mode `PXF_DEBUG=true pxf restart`
 - Debug the new configuration in IntelliJ
-- Run a query in GPDB that uses PXF to debug with IntelliJ
+- Run a query in CloudberryDB that uses PXF to debug with IntelliJ
 
 ## To run a Kerberized Hadoop Cluster
 
