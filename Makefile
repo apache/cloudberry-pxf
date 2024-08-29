@@ -12,7 +12,8 @@ SOURCE_EXTENSION_DIR = external-table
 TARGET_EXTENSION_DIR = gpextable
 
 LICENSE ?= ASL 2.0
-VENDOR ?= Open Source
+VENDOR  ?= Cloudberry Open Source
+RELEASE ?= 1
 
 default: all
 
@@ -99,8 +100,15 @@ rpm:
 	make -C server stage
 	set -e ;\
 	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
-	PXF_MAIN_VERSION=$${PXF_VERSION//-SNAPSHOT/} ;\
-	if [[ $${PXF_VERSION} == *"-SNAPSHOT" ]]; then PXF_RELEASE=SNAPSHOT; else PXF_RELEASE=1; fi ;\
+	PXF_FULL_VERSION=$${PXF_VERSION} ;\
+	PXF_MAIN_VERSION=$$(echo $${PXF_FULL_VERSION} | sed -E 's/(-SNAPSHOT|-rc[0-9]+)$$//') ;\
+	if [[ $${PXF_FULL_VERSION} == *"-SNAPSHOT" ]]; then \
+		PXF_RELEASE=SNAPSHOT; \
+	elif [[ $${PXF_FULL_VERSION} =~ -rc([0-9]+)$$ ]]; then \
+		PXF_RELEASE="rc$${BASH_REMATCH[1]}"; \
+	else \
+		PXF_RELEASE=1; \
+	fi ;\
 	rm -rf build/rpmbuild ;\
 	mkdir -p build/rpmbuild/{BUILD,RPMS,SOURCES,SPECS} ;\
 	mkdir -p build/rpmbuild/SOURCES/$(TARGET_EXTENSION_DIR) ;\
@@ -115,7 +123,7 @@ rpm:
 	--define "pxf_release $${PXF_RELEASE}" \
 	--define "license ${LICENSE}" \
 	--define "vendor ${VENDOR}" \
-	-bb $${PWD}/build/rpmbuild/SPECS/pxf-cbdb$${GP_MAJOR_VERSION}.spec
+	-bb $${PWD}/build/rpmbuild/SPECS/cloudberry-pxf.spec
 
 rpm-tar: rpm
 	rm -rf build/{stagerpm,distrpm}
