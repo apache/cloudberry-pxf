@@ -1,34 +1,33 @@
-# Platform Extension Framework (PXF) for Cloudberry Database
+# Platform Extension Framework (PXF) for Apache Cloudberry (Incubating)
 
 [![Slack](https://img.shields.io/badge/Join_Slack-6a32c9)](https://communityinviter.com/apps/cloudberrydb/welcome)
 [![Twitter Follow](https://img.shields.io/twitter/follow/cloudberrydb)](https://twitter.com/cloudberrydb)
-[![Website](https://img.shields.io/badge/Visit%20Website-eebc46)](https://cloudberrydb.org)
-[![GitHub Discussions](https://img.shields.io/github/discussions/cloudberrydb/cloudberrydb)](https://github.com/orgs/cloudberrydb/discussions)
+[![Website](https://img.shields.io/badge/Visit%20Website-eebc46)](https://cloudberry.apache.org)
 
 ---
 
 ## Introduction
 
-PXF is an extensible framework that allows a distributed database like Greenplum and Cloudberry Database to query external data files, whose metadata is not managed by the database.
+PXF is an extensible framework that allows a distributed database like Greenplum and Apache Cloudberry to query external data files, whose metadata is not managed by the database.
 PXF includes built-in connectors for accessing data that exists inside HDFS files, Hive tables, HBase tables, JDBC-accessible databases and more.
 Users can also create their own connectors to other data storage or processing engines.
 
-This project is forked from [greenplum/pxf](https://github.com/greenplum-db/pxf-archive) and customized for Cloudberry Database.
+This project is forked from [greenplum/pxf](https://github.com/greenplum-db/pxf-archive) and customized for Apache Cloudberry.
 
 ## Repository Contents
 
-* `external-table/` : Contains the CloudberryDB extension implementing an External Table protocol handler
-* `fdw/` : Contains the CloudberryDB extension implementing a Foreign Data Wrapper (FDW) for PXF
+* `external-table/` : Contains the Cloudberry extension implementing an External Table protocol handler
+* `fdw/` : Contains the Cloudberry extension implementing a Foreign Data Wrapper (FDW) for PXF
 * `server/` : Contains the server side code of PXF along with the PXF Service and all the Plugins
 * `cli/` : Contains command line interface code for PXF
 * `automation/` : Contains the automation and integration tests for PXF against the various datasources
 * `singlecluster/` : Hadoop testing environment to exercise the pxf automation tests
 * `regression/` : Contains the end-to-end (integration) tests for PXF against the various datasources, utilizing the PostgreSQL testing framework `pg_regress`
-* `downloads/` : An empty directory that serves as a staging location for CloudberryDB RPMs for the development Docker image
+* `downloads/` : An empty directory that serves as a staging location for Cloudberry RPMs for the development Docker image
 
 ## PXF Development
 
-Below are the steps to build and install PXF along with its dependencies including CloudberryDB and Hadoop.
+Below are the steps to build and install PXF along with its dependencies including Cloudberry and Hadoop.
 
 > [!Note]
 > To start, ensure you have a `~/workspace` directory and have cloned the `pxf` and its prerequisites (shown below) under it.
@@ -38,7 +37,7 @@ Below are the steps to build and install PXF along with its dependencies includi
 mkdir -p ~/workspace
 cd ~/workspace
 
-git clone https://github.com/cloudberrydb/pxf.git
+git clone https://github.com/apache/cloudberry-pxf.git
 ```
 
 ### Install Dependencies
@@ -46,11 +45,11 @@ git clone https://github.com/cloudberrydb/pxf.git
 To build PXF, you must have:
 
 1. GCC compiler, `make` system, `unzip` package, `maven` for running integration tests
-2. Installed Cloudberry Database
+2. Installed Cloudberry
 
-    Either download and install CloudberryDB RPM or build CloudberryDB from the source by following instructions in the [CloudberryDB](https://github.com/cloudberrydb/cloudberrydb).
+    Either download and install Cloudberry RPM or build Cloudberry from the source by following instructions in the [Cloudberry](https://github.com/apache/cloudberry).
 
-    Assuming you have installed CloudberryDB into `/usr/local/cloudberrydb` directory, run its environment script:
+    Assuming you have installed Cloudberry into `/usr/local/cloudberrydb` directory, run its environment script:
     ```
     source /usr/local/cloudberrydb/greenplum_path.sh
     ```
@@ -131,7 +130,7 @@ If `${HOME}/pxf-base` does not exist, `pxf prepare` will create the directory fo
 
 ### Re-installing PXF after making changes
 
-Note: Local development with PXF requires a running CloudberryDB cluster.
+Note: Local development with PXF requires a running Cloudberry cluster.
 
 Once the desired changes have been made, there are 2 options to re-install PXF:
 
@@ -170,13 +169,13 @@ cp ${PXF_HOME}/templates/*-site.xml ${PXF_BASE}/servers/default
 ### Development With Docker
 
 > [!Note]
-> Since the docker container will house all Single cluster Hadoop, CloudberryDB and PXF, we recommend that you have at least 4 cpus and 6GB memory allocated to Docker. These settings are available under docker preferences.
+> Since the docker container will house all Single cluster Hadoop, Cloudberry and PXF, we recommend that you have at least 4 cpus and 6GB memory allocated to Docker. These settings are available under docker preferences.
 
-The quick and easy is to download the CloudberryDB RPM from GitHub and move it into the `/downloads` folder. Then run `./dev/start.bash` to get a docker image with a running CloudberryDB, Hadoop cluster and an installed PXF.
+The quick and easy is to download the Cloudberry RPM from GitHub and move it into the `/downloads` folder. Then run `./dev/start.bash` to get a docker image with a running Cloudberry, Hadoop cluster and an installed PXF.
 
-#### Setup CloudberryDB in the Docker image
+#### Setup Cloudberry in the Docker image
 
-Configure, build and install CloudberryDB. This will be needed only when you use the container for the first time with CloudberryDB source.
+Configure, build and install Cloudberry. This will be needed only when you use the container for the first time with Cloudberry source.
 
 ```bash
 ~/workspace/pxf/dev/build_gpdb.bash
@@ -185,7 +184,7 @@ sudo chown gpadmin:gpadmin /usr/local/cloudberry-db-devel
 ~/workspace/pxf/dev/install_gpdb.bash
 ```
 
-For subsequent minor changes to CloudberryDB source you can simply do the following:
+For subsequent minor changes to Cloudberry source you can simply do the following:
 ```bash
 ~/workspace/pxf/dev/install_gpdb.bash
 ```
@@ -195,7 +194,7 @@ Run all the instructions below and run GROUP=smoke (in one script):
 ~/workspace/pxf/dev/smoke_shortcut.sh
 ```
 
-Create CloudberryDB Cluster
+Create Cloudberry Cluster
 ```bash
 source /usr/local/cloudberrydb-db-devel/greenplum_path.sh
 make -C ~/workspace/cbdb create-demo-cluster
