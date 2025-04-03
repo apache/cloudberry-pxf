@@ -1,0 +1,37 @@
+version: "2"
+
+run:
+  modules-download-mode: readonly
+
+linters:
+  # FIXME change to `standard`
+  default: none
+  enable:
+    - errcheck
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - .*_test.go$
+      - third_party$
+      - builtin$
+      - examples$
+
+severity:
+  default: error
+
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: lax
+    paths:
+      - .*.go$  # FIXME: remove it
+      - .*_test.go$
+      - third_party$
+      - builtin$
+      - examples$

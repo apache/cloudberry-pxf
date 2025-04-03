@@ -1,0 +1,49 @@
+name: pxf-cli
+on:
+  push:
+    paths:
+      - 'cli/**'
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'cli/**'
+
+env:
+  GO_VERSION: "1.22"
+  GINKGO_VERSION: "1.16.5"
+
+jobs:
+  test:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: cli/go.sum
+      - name: Install test tools
+        run: go install github.com/onsi/ginkgo/ginkgo@v${GINKGO_VERSION}
+      - name: build
+        run: make -C cli/go/src/pxf-cli
+      - name: test
+        run: make -C cli/go/src/pxf-cli test
+
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: cli/go/src/pxf-cli/go.sum
+        id: go
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.0.2
+          working-directory: cli/go/src/pxf-cli
