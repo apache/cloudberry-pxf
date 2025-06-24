@@ -652,6 +652,23 @@ add_projection_desc_httpheader_pg94(CHURL_HEADERS headers,
 
 #if PG_VERSION_NUM >= 120000
 static void
+set_var_number(int **varNumbers, int *varNumberSize, int value, int offset)
+{
+	if (*varNumberSize == 0)
+	{
+		*varNumberSize = Max(32, offset * 2);
+		*varNumbers = (int *) palloc0(sizeof(int) * (*varNumberSize));
+	}
+	else if (*varNumberSize <= offset)
+	{
+		*varNumberSize = Max(*varNumberSize * 2, offset * 2);
+		*varNumbers = (int *) repalloc(*varNumbers, sizeof(int) * (*varNumberSize));
+	}
+
+	*varNumbers[offset] = value;
+}
+
+static void
 add_projection_desc_httpheader_pg12(CHURL_HEADERS headers,
                  ProjectionInfo *projInfo,
                  List *qualsAttributes,
@@ -665,7 +682,9 @@ add_projection_desc_httpheader_pg12(CHURL_HEADERS headers,
     // In versions < 120000, projInfo->pi_varNumbers contains atttribute numbers of SimpleVars
     // Since,this pi_varNumbers doesn't exist in PG12 and above, we can add the attribute numbers by
     // iterating on the Simple vars.
-  int       varNumbers[sizeof(int32) * 8];
+  
+  int       varNumbersSize = 0;
+  int       *varNumbers = NULL;
   Bitmapset   *attrs_used;
   StringInfoData  formatter;
   TupleDesc   tupdesc;
@@ -717,8 +736,8 @@ add_projection_desc_httpheader_pg12(CHURL_HEADERS headers,
         add_projection_index_header(headers,
                       formatter, attno - 1, long_number);
         numTargetList++;
-                varNumbers[i] = attno;
-                i++;
+		set_var_number(&varNumbers, &varNumbersSize, attno, i);
+		i++;
       }
     }
 
@@ -775,6 +794,9 @@ add_projection_desc_httpheader_pg12(CHURL_HEADERS headers,
                     i - 1 - dropped_count, long_number);
     }
   }
+
+  if (varNumbers)
+  	pfree(varNumbers);
 
   list_free(qualsAttributes);
   pfree(formatter.data);
