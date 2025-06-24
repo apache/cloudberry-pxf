@@ -551,7 +551,7 @@ set_var_number(int **varNumbers, int *varNumberSize, int value, int offset)
 		*varNumbers = (int *) repalloc(*varNumbers, sizeof(int) * (*varNumberSize));
 	}
 
-	*varNumbers[offset] = value;
+	(*varNumbers)[offset] = value;
 }
 
 static void
