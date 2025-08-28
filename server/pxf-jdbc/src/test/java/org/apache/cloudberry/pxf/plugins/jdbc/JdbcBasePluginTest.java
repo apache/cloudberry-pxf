@@ -23,6 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.cloudberry.pxf.api.model.RequestContext;
 import org.apache.cloudberry.pxf.api.security.SecureLogin;
 import org.apache.cloudberry.pxf.plugins.jdbc.utils.ConnectionManager;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -71,9 +72,19 @@ public class JdbcBasePluginTest {
     private RequestContext context;
     private Properties poolProps;
 
+    private Properties getDefaultConnectionProperties() {
+        Properties properties = new Properties();
+        properties.setProperty("user", "test-user");
+        properties.setProperty("password", "test-password");
+        return properties;
+    }
+
     @BeforeEach
     public void before() {
         configuration = new Configuration();
+        configuration.set("jdbc.user", "test-user");
+        configuration.set("jdbc.password", "test-password");
+
         context = new RequestContext();
         context.setConfig("default");
         context.setDataSource("test-table");
@@ -332,6 +343,123 @@ public class JdbcBasePluginTest {
     }
 
     @Test
+    public void testGetConnectionErrorWithoutPassword1() throws SQLException {
+        configuration.set("jdbc.driver", "org.greenplum.pxf.plugins.jdbc.FakeJdbcDriver");
+        configuration.set("jdbc.url", "test-url");
+        configuration.set("jdbc.password", "");
+
+        context.setServerName("test-server");
+
+        try {
+            getPlugin(mockConnectionManager, mockSecureLogin, context);
+        } catch (IllegalArgumentException e) {
+            assertEquals("JDBC password has not been set", e.getMessage());
+            return;
+        }
+        Assertions.fail("Expected an exception to be thrown due to missing password, but no exception was thrown.");
+    }
+
+    @Test
+    public void testGetConnectionErrorWithoutPassword2() throws SQLException {
+        configuration = new Configuration();
+        configuration.set("jdbc.user", "test-user");
+        configuration.set("jdbc.driver", "org.greenplum.pxf.plugins.jdbc.FakeJdbcDriver");
+        configuration.set("jdbc.url", "test-url");
+        context.setConfiguration(configuration);
+
+        context.setServerName("test-server");
+
+        try {
+            getPlugin(mockConnectionManager, mockSecureLogin, context);
+        } catch (IllegalArgumentException e) {
+            assertEquals("JDBC password has not been set", e.getMessage());
+            return;
+        }
+        Assertions.fail("Expected an exception to be thrown due to missing password, but no exception was thrown.");
+    }
+
+    @Test
+    public void testGetConnectionWithPasswordInUrl() throws SQLException {
+        configuration = new Configuration();
+        configuration.set("jdbc.driver", "org.greenplum.pxf.plugins.jdbc.FakeJdbcDriver");
+        configuration.set("jdbc.url", "test-url?password=test-password");
+        configuration.set("jdbc.user", "test-user");
+
+        context.setServerName("test-server");
+        context.setConfiguration(configuration);
+
+        when(mockConnectionManager.getConnection(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(mockConnection);
+        when(mockConnection.getMetaData()).thenReturn(mockMetaData);
+
+        JdbcBasePlugin plugin = getPlugin(mockConnectionManager, mockSecureLogin, context);
+        Connection conn = plugin.getConnection();
+
+        assertSame(mockConnection, conn);
+
+        Properties properties = new Properties();
+        properties.setProperty("user", "test-user");
+
+        verify(mockConnectionManager).getConnection("test-server", "test-url?password=test-password", properties, true, poolProps, null);
+    }
+
+    @Test
+    public void testGetConnectionErrorWithoutUser1() throws SQLException {
+        configuration.set("jdbc.driver", "org.greenplum.pxf.plugins.jdbc.FakeJdbcDriver");
+        configuration.set("jdbc.url", "test-url");
+        configuration.set("jdbc.user", "");
+        configuration.set("jdbc.password", "test-password");
+
+        context.setServerName("test-server");
+
+        try {
+            getPlugin(mockConnectionManager, mockSecureLogin, context);
+        } catch (IllegalArgumentException e) {
+            assertEquals("JDBC user has not been set", e.getMessage());
+            return;
+        }
+        Assertions.fail("Expected an exception to be thrown due to missing user, but no exception was thrown.");
+    }
+
+    @Test
+    public void testGetConnectionErrorWithoutUser2() throws SQLException {
+        configuration = new Configuration();
+        configuration.set("jdbc.password", "test-password");
+        configuration.set("jdbc.driver", "org.greenplum.pxf.plugins.jdbc.FakeJdbcDriver");
+        configuration.set("jdbc.url", "test-url");
+        context.setConfiguration(configuration);
+
+        context.setServerName("test-server");
+
+        try {
+            getPlugin(mockConnectionManager, mockSecureLogin, context);
+        } catch (IllegalArgumentException e) {
+            assertEquals("JDBC user has not been set", e.getMessage());
+            return;
+        }
+        Assertions.fail("Expected an exception to be thrown due to missing user, but no exception was thrown.");
+    }
+
+    @Test
+    public void testGetConnectionWithUserAndPasswordInUrl() throws SQLException {
+        configuration = new Configuration();
+        configuration.set("jdbc.driver", "org.greenplum.pxf.plugins.jdbc.FakeJdbcDriver");
+        configuration.set("jdbc.url", "test-url?user=test-user&password=test-password");
+        context.setConfiguration(configuration);
+
+        context.setServerName("test-server");
+
+        when(mockConnectionManager.getConnection(any(), any(), any(), anyBoolean(), any(), any())).thenReturn(mockConnection);
+        when(mockConnection.getMetaData()).thenReturn(mockMetaData);
+
+        JdbcBasePlugin plugin = getPlugin(mockConnectionManager, mockSecureLogin, context);
+        Connection conn = plugin.getConnection();
+
+        assertSame(mockConnection, conn);
+
+        verify(mockConnectionManager).getConnection("test-server", "test-url?user=test-user&password=test-password", new Properties(), true, poolProps, null);
+    }
+
+    @Test
     public void testGetConnectionNoConnPropsPoolDisabled() throws SQLException {
         context.setServerName("test-server");
         configuration.set("jdbc.driver", "org.apache.cloudberry.pxf.plugins.jdbc.FakeJdbcDriver");
@@ -346,14 +474,14 @@ public class JdbcBasePluginTest {
 
         assertSame(mockConnection, conn);
 
-        verify(mockConnectionManager).getConnection("test-server", "test-url", new Properties(), false, null, null);
+        verify(mockConnectionManager).getConnection("test-server", "test-url", getDefaultConnectionProperties(), false, null, null);
     }
 
     @Test
     public void testGetConnectionConnPropsPoolDisabled() throws SQLException {
         context.setServerName("test-server");
 
-        Properties connProps = new Properties();
+        Properties connProps = getDefaultConnectionProperties();
         connProps.setProperty("foo", "foo-val");
         connProps.setProperty("bar", "bar-val");
 
@@ -392,7 +520,7 @@ public class JdbcBasePluginTest {
 
         assertSame(mockConnection, conn);
 
-        Properties connProps = new Properties();
+        Properties connProps = getDefaultConnectionProperties();
         connProps.setProperty("foo", "foo-val");
         connProps.setProperty("bar", "bar-val");
 
@@ -419,7 +547,7 @@ public class JdbcBasePluginTest {
 
         assertSame(mockConnection, conn);
 
-        Properties connProps = new Properties();
+        Properties connProps = getDefaultConnectionProperties();
         connProps.setProperty("foo", "foo-val");
         connProps.setProperty("bar", "bar-val");
 
@@ -447,7 +575,7 @@ public class JdbcBasePluginTest {
 
         assertSame(mockConnection, conn);
 
-        Properties connProps = new Properties();
+        Properties connProps = getDefaultConnectionProperties();
         connProps.setProperty("foo", "foo-val");
         connProps.setProperty("bar", "bar-val");
 
@@ -478,7 +606,7 @@ public class JdbcBasePluginTest {
 
         assertSame(mockConnection, conn);
 
-        Properties connProps = new Properties();
+        Properties connProps = getDefaultConnectionProperties();
         connProps.setProperty("foo", "foo-val");
         connProps.setProperty("bar", "bar-val");
 
