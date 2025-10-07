@@ -522,10 +522,8 @@ add_projection_desc_httpheader_pg94(CHURL_HEADERS headers,
 	int				*varNumbers = projInfo->pi_varNumbers;
 	Bitmapset		*attrs_used;
 	StringInfoData	formatter;
-	List		   *targetList;   // targetList from the query plan
-	TupleDesc	   tupdesc;
+	TupleDesc		tupdesc;
 
-	// STEP 0: initialize variables
 	initStringInfo(&formatter);
 	attrs_used = NULL;
 	number = 0;
@@ -544,9 +542,10 @@ add_projection_desc_httpheader_pg94(CHURL_HEADERS headers,
 	if (!varNumbers)
 	{
 		/*
-		 * we use expression_tree_walker to access attrno information
-		 * we do it through a helper function add_attnums_from_targetList
+		 * When there are not just simple Vars we need to
+		 * walk the tree to get attnums
 		 */
+#endif
 		List     *l = lappend_int(NIL, 0);
 		ListCell *lc1;
 
@@ -563,7 +562,7 @@ add_projection_desc_httpheader_pg94(CHURL_HEADERS headers,
 			{
 				attrs_used =
 					bms_add_member(attrs_used,
-								 attno - FirstLowInvalidHeapAttributeNumber);
+									attno - FirstLowInvalidHeapAttributeNumber);
 			}
 		}
 
@@ -588,8 +587,11 @@ add_projection_desc_httpheader_pg94(CHURL_HEADERS headers,
 						 varNumbers[i] - FirstLowInvalidHeapAttributeNumber);
 	}
 
-	// STEP 3: collect attribute numbers from qualifiers (WHERE conditions)
 	ListCell *attribute = NULL;
+
+	/*
+	 * AttrNumbers coming from quals
+	 */
 	foreach(attribute, qualsAttributes)
 	{
 		AttrNumber attrNumber = (AttrNumber) lfirst_int(attribute);
@@ -598,10 +600,8 @@ add_projection_desc_httpheader_pg94(CHURL_HEADERS headers,
 						 attrNumber + 1 - FirstLowInvalidHeapAttributeNumber);
 	}
 
-	// STEP 4: for attributes in the relation that are not dropped, add projection headers for those selected in steps 0 - 3 above
 	tupdesc = RelationGetDescr(rel);
-	droppedCount = 0;
-	headerCount = 0;
+	dropped_count = 0;
 
 	for (i = 1; i <= tupdesc->natts; i++)
 	{
@@ -609,7 +609,7 @@ add_projection_desc_httpheader_pg94(CHURL_HEADERS headers,
 		if (tupdesc->attrs[i - 1]->attisdropped)
 		{
 			/* keep a counter of the number of dropped attributes */
-			droppedCount++;
+			dropped_count++;
 			continue;
 		}
 
@@ -617,15 +617,15 @@ add_projection_desc_httpheader_pg94(CHURL_HEADERS headers,
 		{
 			/* Shift the column index by the running dropped_count */
 			add_projection_index_header(headers, formatter,
-										i - 1 - droppedCount, long_number);
-			headerCount++;
+										i - 1 - dropped_count, long_number);
+			number++;
 		}
 	}
 
-	if (headerCount != 0)
+	if (number != 0)
 	{
 		/* Convert the number of projection columns to a string */
-		pg_ltoa(headerCount, long_number);
+		pg_ltoa(number, long_number);
 		churl_headers_append(headers, "X-GP-ATTRS-PROJ", long_number);
 	}
 

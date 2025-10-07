@@ -234,7 +234,7 @@ new_pxfdelimited_state(FunctionCallInfo fcinfo)
 	fmt_state->nColumns = nColumns;
 
 	fmt_state->external_encoding = FORMATTER_GET_EXTENCODING(fcinfo);
-	fmt_state->enc_conversion_proc = ((FormatterData*) fcinfo->context)->fmt_conversion_proc;
+	fmt_state->enc_conversion_proc = ((FormatterData*) fcinfo->context)->fmt_conv_funcs;
 
 	fmt_state->saw_delim = false;
 	fmt_state->saw_eol = false;

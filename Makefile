@@ -34,7 +34,7 @@ ifneq ($(FDW_SUPPORT),)
 endif
 
 cli:
-	make -C cli/go/src/pxf-cli
+	make -C cli
 
 server:
 	make -C server
@@ -42,7 +42,7 @@ server:
 clean:
 	rm -rf build
 	make -C $(SOURCE_EXTENSION_DIR) clean-all
-	make -C cli/go/src/pxf-cli clean
+	make -C cli clean
 	make -C server clean
 ifneq ($(FDW_SUPPORT),)
 	make -C fdw clean
@@ -62,7 +62,7 @@ it:
 
 install:
 	make -C $(SOURCE_EXTENSION_DIR) install
-	make -C cli/go/src/pxf-cli install
+	make -C cli install
 	make -C server install
 ifneq ($(FDW_SUPPORT),)
 	make -C fdw install
@@ -105,7 +105,7 @@ gppkg-rpm: rpm
 
 rpm:
 	make -C $(SOURCE_EXTENSION_DIR) stage
-	make -C cli/go/src/pxf-cli stage
+	make -C cli stage
 	make -C server stage
 	set -e ;\
 	PXF_MAIN_VERSION=$${PXF_VERSION//-SNAPSHOT/} ;\
