@@ -1,0 +1,441 @@
+name: PXF CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: "11"
+  JAVA_HOME: "/usr/lib/jvm/java-11-openjdk"
+  GPADMIN_HOME: "/home/gpadmin"
+  GO_VERSION: "1.21"
+  GPHOME: "/usr/local/cloudberry-db"
+  CLOUDBERRY_VERSION: "main"
+  PXF_HOME: "/usr/local/pxf"
+  PXF_VERSION: "main"
+  # Common environment setup script
+  SETUP_ENV_SCRIPT: |
+    if [ -f "/usr/local/cloudberry-db/cloudberry-env.sh" ]; then
+      source /usr/local/cloudberry-db/cloudberry-env.sh
+    fi
+    export GPHOME=/usr/local/cloudberry-db
+    export PXF_HOME=/usr/local/pxf
+    export JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-11-openjdk}
+    export CLOUDBERRY_SRC="${GITHUB_WORKSPACE}/cloudberry"
+    export PATH="$PATH:/usr/local/go/bin:${GPHOME}/bin"
+    export LD_LIBRARY_PATH="${GPHOME}/lib:${LD_LIBRARY_PATH}"
+    echo "GPHOME=$GPHOME" >> "$GITHUB_ENV"
+    echo "PXF_HOME=$PXF_HOME" >> "$GITHUB_ENV"
+    echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+    echo "CLOUDBERRY_SRC=$CLOUDBERRY_SRC" >> "$GITHUB_ENV"
+    echo "PATH=$PATH" >> "$GITHUB_ENV"
+    echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+
+jobs:
+  # 1) Setup Apache Cloudberry Demo
+  setup-cloudberry:
+    name: Setup Apache Cloudberry Demo
+    runs-on: ubuntu-latest
+    container:
+      image: apache/incubator-cloudberry:cbdb-build-rocky9-latest
+      options: >-
+        --user root
+        -h cdw
+        --shm-size=2gb
+    steps:
+      - name: Cloudberry Environment Initialization
+        shell: bash
+        run: |
+          if ! su - gpadmin -c "/tmp/init_system.sh"; then
+            echo "::error::Container initialization failed"
+            exit 1
+          fi
+          mkdir -p build-logs/details
+          chown -R gpadmin:gpadmin .
+          chmod -R 755 .
+          chmod 777 build-logs
+
+      - name: Checkout Apache Cloudberry source
+        uses: actions/checkout@v4
+        with:
+          repository: apache/cloudberry
+          ref: main
+          fetch-depth: 1
+          persist-credentials: false
+          path: cloudberry
+          submodules: true
+
+      - name: Configure Apache Cloudberry
+        env:
+          SRC_DIR: ${{ github.workspace }}/cloudberry
+          BUILD_DESTINATION: /usr/local/cloudberry-db
+          LOGS_DIR: build-logs
+        run: |
+          set -eo pipefail
+          mkdir -p "${SRC_DIR}/${LOGS_DIR}" "${SRC_DIR}/${LOGS_DIR}/details"
+          chown -R gpadmin:gpadmin "${SRC_DIR}"
+          chmod -R 755 "${SRC_DIR}"
+          chmod 777 "${SRC_DIR}/${LOGS_DIR}"
+          chmod +x "${SRC_DIR}"/devops/build/automation/cloudberry/scripts/configure-cloudberry.sh
+          if ! time su - gpadmin -c "cd ${SRC_DIR} && SRC_DIR=${SRC_DIR} ENABLE_DEBUG=${{ env.ENABLE_DEBUG }} ${SRC_DIR}/devops/build/automation/cloudberry/scripts/configure-cloudberry.sh"; then
+            echo "::error::Configure script failed"
+            exit 1
+          fi
+
+      - name: Build Apache Cloudberry
+        env:
+          SRC_DIR: ${{ github.workspace }}/cloudberry
+        run: |
+          set -eo pipefail
+          chmod +x "${SRC_DIR}"/devops/build/automation/cloudberry/scripts/build-cloudberry.sh
+          if ! time su - gpadmin -c "cd ${SRC_DIR} && SRC_DIR=${SRC_DIR} ${SRC_DIR}/devops/build/automation/cloudberry/scripts/build-cloudberry.sh"; then
+            echo "::error::Build script failed"
+            exit 1
+          fi
+
+      - name: Create Cloudberry demo cluster
+        env:
+          SRC_DIR: ${{ github.workspace }}/cloudberry
+          NUM_PRIMARY_MIRROR_PAIRS: 1
+        run: |
+          set -eo pipefail
+          su - gpadmin -c "
+            set -eo pipefail
+            cd ${SRC_DIR}
+            export SRC_DIR=${SRC_DIR}
+            export NUM_PRIMARY_MIRROR_PAIRS=${NUM_PRIMARY_MIRROR_PAIRS}
+            chmod +x devops/build/automation/cloudberry/scripts/create-cloudberry-demo-cluster.sh
+            ./devops/build/automation/cloudberry/scripts/create-cloudberry-demo-cluster.sh
+          "
+
+      - name: Verify Cloudberry cluster
+        run: |
+          set -eo pipefail
+          su - gpadmin -c "
+            source /usr/local/cloudberry-db/cloudberry-env.sh
+            source ${GITHUB_WORKSPACE}/cloudberry/gpAux/gpdemo/gpdemo-env.sh
+            gpstate -s
+            psql -d postgres -c 'SELECT version();'
+            psql -d postgres -c 'SELECT * FROM gp_segment_configuration;'
+          "
+
+      - name: Persist env and cache installation
+        run: |
+          eval "$SETUP_ENV_SCRIPT"
+
+      - name: Cache Apache Cloudberry installation and source
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.GPHOME }}
+            ${{ github.workspace }}/cloudberry
+          key: cloudberry-full-${{ env.CLOUDBERRY_VERSION }}-${{ runner.os }}
+          restore-keys: |
+            cloudberry-full-${{ env.CLOUDBERRY_VERSION }}-${{ runner.os }}-
+            cloudberry-${{ env.CLOUDBERRY_VERSION }}-${{ runner.os }}-
+
+  # 2) Build, Install, Start and Test PXF (per your commands)
+  pxf-build-install-test:
+    name: Build, Install & Test PXF
+    runs-on: ubuntu-latest
+    container:
+      image: apache/incubator-cloudberry:cbdb-build-rocky9-latest
+      options: >-
+        --privileged
+        --user root
+        --hostname cdw
+        --shm-size=2gb
+        --ulimit core=-1
+    needs: setup-cloudberry
+    steps:
+      - name: Restore Apache Cloudberry installation
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.GPHOME }}
+            ${{ github.workspace }}/cloudberry
+          key: cloudberry-full-${{ env.CLOUDBERRY_VERSION }}-${{ runner.os }}
+          restore-keys: |
+            cloudberry-full-${{ env.CLOUDBERRY_VERSION }}-${{ runner.os }}-
+            cloudberry-${{ env.CLOUDBERRY_VERSION }}-${{ runner.os }}-
+
+      - name: Setup Apache Cloudberry environment
+        run: |
+          eval "$SETUP_ENV_SCRIPT"
+
+      - name: Checkout current PXF source (this repository)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: cloudberry-pxf
+
+      - name: Prepare PXF source for gpadmin
+        run: |
+          rm -rf ${{ env.GPADMIN_HOME }}/cloudberry-pxf
+          mkdir -p ${{ env.GPADMIN_HOME }}
+          cp -a cloudberry-pxf ${{ env.GPADMIN_HOME }}/cloudberry-pxf
+          chown -R gpadmin:gpadmin ${{ env.GPADMIN_HOME }}/cloudberry-pxf
+
+      - name: Install build dependencies (maven)
+        run: |
+          set -eo pipefail
+          dnf install -y maven
+
+      - name: "Build PXF CLI"
+        id: build_pxf_cli
+        continue-on-error: true
+        run: |
+          set -eo pipefail
+          su - gpadmin -c "
+            set -eo pipefail
+            cd ~/cloudberry-pxf/cli
+            make
+          "
+      - name: "Build PXF FDW"
+        id: build_pxf_fdw
+        continue-on-error: true
+        run: |
+          set -eo pipefail
+          su - gpadmin -c "
+            set -eo pipefail
+            source /usr/local/cloudberry-db/cloudberry-env.sh
+            cd ~/cloudberry-pxf/fdw
+            make
+          "
+      - name: "Build PXF External Table"
+        id: build_pxf_external
+        continue-on-error: true
+        run: |
+          set -eo pipefail
+          su - gpadmin -c "
+            set -eo pipefail
+            source /usr/local/cloudberry-db/cloudberry-env.sh
+            cd ~/cloudberry-pxf/external-table
+            make
+          "
+      - name: "Build PXF Server"
+        id: build_pxf_server
+        continue-on-error: true
+        run: |
+          set -eo pipefail
+          su - gpadmin -c "
+            set -eo pipefail
+            source /usr/local/cloudberry-db/cloudberry-env.sh
+            cd ~/cloudberry-pxf/server
+            ./gradlew clean build
+          "
+
+      - name: "Test PXF CLI"
+        id: test_pxf_cli
+        continue-on-error: true
+        run: |
+          set -eo pipefail
+          su - gpadmin -c "
+            set -eo pipefail
+            cd ~/cloudberry-pxf/cli
+            make test
+          "
+      - name: "Test PXF FDW"
+        id: test_pxf_fdw
+        continue-on-error: true
+        run: |
+          set -eo pipefail
+          su - gpadmin -c "
+            set -eo pipefail
+            source /usr/local/cloudberry-db/cloudberry-env.sh
+            cd ~/cloudberry-pxf/fdw
+            make test
+          "
+      - name: "Test PXF External Table"
+        id: test_pxf_external
+        continue-on-error: true
+        run: |
+          set -eo pipefail
+          su - gpadmin -c "
+            set -eo pipefail
+            source /usr/local/cloudberry-db/cloudberry-env.sh
+            cd ~/cloudberry-pxf/external-table
+            make installcheck
+          "
+      - name: "Test PXF Server"
+        id: test_pxf_server
+        continue-on-error: true
+        run: |
+          set -eo pipefail
+          su - gpadmin -c "
+            set -eo pipefail
+            source /usr/local/cloudberry-db/cloudberry-env.sh
+            cd ~/cloudberry-pxf/server
+            ./gradlew test
+          "
+
+      - name: "Install PXF"
+        id: install_pxf
+        continue-on-error: true
+        if: always()
+        run: |
+          set -eo pipefail
+          # root creates and owns dirs correctly, then hand over to gpadmin to install
+          mkdir -p /usr/local/pxf
+          chown -R gpadmin:gpadmin /usr/local/pxf
+          su - gpadmin -c "
+            set -eo pipefail
+            export PXF_HOME=/usr/local/pxf
+            cd ~/cloudberry-pxf
+            make -C ~/cloudberry-pxf install
+          "
+
+      - name: "Start PXF"
+        id: start_pxf
+        continue-on-error: true
+        if: always()
+        run: |
+          set -eo pipefail
+          su - gpadmin -c "
+            set -eo pipefail
+            export PXF_HOME=/usr/local/pxf
+            export PXF_BASE=\$HOME/pxf-base
+            export PATH=/usr/local/pxf/bin:\$PATH
+            pxf prepare
+            pxf start
+          "
+
+      - name: Run PXF automation tests (gpadmin)
+        id: automation_tests
+        continue-on-error: true
+        if: always()
+        run: |
+          set -eo pipefail
+          # ensure maven exists (idempotent)
+          dnf install -y maven
+          su - gpadmin -c "
+            set -eo pipefail
+            export PXF_HOME=/usr/local/pxf
+            export PXF_BASE=\$HOME/pxf-base
+            export PATH=/usr/local/pxf/bin:\$PATH
+            pushd ~/cloudberry-pxf/automation >/dev/null
+            mkdir -p \${PXF_BASE}/servers/default
+            cp \${PXF_HOME}/templates/{hdfs,mapred,yarn,core,hbase,hive}-site.xml \${PXF_BASE}/servers/default || true
+            make TEST=HdfsSmokeTest
+            make GROUP=gpdb || true
+            popd >/dev/null
+          "
+
+      - name: Collect and upload artifacts
+        if: always()
+        run: |
+          mkdir -p artifacts/logs
+          # Always create a manifest to ensure non-empty artifact bundle
+          echo "PXF artifacts bundle" > artifacts/manifest.txt
+          # Collect some common outputs
+          cp -r ${{ env.GPADMIN_HOME }}/pxf-base/log/* artifacts/logs/ 2>/dev/null || true
+          cp -r ${{ env.GPADMIN_HOME }}/cloudberry-pxf/server/build/reports/tests/test artifacts/ 2>/dev/null || true
+          cp -r ${{ env.GPADMIN_HOME }}/cloudberry-pxf/automation/*/reports  artifacts/ 2>/dev/null || true
+          # Record collected files (if any) into manifest
+          find artifacts -type f -print >> artifacts/manifest.txt 2>/dev/null || true
+        shell: bash
+
+      - name: Upload PXF artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pxf-build-install-test-artifacts
+          path: artifacts/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Evaluate module build/test results
+        if: always()
+        env:
+          BUILD_CLI: ${{ steps.build_pxf_cli.outcome }}
+          BUILD_FDW: ${{ steps.build_pxf_fdw.outcome }}
+          BUILD_EXTERNAL: ${{ steps.build_pxf_external.outcome }}
+          BUILD_SERVER: ${{ steps.build_pxf_server.outcome }}
+          TEST_CLI: ${{ steps.test_pxf_cli.outcome }}
+          TEST_FDW: ${{ steps.test_pxf_fdw.outcome }}
+          TEST_EXTERNAL: ${{ steps.test_pxf_external.outcome }}
+          TEST_SERVER: ${{ steps.test_pxf_server.outcome }}
+          INSTALL_PXF: ${{ steps.install_pxf.outcome }}
+          START_PXF: ${{ steps.start_pxf.outcome }}
+          AUTO_TESTS: ${{ steps.automation_tests.outcome }}
+        run: |
+          set -eo pipefail
+
+          status_icon() {
+            case "$1" in
+              success) echo "✅";;
+              failure) echo "❌";;
+              cancelled) echo "🛑";;
+              skipped|"") echo "⏭️";;
+              *) echo "$1";;
+            esac
+          }
+
+          BCLI_ICON=$(status_icon "${BUILD_CLI}")
+          BFDW_ICON=$(status_icon "${BUILD_FDW}")
+          BEXT_ICON=$(status_icon "${BUILD_EXTERNAL}")
+          BSRV_ICON=$(status_icon "${BUILD_SERVER}")
+          TCLI_ICON=$(status_icon "${TEST_CLI}")
+          TFDW_ICON=$(status_icon "${TEST_FDW}")
+          TEXT_ICON=$(status_icon "${TEST_EXTERNAL}")
+          TSRV_ICON=$(status_icon "${TEST_SERVER}")
+
+          {
+            echo "## PXF Module Build/Test Results"
+            echo ""
+            echo "| Module | Build | Test |"
+            echo "|-------:|:-----:|:----:|"
+            echo "| CLI | ${BCLI_ICON} (${BUILD_CLI:-skipped}) | ${TCLI_ICON} (${TEST_CLI:-skipped}) |"
+            echo "| FDW | ${BFDW_ICON} (${BUILD_FDW:-skipped}) | ${TFDW_ICON} (${TEST_FDW:-skipped}) |"
+            echo "| External-Table | ${BEXT_ICON} (${BUILD_EXTERNAL:-skipped}) | ${TEXT_ICON} (${TEST_EXTERNAL:-skipped}) |"
+            echo "| Server | ${BSRV_ICON} (${BUILD_SERVER:-skipped}) | ${TSRV_ICON} (${TEST_SERVER:-skipped}) |"
+            echo ""
+            echo "### Install/Start/Automation"
+            IN_ICON=$(status_icon "${INSTALL_PXF}") ; ST_ICON=$(status_icon "${START_PXF}") ; AT_ICON=$(status_icon "${AUTO_TESTS}")
+            echo "| Step | Status |"
+            echo "|-----:|:------:|"
+            echo "| Install PXF | ${IN_ICON} (${INSTALL_PXF:-skipped}) |"
+            echo "| Start PXF | ${ST_ICON} (${START_PXF:-skipped}) |"
+            echo "| Automation Tests | ${AT_ICON} (${AUTO_TESTS:-skipped}) |"
+            echo ""
+            echo "### Logs and Reports"
+            echo "- Server Gradle test reports: \`~/cloudberry-pxf/server/build/reports/tests/test\`"
+            echo "- Automation test reports: \`~/cloudberry-pxf/automation/*/reports\`"
+            echo "- PXF runtime logs: \`~/pxf-base/log\`"
+            echo "- Uploaded artifact bundle: 'pxf-build-install-test-artifacts'"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          fail=0
+          for v in "${BUILD_CLI}" "${BUILD_FDW}" "${BUILD_EXTERNAL}" "${BUILD_SERVER}" \
+                   "${TEST_CLI}" "${TEST_FDW}" "${TEST_EXTERNAL}" "${TEST_SERVER}" \
+                   "${INSTALL_PXF}" "${START_PXF}" "${AUTO_TESTS}"; do
+            if [ "$v" = "failure" ]; then fail=1; fi
+          done
+
+          if [ "$fail" -ne 0 ]; then
+            echo "One or more modules failed. Marking job as failed."
+            exit 1
+          fi
+
+  notify-status:
+    name: Notify Build Status
+    runs-on: ubuntu-latest
+    needs: [pxf-build-install-test]
+    if: always()
+    steps:
+      - name: Summary
+        run: |
+          echo "PXF CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- PXF Build & Test: ${{ needs.pxf-build-install-test.result }}" >> $GITHUB_STEP_SUMMARY
