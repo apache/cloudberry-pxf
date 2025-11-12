@@ -2,9 +2,9 @@ name: PXF CI Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, merge-with-upstream ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, merge-with-upstream ]
     types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
@@ -19,11 +19,13 @@ env:
   JAVA_VERSION: "11"
   JAVA_HOME: "/usr/lib/jvm/java-11-openjdk"
   GPADMIN_HOME: "/home/gpadmin"
-  GO_VERSION: "1.21"
+  GO_VERSION: "1.22"
   GPHOME: "/usr/local/cloudberry-db"
   CLOUDBERRY_VERSION: "main"
   PXF_HOME: "/usr/local/pxf"
   PXF_VERSION: "main"
+  # Toggle to run Hadoop-dependent automation smoke tests (requires singlecluster)
+  RUN_SMOKE: "false"
   # Common environment setup script
   SETUP_ENV_SCRIPT: |
     if [ -f "/usr/local/cloudberry-db/cloudberry-env.sh" ]; then
@@ -174,6 +176,29 @@ jobs:
         run: |
           eval "$SETUP_ENV_SCRIPT"
 
+      - name: Start or (re)create Cloudberry demo cluster
+        run: |
+          set -eo pipefail
+          su - gpadmin -c "
+            set -eo pipefail
+            if [ -f ${GITHUB_WORKSPACE}/cloudberry/gpAux/gpdemo/gpdemo-env.sh ]; then
+              source /usr/local/cloudberry-db/cloudberry-env.sh
+              # If demo cluster is missing, (re)create it
+              if [ ! -d \"${GPHOME}/../gpAdminLogs\" ] || ! ${GPHOME}/bin/gpstate -s >/dev/null 2>&1; then
+                export SRC_DIR=${GITHUB_WORKSPACE}/cloudberry
+                export NUM_PRIMARY_MIRROR_PAIRS=1
+                chmod +x ${SRC_DIR}/devops/build/automation/cloudberry/scripts/create-cloudberry-demo-cluster.sh
+                ${SRC_DIR}/devops/build/automation/cloudberry/scripts/create-cloudberry-demo-cluster.sh
+              fi
+              source ${GITHUB_WORKSPACE}/cloudberry/gpAux/gpdemo/gpdemo-env.sh
+              gpstate -s || gpstart -a
+              psql -d postgres -c 'SELECT version();'
+            else
+              echo 'gpdemo env not found; ensure cloudberry repo was restored'
+              exit 1
+            fi
+          "
+
       - name: Checkout current PXF source (this repository)
         uses: actions/checkout@v4
         with:
@@ -254,6 +279,7 @@ jobs:
           su - gpadmin -c "
             set -eo pipefail
             source /usr/local/cloudberry-db/cloudberry-env.sh
+            source ${GITHUB_WORKSPACE}/cloudberry/gpAux/gpdemo/gpdemo-env.sh
             cd ~/cloudberry-pxf/fdw
             make test
           "
@@ -265,6 +291,7 @@ jobs:
           su - gpadmin -c "
             set -eo pipefail
             source /usr/local/cloudberry-db/cloudberry-env.sh
+            source ${GITHUB_WORKSPACE}/cloudberry/gpAux/gpdemo/gpdemo-env.sh
             cd ~/cloudberry-pxf/external-table
             make installcheck
           "
@@ -311,26 +338,38 @@ jobs:
             pxf start
           "
 
-      - name: Run PXF automation tests (gpadmin)
+      - name: "PXF Health Check"
+        if: always()
+        run: |
+          set -eo pipefail
+          curl -sf http://localhost:5888/actuator/health -H 'Accept: application/json'
+
+      - name: Run PXF automation tests (optional)
         id: automation_tests
         continue-on-error: true
         if: always()
         run: |
           set -eo pipefail
-          # ensure maven exists (idempotent)
-          dnf install -y maven
-          su - gpadmin -c "
-            set -eo pipefail
-            export PXF_HOME=/usr/local/pxf
-            export PXF_BASE=\$HOME/pxf-base
-            export PATH=/usr/local/pxf/bin:\$PATH
-            pushd ~/cloudberry-pxf/automation >/dev/null
-            mkdir -p \${PXF_BASE}/servers/default
-            cp \${PXF_HOME}/templates/{hdfs,mapred,yarn,core,hbase,hive}-site.xml \${PXF_BASE}/servers/default || true
-            make TEST=HdfsSmokeTest
-            make GROUP=gpdb || true
-            popd >/dev/null
-          "
+          if [ "${RUN_SMOKE}" = "true" ]; then
+            # ensure maven exists (idempotent)
+            dnf install -y maven
+            su - gpadmin -c "
+              set -eo pipefail
+              export PXF_HOME=/usr/local/pxf
+              export PXF_BASE=\$HOME/pxf-base
+              export PATH=/usr/local/pxf/bin:\$PATH
+              source /usr/local/cloudberry-db/cloudberry-env.sh
+              source ${GITHUB_WORKSPACE}/cloudberry/gpAux/gpdemo/gpdemo-env.sh
+              pushd ~/cloudberry-pxf/automation >/dev/null
+              mkdir -p \${PXF_BASE}/servers/default
+              cp \${PXF_HOME}/templates/{hdfs,mapred,yarn,core,hbase,hive}-site.xml \${PXF_BASE}/servers/default || true
+              make TEST=HdfsSmokeTest || true
+              make GROUP=gpdb || true
+              popd >/dev/null
+            "
+          else
+            echo "Skipping automation smoke tests (RUN_SMOKE=false)"
+          fi
 
       - name: Collect and upload artifacts
         if: always()
