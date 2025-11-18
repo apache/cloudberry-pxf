@@ -63,25 +63,25 @@ To build PXF, you must have:
 1. GCC compiler, `make` system, `unzip` package, `maven` for running integration tests
 2. Installed Greenplum DB
 
-    Either download and install Greenplum RPM or build Greenplum from the source by following instructions in the [GPDB README](https://github.com/greenplum-db/gpdb).
+   Either download and install Greenplum RPM or build Greenplum from the source by following instructions in the [GPDB README](https://github.com/greenplum-db/gpdb).
 
-    Assuming you have installed Greenplum into `/usr/local/greenplum-db` directory, run its environment script:
+   Assuming you have installed Greenplum into `/usr/local/greenplum-db` directory, run its environment script:
     ```
     source /usr/local/greenplum-db/greenplum_path.sh
     ```
 
 3. JDK 1.8 or JDK 11 to compile/run
 
-    Export your `JAVA_HOME`:
+   Export your `JAVA_HOME`:
     ```
     export JAVA_HOME=<PATH_TO_YOUR_JAVA_HOME>
     ```
 
 4. Go (1.9 or later)
 
-    To install Go on CentOS, `sudo yum install go`. For other platforms, see the [Go downloads page](https://golang.org/dl/).
+   To install Go on CentOS, `sudo yum install go`. For other platforms, see the [Go downloads page](https://golang.org/dl/).
 
-    Make sure to export your `GOPATH` and add go to your `PATH`. For example:
+   Make sure to export your `GOPATH` and add go to your `PATH`. For example:
     ```shell
     export GOPATH=$HOME/go
     export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
@@ -94,9 +94,9 @@ To build PXF, you must have:
 
 5. cURL (7.29 or later):
 
-    To install cURL devel package on CentOS 7, `sudo yum install libcurl-devel`.
+   To install cURL devel package on CentOS 7, `sudo yum install libcurl-devel`.
 
-    Note that CentOS 6 provides an older, unsupported version of cURL (7.19). You should install a newer version from source if you are on CentOS 6.
+   Note that CentOS 6 provides an older, unsupported version of cURL (7.19). You should install a newer version from source if you are on CentOS 6.
 
 ## How to Build PXF
 PXF uses Makefiles to build its components. PXF server component uses Gradle that is wrapped into the Makefile for convenience.
@@ -337,7 +337,7 @@ $PXF_HOME/bin/pxf start
 - Select `File > Project Structure`.
 - Make sure you have a JDK (version 1.8) selected.
 - In the `Project Settings > Modules` section, select `Import Module`, pick the `pxf/server` directory and import as a Gradle module. You may see an error saying that there's
-no JDK set for Gradle. Just cancel and retry. It goes away the second time.
+  no JDK set for Gradle. Just cancel and retry. It goes away the second time.
 - Import a second module, giving the `pxf/automation` directory, select "Import module from external model", pick `Maven` then click Finish.
 - Restart IntelliJ
 - Check that it worked by running a unit test (cannot currently run automation tests from IntelliJ) and making sure that imports, variables, and auto-completion function in the two modules.
