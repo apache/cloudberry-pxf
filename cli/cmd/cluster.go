@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/blang/semver"
 	"github.com/greenplum-db/gp-common-go-libs/cluster"
 	"github.com/greenplum-db/gp-common-go-libs/dbconn"
 	"github.com/greenplum-db/gp-common-go-libs/gplog"
@@ -141,6 +142,10 @@ func doSetup() (*ClusterData, error) {
 			"Please make sure that your Greenplum database is running and you are on the coordinator node.", err.Error()))
 		return nil, err
 	}
+
+	//set the fake version for cbdb.
+	connection.Version = dbconn.GPDBVersion{VersionString: "7.1.0", SemVer: semver.MustParse("7.1.0")}
+
 	segConfigs, err := cluster.GetSegmentConfiguration(connection, true)
 	if err != nil {
 		gplog.Error(fmt.Sprintf("ERROR: Could not retrieve segment information from GPDB.\n%s\n" + err.Error()))

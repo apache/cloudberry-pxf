@@ -254,7 +254,7 @@ function installExtensions() {
     if [[ -d ${parent_script_dir}/gpextable ]]; then
         if [[ -z "${GPHOME}" ]]; then
             echoYellow 'WARNING: environment variable GPHOME is not set, skipping install of Greenplum External Table PXF Extension'
-        elif [[ ! -f ${GPHOME}/greenplum_path.sh ]]; then
+        elif [[ ! -f ${GPHOME}/cloudberry-env.sh ]]; then
             echoYellow "WARNING: environment variable GPHOME (${GPHOME}) must be set to a valid Greenplum installation, skipping install of Greenplum External Table PXF Extension'"
         else
             echoGreen "Installing Greenplum External Table PXF Extension into '${GPHOME}'"
@@ -266,7 +266,7 @@ function installExtensions() {
     if [[ -d ${parent_script_dir}/fdw ]]; then
         if [[ -z "${GPHOME}" ]]; then
             echoYellow 'WARNING: environment variable GPHOME is not set, skipping install of Greenplum Foreign Data Wrapper PXF Extension'
-        elif [[ ! -f ${GPHOME}/greenplum_path.sh ]]; then
+        elif [[ ! -f ${GPHOME}/cloudberry-env.sh ]]; then
             echoYellow "WARNING: environment variable GPHOME (${GPHOME}) must be set to a valid Greenplum installation, skipping install of Greenplum Foreign Data Wrapper PXF Extension'"
         else
             echoGreen "Installing Greenplum Foreign Data Wrapper PXF Extension into '${GPHOME}'"

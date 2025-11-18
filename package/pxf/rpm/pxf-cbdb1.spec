@@ -1,25 +1,29 @@
 # Disable repacking of jars, since it takes forever
 %define __jar_repack %{nil}
 
+# Disable build-id in rpm
+%define _build_id_links none
 # Disable automatic dependency processing both for requirements and provides
 AutoReqProv: no
 
-Name: pxf-gp5
+Name: pxf-cbdb1
 Version: %{pxf_version}
-Release: %{pxf_release}%{?dist}
-Summary: Greenplum PXF framework for external data access
+Release: 1%{?dist}
+Summary: Cloudberry PXF framework for external data access
 License: %{license}
-URL: https://github.com/greenplum-db/pxf
+URL: http://www.hashdata.cn
 Vendor: %{vendor}
 
 Prefix: /usr/local/%{name}
 
-# .so file makes sense only when installing on Greenplum node, so inherit Greenplum's dependencies implicitly
+# .so file makes sense only when installing on Cloudberry node, so inherit Cloudberry's dependencies implicitly
 # Java server can be installed on a new node, only bash is needed for management scripts
-Requires: bash
+## cbdb has added this requirement, pxf may installed under GPHOME,
+# this requirement will cause installation fail.
+# Requires: bash
 
 %description
-PXF is an extensible framework that allows a distributed database like Greenplum to query external data files,
+PXF is an extensible framework that allows a distributed database like Cloudberry to query external data files,
 whose metadata is not managed by the database. PXF includes built-in connectors for accessing data that exists
 inside HDFS files, Hive tables, HBase tables, databases that support JDBC, data stores (S3, GCS) and more.
 
@@ -35,6 +39,8 @@ fi
 %__cp -R %{_sourcedir}/* %{buildroot}/%{prefix}
 
 %post
+sed -i "s|directory =.*|directory = '${RPM_INSTALL_PREFIX}/fdw/'|g" "${RPM_INSTALL_PREFIX}/fdw/pxf_fdw.control"
+sed -i "s|module_pathname =.*|module_pathname = '${RPM_INSTALL_PREFIX}/fdw/pxf_fdw'|g" "${RPM_INSTALL_PREFIX}/fdw/pxf_fdw.control"
 sed -i "s|directory =.*|directory = '${RPM_INSTALL_PREFIX}/gpextable/'|g" "${RPM_INSTALL_PREFIX}/gpextable/pxf.control"
 sed -i "s|module_pathname =.*|module_pathname = '${RPM_INSTALL_PREFIX}/gpextable/pxf'|g" "${RPM_INSTALL_PREFIX}/gpextable/pxf.control"
 

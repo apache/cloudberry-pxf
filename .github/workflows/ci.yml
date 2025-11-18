@@ -38,3 +38,47 @@ jobs:
 
       - name: Build Cloudberry package
         run: make -C package ${{ matrix.target }}
+
+
+  build_pxf_packages:
+    name: Build PXF Packages
+    runs-on: ubuntu-latest
+    needs: [build_cloudberry_packages]
+    strategy:
+      fail-fast: false
+      matrix:
+        target: # make targets
+          - pxf: 'rpm-pxf-cbdb1-rocky9'
+            db-cache-key-sfx: 'rpm-cbdb-rocky9'
+          # TODO: Add Ubuntu support when deb package build is implemented
+    steps:
+      - name: Get Date
+        id: get-date
+        run: echo "week=$(/bin/date -u '+%U')" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: (restore) database package files caching
+        id: cache-db-packages
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: |
+            ./downloads/*.rpm
+            ./downloads/*.deb
+          key: ${{ runner.os }}-${{ matrix.target.db-cache-key-sfx }}-${{ steps.get-date.outputs.week }}
+
+      - name: Build PXF6
+        run: make -C package ${{ matrix.target.pxf }}
+
+      - name: (save) PXF packages in cache
+        uses: actions/cache/save@v4
+        id: cache
+        with:
+            path: |
+              ./downloads/*pxf*.rpm
+              ./downloads/*pxf*.deb
+            key: ${{ runner.os }}-${{ matrix.target.pxf }}-${{ github.sha }}
