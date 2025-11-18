@@ -1,0 +1,40 @@
+name: PXF CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build_cloudberry_packages:
+    name: Build Cloudberry Packages
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: # make targets
+          - 'rpm-cbdb-rocky9'
+          # TODO: Add Ubuntu support when deb package build is implemented
+          # - 'deb-cbdb-jammy'
+    steps:
+      - name: Get Date
+        id: get-date
+        run: echo "week=$(/bin/date -u '+%U')" >> "$GITHUB_OUTPUT"
+      - name: Cloudberry package files caching
+        id: cache-packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ./downloads/*.rpm
+            ./downloads/*.deb
+          # save per-os with 7 days TTL
+          key: ${{ runner.os }}-${{ matrix.target }}-${{ steps.get-date.outputs.week }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Build Cloudberry package
+        run: make -C package ${{ matrix.target }}

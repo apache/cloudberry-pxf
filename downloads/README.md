@@ -10,9 +10,7 @@ PLEASE DO NOT check these artifacts into this Git repository !!!
 For example, one of the following artifacts should be used for GPDB 6.6:
 
 ```
-greenplum-db-6.6.0-rhel6-x86_64.rpm
-greenplum-db-6.6.0-rhel7-x86_64.rpm
-greenplum-db-6.6.0-ubuntu18.04-amd64.deb
+apache-cloudberry-db-incubating-1.0.0-1.el9.x86_64.rpm
 ```
 
 You should use only the artifact for the operating system that corresponds to the Docker image you want to use.
