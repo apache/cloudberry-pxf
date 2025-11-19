@@ -27,8 +27,12 @@
 
     <repositories>
         <repository>
-            <id>test-dependencies</id>
-            <url>artifactregistry://us-central1-maven.pkg.dev/data-gpdb-ud/pxf-automation-test</url>
+            <id>main</id>
+            <url>https://repo.maven.apache.org/maven2/</url>
+        </repository>
+        <repository>
+            <id>bincenter</id>
+            <url>https://maven.top-q.co.il/content/repositories/public/</url>
         </repository>
     </repositories>
 
@@ -62,6 +66,11 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <argLine>-Xmx1024m</argLine>
+                    <argLine>-Xms256m</argLine>
+                    <excludedGroups>load</excludedGroups>
+                </configuration>
             </plugin>
         </plugins>
 
@@ -153,13 +162,13 @@
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
-            <version>6.8.7</version>
+            <version>6.14.3</version>
         </dependency>
 
         <dependency>
             <groupId>org.jsystemtest</groupId>
             <artifactId>jsystemCore</artifactId>
-            <version>6.0.01</version>
+            <version>6.1.06</version>
             <exclusions>
                 <!--  javax.comm provides applications access to RS-232 hardware - not needed -->
                 <exclusion>
@@ -172,7 +181,7 @@
         <dependency>
             <groupId>org.jsystemtest.systemobjects</groupId>
             <artifactId>cli</artifactId>
-            <version>6.0.01</version>
+            <version>6.1.06</version>
             <exclusions>
                 <!--  javax.comm provides applications access to RS-232 hardware - not needed -->
                 <exclusion>

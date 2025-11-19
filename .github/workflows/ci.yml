@@ -4,7 +4,6 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
 
 jobs:
   build_cloudberry_packages:
@@ -82,3 +81,315 @@ jobs:
               ./downloads/*pxf*.rpm
               ./downloads/*pxf*.deb
             key: ${{ runner.os }}-${{ matrix.target.pxf }}-${{ github.sha }}
+
+  run_automation_tests:
+    name: Automation tests
+    runs-on: ubuntu-latest
+    needs: [build_pxf_packages]
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - pxf: 'rpm-pxf-cbdb1-rocky9'
+            db-cache-key-sfx: 'rpm-cbdb-rocky9'
+          # TODO: Add Ubuntu support when deb package build is implemented
+          # - pxf: 'deb-pxf6-gpdb-bionic'
+          #   db-cache-key-sfx: 'deb-gpdb-bionic'
+          # - pxf: 'deb-pxf6-gpdb-jammy'
+          #   db-cache-key-sfx: 'deb-gpdb-jammy'
+          # - pxf: 'deb-pxf6-cbdb-jammy'
+          #   db-cache-key-sfx: 'deb-cbdb-jammy'
+    steps:
+      - name: Get Date
+        id: get-date
+        run: echo "week=$(/bin/date -u '+%U')" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: (restore) database package files caching
+        id: cache-packages-db
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: |
+            ./downloads/*.rpm
+            ./downloads/*.deb
+          key: ${{ runner.os }}-${{ matrix.target.db-cache-key-sfx }}-${{ steps.get-date.outputs.week }}
+
+      - name: (restore) PXF package files caching
+        id: cache-packages-pxf
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: |
+            ./downloads/*pxf*.rpm
+            ./downloads/*pxf*.deb
+          key: ${{ runner.os }}-${{ matrix.target.pxf }}-${{ github.sha }}
+
+      - name: Use PXF builds
+        run: ls -lah ./downloads/
+
+      - name: Build automation images
+        if: matrix.target.pxf == 'rpm-pxf-cbdb1-rocky9'  # FIXME: support other PXF versions
+        run: |
+          echo "Building automation images..."
+          cd automation
+          # For RPM packages, no copy step needed - files are already in downloads/
+          docker compose build singlecluster
+          docker compose build universe
+          docker compose up
+
+      - name: Extract test artifacts from container
+        if: always()
+        run: |
+          echo "Extracting test artifacts from container..."
+          
+          # Create test artifacts directory structure
+          mkdir -p ./automation/test_artifacts/surefire-reports
+          mkdir -p ./automation/test_artifacts/automation_logs
+          mkdir -p ./automation/test_artifacts/pxf_regress
+          
+          # Extract main test reports with preserved structure
+          docker compose -f automation/docker-compose.yml cp universe:/home/gpadmin/workspace/pxf/automation/target/surefire-reports ./automation/test_artifacts || echo "No surefire-reports found"
+          docker compose -f automation/docker-compose.yml cp universe:/home/gpadmin/workspace/pxf/automation/automation_logs ./automation/test_artifacts || echo "No automation_logs found"
+          
+          # Extract additional test results for debugging with preserved structure
+          docker compose -f automation/docker-compose.yml cp universe:/home/gpadmin/workspace/pxf/automation/pxf_regress ./automation/test_artifacts || echo "No pxf_regress found"
+          
+          echo "Extracted artifacts:"
+          ls -la ./automation/test_artifacts/ || echo "No test_artifacts directory"
+
+      - name: Save automation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        id: upload_automation_step
+        with:
+          name: automation-test-results-${{ matrix.target.pxf }}
+          path: |
+            ./automation/test_artifacts/surefire-reports
+            ./automation/test_artifacts/automation_logs
+            ./automation/test_artifacts/pxf_regress
+            ./automation/test_artifacts/sqlrepo
+          retention-days: 30
+
+      - name: Process TestNG reports
+        if: success() || failure()
+        uses: actions/github-script@v7
+        id: process-reports
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            const targetPlatform = '${{ matrix.target.pxf }}';
+            const testReportsDir = './automation/test_artifacts/surefire-reports';
+            
+            console.log(`Processing test reports for ${targetPlatform}...`);
+            
+            // Start building the step summary
+            const summary = core.summary
+              .addHeading(`Test Results Summary for ${targetPlatform}`)
+              .addHeading('📦 Artifacts', 3)
+              .addLink('Raw Test Results', "${{ steps.upload_automation_step.outputs.artifact-url }}");
+            
+            let hasErrors = false;
+            let testReport = {
+              platform: targetPlatform,
+              total: 0,
+              passed: 0,
+              failed: 0,
+              skipped: 0,
+              failedTests: [],
+              skippedTests: []
+            };
+            
+            // Check if test reports exist
+            if (!fs.existsSync(testReportsDir)) {
+              core.error(`No test reports found for ${targetPlatform}`);
+              summary.addRaw('No test reports available\n\n');
+              hasErrors = true;
+            }
+            
+            // Process TestNG XML results
+            const testngResultsPath = path.join(testReportsDir, 'testng-results.xml');
+            if (!fs.existsSync(testngResultsPath)) {
+              core.error('No testng-results.xml found');
+              summary.addRaw('No TestNG results file found\n\n');
+              hasErrors = true;
+            } else {
+              try {
+                const xmlContent = fs.readFileSync(testngResultsPath, 'utf8');
+                
+                // Extract test statistics using regex
+                const totalMatch = xmlContent.match(/total="(\d+)"/);
+                const passedMatch = xmlContent.match(/passed="(\d+)"/);
+                const failedMatch = xmlContent.match(/failed="(\d+)"/);
+                const skippedMatch = xmlContent.match(/skipped="(\d+)"/);
+                
+                testReport.total = totalMatch ? parseInt(totalMatch[1]) : 0;
+                testReport.passed = passedMatch ? parseInt(passedMatch[1]) : 0;
+                testReport.failed = failedMatch ? parseInt(failedMatch[1]) : 0;
+                testReport.skipped = skippedMatch ? parseInt(skippedMatch[1]) : 0;
+                
+                // Extract failed test names using regex
+                const failedTestRegex = /<test-method[^>]*status="FAIL"[^>]*name="([^"]+)"[^>]*>/g;
+                let failedMatch;
+                while ((failedMatch = failedTestRegex.exec(xmlContent)) !== null) {
+                  testReport.failedTests.push(failedMatch[1]);
+                }
+                
+                // Extract skipped test names using regex
+                const skippedTestRegex = /<test-method[^>]*status="SKIP"[^>]*name="([^"]+)"[^>]*>/g;
+                let skippedMatch;
+                while ((skippedMatch = skippedTestRegex.exec(xmlContent)) !== null) {
+                  testReport.skippedTests.push(skippedMatch[1]);
+                }
+                
+                // Add test statistics to summary
+                const statusEmoji = testReport.failed > 0 ? '❌' : testReport.skipped > 0 ? '⚠️' : '✅';
+                summary
+                  .addRaw(`\n\n${statusEmoji} Test Results for ${targetPlatform}:\n\n`)
+                  .addRaw(`| Metric | Count |\n`)
+                  .addRaw(`|--------|-------|\n`)
+                  .addRaw(`| **Total** | ${testReport.total} |\n`)
+                  .addRaw(`| **Passed** | ${testReport.passed} |\n`)
+                  .addRaw(`| **Failed** | ${testReport.failed} |\n`)
+                  .addRaw(`| **Skipped** | ${testReport.skipped} |\n\n`);
+                
+                // Add failed tests details if any
+                if (testReport.failed > 0 && testReport.failedTests.length > 0) {
+                  summary.addHeading('Failed Tests', 3);
+                  testReport.failedTests.slice(0, 10).forEach(test => {
+                    summary.addRaw(`- \`${test}\`\n`);
+                  });
+                  if (testReport.failedTests.length > 10) {
+                    summary.addRaw(`- ... and ${testReport.failedTests.length - 10} more\n`);
+                  }
+                  summary.addRaw('\n');
+                }
+                
+                // Check if there are failed or skipped tests
+                if (testReport.failed > 0) {
+                  core.error(`Test execution failed: ${testReport.failed} test(s) failed`);
+                  hasErrors = true;
+                }
+                if (testReport.skipped > 0) {
+                  core.warning(`Test execution incomplete: ${testReport.skipped} test(s) skipped`);
+                }
+              } catch (error) {
+                console.log('Error processing TestNG results:', error.message);
+                core.error('Error processing test results');
+                hasErrors = true;
+              }
+            }
+            
+            // Write to step summary
+            await summary.write();
+            
+            // Save report data for PR comment
+            const reportData = {
+              platform: testReport.platform,
+              total: testReport.total,
+              passed: testReport.passed,
+              failed: testReport.failed,
+              skipped: testReport.skipped,
+              failedTests: testReport.failedTests,
+              skippedTests: testReport.skippedTests,
+              hasErrors: hasErrors,
+              artifactUrl: "${{ steps.upload_automation_step.outputs.artifact-url }}"
+            };
+            
+            fs.writeFileSync('test-report.json', JSON.stringify(reportData, null, 2));
+            core.setOutput('has-errors', hasErrors);
+            core.setOutput('report-data', JSON.stringify(reportData));
+            
+            // Exit with error code if there were errors
+            if (hasErrors) {
+              process.exit(1);
+            }
+
+      - name: Comment on PR with test results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            const targetPlatform = '${{ matrix.target.pxf }}';
+            let reportData = {};
+            
+            // Try to read report data if available
+            try {
+              if (fs.existsSync('test-report.json')) {
+                reportData = JSON.parse(fs.readFileSync('test-report.json', 'utf8'));
+              }
+            } catch (error) {
+              console.log('Could not read test report data:', error.message);
+            }
+            
+            // Build comment body
+            const statusEmoji = reportData.hasErrors ? '❌' : (reportData.skipped > 0 ? '⚠️' : '✅');
+            let commentBody = `## ${statusEmoji} Automation Test Results for ${targetPlatform}\n\n`;
+            
+            if (reportData.total !== undefined) {
+              commentBody += `| Metric | Count |\n`;
+              commentBody += `|--------|-------|\n`;
+              commentBody += `| **Total** | ${reportData.total} |\n`;
+              commentBody += `| **Passed** | ${reportData.passed || 0} |\n`;
+              commentBody += `| **Failed** | ${reportData.failed || 0} |\n`;
+              commentBody += `| **Skipped** | ${reportData.skipped || 0} |\n\n`;
+              
+              if (reportData.failed > 0 && reportData.failedTests && reportData.failedTests.length > 0) {
+                commentBody += `### Failed Tests\n\n`;
+                reportData.failedTests.slice(0, 10).forEach(test => {
+                  commentBody += `- \`${test}\`\n`;
+                });
+                if (reportData.failedTests.length > 10) {
+                  commentBody += `- ... and ${reportData.failedTests.length - 10} more\n`;
+                }
+                commentBody += `\n`;
+              }
+              
+              if (reportData.artifactUrl) {
+                commentBody += `📦 [View detailed test artifacts](${reportData.artifactUrl})\n\n`;
+              }
+            } else {
+              commentBody += `⚠️ Test reports are not available. Please check the workflow logs for details.\n\n`;
+            }
+            
+            commentBody += `---\n`;
+            commentBody += `*Test run for commit: ${{ github.sha }}*\n`;
+            
+            // Find existing comment or create new one
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.data.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes(`Automation Test Results for ${targetPlatform}`)
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }

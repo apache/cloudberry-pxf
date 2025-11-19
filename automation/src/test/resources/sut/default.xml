@@ -95,5 +95,9 @@
         <MASTER_DATA_DIRECTORY></MASTER_DATA_DIRECTORY>
         <PGPORT></PGPORT>
         <PGDATABASE></PGDATABASE>
+        <TERM>dumb</TERM>
+        <PGHOST></PGHOST>
+        <userName>gpadmin</userName>
+        <password>cbdb@123</password>
     </shellsystemobject>
 </sut>
