@@ -323,7 +323,7 @@ public class Gpdb extends DbSystemObject {
 
 		sso.init();
 
-		sso.runCommand("source $GPHOME/greenplum_path.sh");
+		sso.runCommand("source $GPHOME/cloudberry_path.sh");
 		// psql do not return error code so use EXIT_CODE_NOT_EXISTS
 		sso.runCommand("psql " + getDb(), ShellSystemObject.EXIT_CODE_NOT_EXISTS);
 

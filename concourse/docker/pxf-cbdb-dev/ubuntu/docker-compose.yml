@@ -1,0 +1,23 @@
+services:
+# hadoop
+  singlecluster:
+    build:
+      dockerfile: Dockerfile
+      context: ../../../singlecluster
+    image: pxf/singlecluster:3
+    container_name: pxf_singlecluster
+
+  pxf-cbdb-dev:
+    image: pxf/singlecluster:3
+    container_name: pxf-cbdb-dev
+    hostname: cdw
+    depends_on:
+      - singlecluster
+    volumes:
+      - ../../../../../cloudberry-pxf:/home/gpadmin/workspace/cloudberry-pxf
+      - ../../../../../cloudberry:/home/gpadmin/workspace/cloudberry
+    command: ["tail", "-f", "/dev/null"]
+
+networks:
+  default:
+    name: pxf-cbdb-ci

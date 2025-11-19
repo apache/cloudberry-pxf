@@ -27,8 +27,12 @@
 
     <repositories>
         <repository>
-            <id>test-dependencies</id>
-            <url>artifactregistry://us-central1-maven.pkg.dev/data-gpdb-ud/pxf-automation-test</url>
+            <id>main</id>
+            <url>https://repo.maven.apache.org/maven2/</url>
+        </repository>
+        <repository>
+            <id>bincenter</id>
+            <url>https://maven.top-q.co.il/content/repositories/public/</url>
         </repository>
     </repositories>
 
@@ -53,6 +57,9 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.15</version>
+                <configuration>
+                    <testFailureIgnore>true</testFailureIgnore>
+                </configuration>
                 <executions>
                     <execution>
                         <id>default-test</id>
@@ -157,9 +164,15 @@
         </dependency>
 
         <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>4.2.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.jsystemtest</groupId>
             <artifactId>jsystemCore</artifactId>
-            <version>6.0.01</version>
+            <version>6.1.06</version>
             <exclusions>
                 <!--  javax.comm provides applications access to RS-232 hardware - not needed -->
                 <exclusion>
@@ -172,7 +185,7 @@
         <dependency>
             <groupId>org.jsystemtest.systemobjects</groupId>
             <artifactId>cli</artifactId>
-            <version>6.0.01</version>
+            <version>6.1.06</version>
             <exclusions>
                 <!--  javax.comm provides applications access to RS-232 hardware - not needed -->
                 <exclusion>

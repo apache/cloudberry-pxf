@@ -21,7 +21,7 @@ public class Regress extends ShellSystemObject {
         ReportUtils.startLevel(report, getClass(), "init");
         regressRunner = new File("pxf_regress/pxf_regress").getAbsolutePath();
         super.init();
-        runCommand("source $GPHOME/greenplum_path.sh");
+        runCommand("source $GPHOME/cloudberry_path.sh");
         runCommand("cd " + new File(regressTestFolder).getAbsolutePath());
         ReportUtils.stopLevel(report);
     }

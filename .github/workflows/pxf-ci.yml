@@ -1,0 +1,228 @@
+name: PXF CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: "11"
+  JAVA_HOME: "/usr/lib/jvm/java-11-openjdk"
+  GPADMIN_HOME: "/home/gpadmin"
+  GO_VERSION: "1.21"
+  GPHOME: "/usr/local/cloudberry-db"
+  CLOUDBERRY_VERSION: "main"
+  PXF_HOME: "/usr/local/pxf"
+
+jobs:
+  pxf-build-install-test:
+    name: Build, Install & Test PXF
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Apache Cloudberry source
+      uses: actions/checkout@v4
+      with:
+        repository: apache/cloudberry
+        ref: main
+        fetch-depth: 1
+        persist-credentials: false
+        path: cloudberry
+        submodules: true
+    - name: Checkout Apache Cloudberry pxf source
+      uses: actions/checkout@v4
+      with:
+        repository: MisterRaindrop/cloudberry-pxf
+        ref: liuxiaoyu/merge_2
+        fetch-depth: 1
+        persist-credentials: false
+        path: cloudberry-pxf
+        submodules: true
+    - name: Cache singlecluster Docker image
+      id: cache-singlecluster
+      uses: actions/cache@v4
+      with:
+        path: /tmp/singlecluster-image.tar
+        key: singlecluster-${{ hashFiles('cloudberry-pxf/concourse/singlecluster/Dockerfile', 'cloudberry-pxf/concourse/singlecluster/**') }}
+    - name: Build singlecluster image
+      if: steps.cache-singlecluster.outputs.cache-hit != 'true'
+      run: |
+        cd ${{ github.workspace }}/cloudberry-pxf/concourse/singlecluster
+        docker build -t pxf/singlecluster:3 .
+        docker save pxf/singlecluster:3 > /tmp/singlecluster-image.tar
+    - name: Load singlecluster image
+      if: steps.cache-singlecluster.outputs.cache-hit == 'true'
+      run: |
+        docker load < /tmp/singlecluster-image.tar
+    - name: Run Test
+      run: |
+        cd ${{ github.workspace }}/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu/
+        docker compose up -d
+        # Wait for container to be ready
+        sleep 10
+        # Execute entrypoint script with correct working directory
+        docker compose exec -T pxf-cbdb-dev /bin/bash -c "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/entrypoint.sh"
+    - name: Extract test artifacts from container
+      if: always()
+      run: |
+        echo "Test results are already available in mounted volume:"
+        ls -la ${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/ || echo "No test_artifacts directory found"
+        
+        # Show summary if available
+        if [ -f ${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/summary.csv ]; then
+          echo "Test Summary:"
+          cat ${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/summary.csv
+        fi
+        
+    - name: Cleanup containers
+      if: always()
+      run: |
+        cd cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu/
+        docker compose down -v || true
+
+
+    - name: Save artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      id: upload_automation_step
+      with:
+        name: automation-test-results-pxf-cbdb-dev
+        path: |
+          ${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/
+        retention-days: 30
+
+    - name: Evaluate module build/test results
+      if: success() || failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          console.log('Processing test reports for PXF...');
+          
+          // Start building the step summary
+          const summary = core.summary
+            .addHeading('PXF Test Results Summary')
+            .addHeading('📦 Artifacts', 3)
+            .addLink('Raw Test Results', "${{ steps.upload_automation_step.outputs.artifact-url }}");
+          
+          let hasErrors = false;
+          
+          // Check if test summary exists
+          const testSummaryPath = '${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/summary.csv';
+          if (fs.existsSync(testSummaryPath)) {
+            try {
+              const csvContent = fs.readFileSync(testSummaryPath, 'utf8');
+              const lines = csvContent.trim().split('\n');
+              
+              if (lines.length > 1) {
+                // Parse CSV and create table
+                const headers = lines[0].split(',');
+                const rows = lines.slice(1).map(line => line.split(','));
+                
+                // Add test results table
+                summary.addHeading('🧪 Test Results', 3);
+                summary.addTable([
+                  headers,
+                  ...rows
+                ]);
+                
+                // Check for failures
+                let totalTests = 0;
+                let failedTests = 0;
+                let passedTests = 0;
+                
+                rows.forEach(row => {
+                  totalTests++;
+                  if (row[1] === 'FAIL') {
+                    failedTests++;
+                    hasErrors = true;
+                  } else if (row[1] === 'PASS') {
+                    passedTests++;
+                  }
+                });
+                
+                summary.addRaw(`\n\n**Summary**: ${totalTests} test components, ${passedTests} passed, ${failedTests} failed\n\n`);
+                
+                if (failedTests > 0) {
+                  core.error(`${failedTests} test component(s) failed`);
+                }
+              }
+            } catch (error) {
+              console.log('Error processing test summary:', error.message);
+              core.error('Error processing test summary');
+              hasErrors = true;
+            }
+          } else {
+            summary.addRaw('No test summary found\n\n');
+          }
+          
+          // Check if TestNG results exist
+          const testReportsDir = '${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/surefire-reports';
+          if (fs.existsSync(testReportsDir)) {
+            const testngResultsPath = path.join(testReportsDir, 'testng-results.xml');
+            if (fs.existsSync(testngResultsPath)) {
+              try {
+                const xmlContent = fs.readFileSync(testngResultsPath, 'utf8');
+              
+                // Extract test statistics using regex
+                const totalMatch = xmlContent.match(/total="(\d+)"/);
+                const passedMatch = xmlContent.match(/passed="(\d+)"/);
+                const failedMatch = xmlContent.match(/failed="(\d+)"/);
+                const skippedMatch = xmlContent.match(/skipped="(\d+)"/);
+              
+                const total = totalMatch ? totalMatch[1] : '0';
+                const passed = passedMatch ? passedMatch[1] : '0';
+                const failed = failedMatch ? failedMatch[1] : '0';
+                const skipped = skippedMatch ? skippedMatch[1] : '0';
+              
+                // Add TestNG statistics to summary
+                summary
+                  .addHeading('🔬 Automation Test Details', 3)
+                  .addTable([
+                    ['Metric', 'Count'],
+                    ['Total Tests', total],
+                    ['Passed', passed],
+                    ['Failed', failed],
+                    ['Skipped', skipped]
+                  ]);
+              
+                // Check if there are failed tests
+                const failedCount = parseInt(failed) || 0;
+                const skippedCount = parseInt(skipped) || 0;
+              
+                if (failedCount > 0) {
+                  core.error(`Automation tests failed: ${failedCount} test(s) failed`);
+                  hasErrors = true;
+                }
+                if (skippedCount > 0) {
+                  core.warning(`Automation tests incomplete: ${skippedCount} test(s) skipped`);
+                }
+              } catch (error) {
+                console.log('Error processing TestNG results:', error.message);
+                core.error('Error processing automation test results');
+                hasErrors = true;
+              }
+            }
+          }
+          
+          // Write to step summary
+          await summary.write();
+          
+          // Exit with error code if there were errors
+          if (hasErrors) {
+            process.exit(1);
+          }
+
+
+
