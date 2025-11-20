@@ -22,7 +22,8 @@
 #include "utils/builtins.h"
 #include "utils/fmgroids.h"
 #include "utils/guc.h"
-#include "utils/jsonapi.h"
+#include "common/jsonapi.h"
+#include "utils/jsonfuncs.h"
 
 /* include libcurl without typecheck.
  * This allows wrapping curl_easy_setopt to be wrapped
@@ -91,13 +92,6 @@ typedef struct
 {
 	struct curl_slist *headers;
 } churl_settings;
-
-/* the null action object used for pure validation */
-static JsonSemAction nullSemAction =
-{
-	NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL
-};
 
 churl_context *churl_new_context(void);
 static void		create_curl_handle(churl_context *context);
