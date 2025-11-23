@@ -86,6 +86,8 @@ public class HBaseSmokeTest extends BaseSmoke {
 
     @Override
     protected void queryResults() throws Exception {
+        // Give HBase a moment to settle after table creation and data load
+        Thread.sleep(ShellSystemObject._5_SECONDS);
         runSqlTest("smoke/small_data");
     }
 

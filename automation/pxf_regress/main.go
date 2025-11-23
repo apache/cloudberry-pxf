@@ -200,6 +200,11 @@ func initializeEnvironment() {
 	// override this, but if it doesn't, we have something useful in place.
 	os.Setenv("PGAPPNAME", "pxf_regress")
 
+	// Align floating point text output with expected files
+	if os.Getenv("PGOPTIONS") == "" {
+		os.Setenv("PGOPTIONS", "-c extra_float_digits=0")
+	}
+
 	// Set timezone and datestyle for datetime-related tests
 	//
 	// Unlike postgres/pg_regress, PXF's existing expected test outputs

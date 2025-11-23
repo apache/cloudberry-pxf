@@ -5,6 +5,8 @@ root=`cd \`dirname $0\`/..;pwd`
 bin=${root}/bin
 . ${bin}/gphd-env.sh
 
+ensure_activation_jar || exit 1
+
 ${bin}/start-hdfs.sh || exit 1
 
 ${HADOOP_BIN}/hdfs dfsadmin -safemode wait

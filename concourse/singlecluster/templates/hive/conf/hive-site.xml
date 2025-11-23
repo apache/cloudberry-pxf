@@ -7,16 +7,41 @@
 		<name>hive.metastore.uris</name>
 		<value>thrift://localhost:9083</value>
 	</property>
+    <!-- Pin metastore to a deterministic Derby location inside singlecluster -->
+    <property>
+        <name>javax.jdo.option.ConnectionURL</name>
+        <value>jdbc:derby:;databaseName=/home/gpadmin/workspace/singlecluster/storage/hive/metastore_db;create=true</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionDriverName</name>
+        <value>org.apache.derby.jdbc.EmbeddedDriver</value>
+    </property>
 	<property>
 		<name>hive.server2.enable.impersonation</name>
 		<value>true</value>
 		<description>Set this property to enable impersonation in Hive Server 2</description>
 	</property>
-	<property>
-		<name>hive.server2.enable.doAs</name>
-		<value>false</value>
-		<description>Set this property to enable impersonation in Hive Server 2</description>
-	</property>
+    <property>
+        <name>hive.server2.enable.doAs</name>
+        <value>false</value>
+        <description>Set this property to enable impersonation in Hive Server 2</description>
+    </property>
+    <property>
+        <name>hive.server2.authentication</name>
+        <value>NOSASL</value>
+    </property>
+    <property>
+        <name>hive.server2.transport.mode</name>
+        <value>binary</value>
+    </property>
+    <property>
+        <name>hive.server2.thrift.port</name>
+        <value>10000</value>
+    </property>
+    <property>
+        <name>hive.server2.thrift.bind.host</name>
+        <value>0.0.0.0</value>
+    </property>
 	<property>
 		<name>hive.execution.engine</name>
 		<value>tez</value>
@@ -54,6 +79,31 @@
     <property>
         <name>hive.stats.autogather</name>
         <value>false</value>
+    </property>
+    <!-- Enable ACID/transactional tables by default -->
+    <property>
+        <name>hive.support.concurrency</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hive.txn.manager</name>
+        <value>org.apache.hadoop.hive.ql.lockmgr.DbTxnManager</value>
+    </property>
+    <property>
+        <name>hive.compactor.initiator.on</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hive.compactor.worker.threads</name>
+        <value>1</value>
+    </property>
+    <property>
+        <name>hive.enforce.bucketing</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hive.exec.dynamic.partition.mode</name>
+        <value>nonstrict</value>
     </property>
 
 </configuration>

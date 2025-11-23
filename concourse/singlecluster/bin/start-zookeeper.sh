@@ -8,6 +8,8 @@ bin=${root}/bin
 zookeeper_cfg=$ZOOKEEPER_CONF/zoo.cfg
 zookeeper_cfg_tmp=$zookeeper_cfg.preped
 
+sudo chown -R gpadmin:gpadmin "${ZOOKEEPER_CONF}"
+
 sed "s|dataDir.*$|dataDir=$ZOOKEEPER_STORAGE_ROOT|" ${zookeeper_cfg} > ${zookeeper_cfg_tmp}
 rm -f ${zookeeper_cfg}
 mv ${zookeeper_cfg_tmp} ${zookeeper_cfg}

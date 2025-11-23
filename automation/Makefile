@@ -98,7 +98,8 @@ symlink_pxf_jars: check-env
 	@if [ -d "$(PXF_HOME)/application" ]; then \
 		rm -rf $(PXF_TMP_LIB) && \
 		mkdir -p $(PXF_TMP_LIB)/tmp && \
-		unzip -qq -j $(PXF_HOME)/application/pxf-app-*.jar 'BOOT-INF/lib/pxf-*.jar' -d $(PXF_TMP_LIB)/tmp && \
+		pxf_app=$$(ls -1v $(PXF_HOME)/application/pxf-app-*.jar | grep -v 'plain.jar' | tail -n 1) && \
+		unzip -qq -j "$${pxf_app}" 'BOOT-INF/lib/pxf-*.jar' -d $(PXF_TMP_LIB)/tmp && \
 		for jar in $(PXF_TMP_LIB)/tmp/pxf-*.jar; do \
 			jar_name="$${jar##*/}"; \
 			if [[ $${jar_name} =~ ^pxf-[A-Za-z0-9]+(-[0-9.]+.*).jar$$ ]]; then \

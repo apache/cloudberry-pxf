@@ -21,7 +21,7 @@ public class Regress extends ShellSystemObject {
         ReportUtils.startLevel(report, getClass(), "init");
         regressRunner = new File("pxf_regress/pxf_regress").getAbsolutePath();
         super.init();
-        runCommand("source $GPHOME/cloudberry_path.sh");
+        runCommand("source $GPHOME/cloudberry-env.sh");
         runCommand("cd " + new File(regressTestFolder).getAbsolutePath());
         ReportUtils.stopLevel(report);
     }
@@ -40,6 +40,12 @@ public class Regress extends ShellSystemObject {
         setCommandTimeout(_10_MINUTES);
         StringJoiner commandToRun = new StringJoiner(" ");
 
+        // Always run from the regress SQL repo
+        commandToRun.add("cd " + new File(regressTestFolder).getAbsolutePath() + " &&");
+        commandToRun.add("GPHOME=${GPHOME:-/usr/local/cloudberry-db}");
+        commandToRun.add("PATH=\"${GPHOME}/bin:$PATH\"");
+        commandToRun.add("PGHOST=${PGHOST:-localhost}");
+        commandToRun.add("PGPORT=${PGPORT:-7000}");
         commandToRun.add("PGDATABASE=" + dbName);
         commandToRun.add(regressRunner);
         commandToRun.add(sqlTestPath);

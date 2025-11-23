@@ -129,7 +129,11 @@ public abstract class DbSystemObject extends BaseSystemObject implements IDbFunc
 
 	@Override
 	public void dropTable(Table table, boolean cascade) throws Exception {
+		// Drop regardless of external or foreign table type to avoid stale definitions
 		runQuery(table.constructDropStmt(cascade), true, false);
+		String dropForeign = String.format("DROP FOREIGN TABLE IF EXISTS %s%s",
+				table.getFullName(), cascade ? " CASCADE" : "");
+		runQuery(dropForeign, true, false);
 	}
 
 	@Override
@@ -283,7 +287,9 @@ public abstract class DbSystemObject extends BaseSystemObject implements IDbFunc
 				throw stmt.getWarnings();
 			}
 		} catch (PSQLException e) {
-			throw e;
+			if (!ignoreFail) {
+				throw e;
+			}
 		} catch (SQLException e) {
 			if (!ignoreFail) {
 				throw e;

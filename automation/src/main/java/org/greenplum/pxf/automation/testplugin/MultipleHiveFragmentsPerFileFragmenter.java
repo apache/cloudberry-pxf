@@ -14,7 +14,10 @@ import org.apache.hadoop.mapred.JobConf;
 import org.greenplum.pxf.api.model.BaseFragmenter;
 import org.greenplum.pxf.api.model.Fragment;
 import org.greenplum.pxf.api.model.Metadata;
+import org.apache.hadoop.security.PxfUserGroupInformation;
+import org.greenplum.pxf.api.security.SecureLogin;
 import org.greenplum.pxf.plugins.hive.HiveClientWrapper;
+import org.greenplum.pxf.plugins.hive.HiveClientWrapper.HiveClientFactory;
 import org.greenplum.pxf.plugins.hive.HiveFragmentMetadata;
 import org.greenplum.pxf.plugins.hive.utilities.HiveUtilities;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +69,21 @@ public class MultipleHiveFragmentsPerFileFragmenter extends BaseFragmenter {
     @Override
     public List<Fragment> getFragments() throws Exception {
         // TODO allowlist property
-        int fragmentsNum = Integer.parseInt(context.getOption("TEST-FRAGMENTS-NUM"));
+        String fragmentsOpt = context.getOption("TEST-FRAGMENTS-NUM");
+        if (fragmentsOpt == null) {
+            LOG.warn("TEST-FRAGMENTS-NUM not provided, defaulting to 1");
+            fragmentsOpt = "1";
+        }
+        if (hiveUtilities == null) {
+            hiveUtilities = new HiveUtilities();
+        }
+        if (hiveClientWrapper == null) {
+            hiveClientWrapper = new HiveClientWrapper();
+            hiveClientWrapper.setHiveUtilities(hiveUtilities);
+            hiveClientWrapper.setHiveClientFactory(new HiveClientFactory());
+            hiveClientWrapper.setSecureLogin(new SecureLogin(new PxfUserGroupInformation()));
+        }
+        int fragmentsNum = Integer.parseInt(fragmentsOpt);
         Metadata.Item tblDesc = hiveClientWrapper.extractTableFromName(context.getDataSource());
         Table tbl;
         try (HiveClientWrapper.MetaStoreClientHolder holder = hiveClientWrapper.initHiveClient(context, configuration)) {

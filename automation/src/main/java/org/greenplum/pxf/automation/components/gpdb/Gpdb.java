@@ -323,7 +323,7 @@ public class Gpdb extends DbSystemObject {
 
 		sso.init();
 
-		sso.runCommand("source $GPHOME/cloudberry_path.sh");
+		sso.runCommand("source $GPHOME/cloudberry-env.sh");
 		// psql do not return error code so use EXIT_CODE_NOT_EXISTS
 		sso.runCommand("psql " + getDb(), ShellSystemObject.EXIT_CODE_NOT_EXISTS);
 
@@ -567,10 +567,29 @@ public class Gpdb extends DbSystemObject {
 		res.next();
 		String fullVersion = res.getString(1);
 		ReportUtils.report(report, getClass(), "Retrieved from Greenplum: [" + fullVersion + "]");
-		int gpIndex = fullVersion.indexOf(GREENPLUM_DATABASE_PREFIX); // where the version prefix starts
-		int dotIndex = fullVersion.indexOf(".", gpIndex);             // where the first dot of GP version starts
-		String versionStr = fullVersion.substring(gpIndex + GREENPLUM_DATABASE_PREFIX.length(), dotIndex);
-		int versionInt = Integer.valueOf(versionStr);
+        int gpIndex = fullVersion.indexOf(GREENPLUM_DATABASE_PREFIX); // where the version prefix starts
+        String prefix = GREENPLUM_DATABASE_PREFIX;
+        // Cloudberry forks print strings like:
+        //   "PostgreSQL 14.4 (Apache Cloudberry 3.0.0-devel build dev) ..."
+        // fall back to the Cloudberry prefix if the Greenplum one is missing
+        if (gpIndex < 0) {
+            prefix = "Cloudberry ";
+            gpIndex = fullVersion.indexOf(prefix);
+            if (gpIndex < 0) {
+                throw new Exception("Unable to parse database version from: " + fullVersion);
+            }
+        }
+        // find first digit after the detected prefix
+        int start = gpIndex + prefix.length();
+        while (start < fullVersion.length() && !Character.isDigit(fullVersion.charAt(start))) {
+            start++;
+        }
+        int end = start;
+        while (end < fullVersion.length() && Character.isDigit(fullVersion.charAt(end))) {
+            end++;
+        }
+        String versionStr = fullVersion.substring(start, end);
+        int versionInt = Integer.valueOf(versionStr);
 		ReportUtils.report(report, getClass(), "Determined Greenplum version: " + versionInt);
 		return versionInt;
 	}

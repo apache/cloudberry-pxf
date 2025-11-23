@@ -93,5 +93,8 @@ export HBASE_PID_DIR=$PIDS_ROOT
 # Tell HBase whether it should manage it's own instance of Zookeeper or not.
 export HBASE_MANAGES_ZK=false
 
-# FIXME: remove after upgrading to new Hive version
-export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+# Prefer JAVA_HOME from gphd-env.sh; fail fast if missing to avoid divergent per-service detection.
+if [ -z "${JAVA_HOME:-}" ]; then
+  echo "Error: JAVA_HOME must be set (gphd-env.sh should export JAVA_HADOOP)."
+  exit 1
+fi

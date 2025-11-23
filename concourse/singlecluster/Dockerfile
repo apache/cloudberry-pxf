@@ -4,7 +4,9 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN sudo apt-get update &&  \
     sudo apt-get install -y --no-install-recommends \
-      curl ca-certificates
+      curl ca-certificates \
+      openjdk-8-jdk-headless \
+      openjdk-11-jdk-headless
 
 # TODO: update hive to support java 11+
 ENV    HADOOP_VERSION=3.1.2
@@ -42,7 +44,9 @@ RUN mkdir -p $HADOOP_ROOT && \
     curl -fSL "$HADOOP_URL" -o hadoop.tar.gz && \
     echo "$HADOOP_SHA512 hadoop.tar.gz" | sha512sum -c && \
     tar xvf hadoop.tar.gz -C $HADOOP_ROOT --strip-components 1  --exclude="share/doc/*" --exclude="*-sources.jar" && \
-    rm hadoop.tar.gz
+    rm hadoop.tar.gz && \
+    curl -fSL "https://repo1.maven.org/maven2/javax/activation/javax.activation-api/1.2.0/javax.activation-api-1.2.0.jar" \
+      -o $HADOOP_ROOT/share/hadoop/common/lib/javax.activation-api-1.2.0.jar
 
 RUN mkdir -p $HIVE_ROOT && \
     curl -fSL $HIVE_URL -o hive.tar.gz && \
@@ -68,10 +72,18 @@ RUN mkdir -p $TEZ_ROOT && \
     tar xvf tez.tar.gz -C $TEZ_ROOT --strip-components 1 && \
     rm tez.tar.gz
 
-# Install Go (required by PXF).
-RUN mkdir -p /tmp/pxf_src/ && cd /tmp \
-    && wget -O go.tgz -q https://go.dev/dl/go1.23.3.linux-amd64.tar.gz \
-    && sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go.tgz && rm go.tgz
+# Install Go (required by PXF). Pick archive based on architecture (amd64/arm64).
+ARG TARGETARCH
+RUN set -e; \
+    arch="${TARGETARCH:-$(uname -m)}"; \
+    case "$arch" in \
+      amd64|x86_64) go_arch="amd64" ;; \
+      arm64|aarch64) go_arch="arm64" ;; \
+      *) echo "Unsupported architecture: ${arch}"; exit 1 ;; \
+    esac; \
+    mkdir -p /tmp/pxf_src/ && cd /tmp && \
+    wget -O go.tgz -q "https://go.dev/dl/go1.23.3.linux-${go_arch}.tar.gz" && \
+    sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go.tgz && rm go.tgz
 
 
 COPY ./templates $GPHD_ROOT

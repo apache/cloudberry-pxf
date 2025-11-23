@@ -11,8 +11,11 @@
 -- m/.*inode=.*/
 -- s/inode=.*?:-rwx/inode=SOME_PATH:-rwx/g
 --
--- m/pxf:\/\/(.*)\/pxf_automation_data\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\/proxy\/([0-9a-zA-Z]).*\/data.txt/
--- s/pxf:\/\/(.*)\/pxf_automation_data\/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\/proxy\/([0-9a-zA-Z]).*\/data.txt/pxf:\/\/pxf_automation_data\/proxy\/NON_IMPERSONATED_USER\/data.txt/
+-- m#pxf://(tmp/)?pxf_automation_data(/[^ ]*)?/proxy/[0-9A-Za-z._-]+/data.txt#
+-- s#pxf://(tmp/)?pxf_automation_data(/[^ ]*)?/proxy/[0-9A-Za-z._-]+/data.txt#pxf://pxf_automation_data/proxy/NON_IMPERSONATED_USER/data.txt#
+--
+-- m/^NOTICE:.*/
+-- s/^NOTICE:.*/GP_IGNORE: NOTICE/
 --
 -- m/DETAIL/
 -- s/DETAIL/CONTEXT/

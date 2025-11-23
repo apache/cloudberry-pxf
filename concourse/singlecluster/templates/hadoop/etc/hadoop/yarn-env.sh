@@ -29,16 +29,9 @@ export HADOOP_YARN_USER=${HADOOP_YARN_USER:-yarn}
 # some Java parameters
 # export JAVA_HOME=/home/y/libexec/jdk1.6.0/
 
-# FIXME: remove after upgrading to new Hive version
-export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-
-if [ "$JAVA_HOME" != "" ]; then
-  #echo "run java in $JAVA_HOME"
-  JAVA_HOME=$JAVA_HOME
-fi
-  
-if [ "$JAVA_HOME" = "" ]; then
-  echo "Error: JAVA_HOME is not set."
+# Rely on JAVA_HOME provided by gphd-env.sh (which already auto-detects arch/JDK).
+if [ -z "${JAVA_HOME:-}" ]; then
+  echo "Error: JAVA_HOME is not set (expected from gphd-env.sh)."
   exit 1
 fi
 
@@ -85,5 +78,4 @@ if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
   YARN_OPTS="$YARN_OPTS -Djava.library.path=$JAVA_LIBRARY_PATH"
 fi  
 YARN_OPTS="$YARN_OPTS -Dyarn.policy.file=$YARN_POLICYFILE"
-
 

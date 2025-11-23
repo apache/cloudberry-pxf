@@ -12,6 +12,7 @@ import org.greenplum.pxf.automation.structures.tables.basic.Table;
 import org.greenplum.pxf.automation.structures.tables.hive.HiveTable;
 import org.greenplum.pxf.automation.structures.tables.utils.TableFactory;
 import org.testng.annotations.Test;
+import org.testng.SkipException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -58,6 +59,14 @@ public class HiveOrcTest extends HiveBaseTest {
         prepareSmallData();
         prepareTypesData();
         prepareOrcData();
+
+        if (hiveOrcTypesTable == null) {
+            hiveOrcTypesTable = new HiveTable(HIVE_TYPES_TABLE + "_orc", HIVE_TYPES_COLS);
+            hiveOrcTypesTable.setStoredAs(ORC);
+            hive.createTableAndVerify(hiveOrcTypesTable);
+            hive.insertData(hiveTypesTable, hiveOrcTypesTable);
+        }
+
         prepareNonDefaultSchemaData();
         preparePxfHiveOrcTypes();
         preparePxfHiveSmallData();
@@ -403,6 +412,11 @@ public class HiveOrcTest extends HiveBaseTest {
      */
     @Test(groups = { "features", "hcatalog" })
     public void aggregateQueries() throws Exception {
+
+        if (hiveOrcAllTypes == null) {
+            // Defensive: ensure ORC all-types table is prepared in environments
+            prepareOrcData();
+        }
 
         createExternalTable(PXF_HIVE_SMALL_DATA_TABLE,
                 PXF_HIVE_SMALLDATA_COLS, hiveOrcTypesTable);

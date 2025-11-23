@@ -6,11 +6,12 @@ services:
       context: ../../../singlecluster
     image: pxf/singlecluster:3
     container_name: pxf_singlecluster
+    hostname: cdw
 
   pxf-cbdb-dev:
     image: pxf/singlecluster:3
     container_name: pxf-cbdb-dev
-    hostname: cdw
+    hostname: mdw
     depends_on:
       - singlecluster
     volumes:

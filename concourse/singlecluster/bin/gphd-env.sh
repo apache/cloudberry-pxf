@@ -47,8 +47,19 @@ export HBASE_CONF=${HBASE_ROOT}/conf
 export HIVE_CONF=${HIVE_ROOT}/conf
 export TEZ_CONF=${TEZ_ROOT}/conf
 export RANGER_CONF=${RANGER_ROOT}/conf
+export HADOOP_COMMON_LIB=${HADOOP_ROOT}/share/hadoop/common/lib
+export HADOOP_CLASSPATH=${HADOOP_CLASSPATH:-}
 
 export TEZ_JARS=$(echo "$TEZ_ROOT"/*.jar | tr ' ' ':'):$(echo "$TEZ_ROOT"/lib/*.jar | tr ' ' ':')
+
+ensure_activation_jar() {
+  local jar="$HADOOP_COMMON_LIB/javax.activation-api-1.2.0.jar"
+  if [ ! -f "$jar" ]; then
+    echo "Fetching javax.activation-api for Java11 runtime..."
+    curl -fSL "https://repo1.maven.org/maven2/javax/activation/javax.activation-api/1.2.0/javax.activation-api-1.2.0.jar" -o "$jar" || return 1
+  fi
+  export HADOOP_CLASSPATH="$HADOOP_CLASSPATH:$jar"
+}
 
 function cluster_initialized()
 {
@@ -82,4 +93,3 @@ function zookeeper_running()
 	done
 	return ${retval}
 }
-
