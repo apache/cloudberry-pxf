@@ -25,7 +25,7 @@
         <class>org.greenplum.pxf.automation.components.hdfs.Hdfs</class>
         <host>localhost</host>
         <port>8020</port>
-        <workingDirectory>tmp/pxf_automation_data/__UUID__</workingDirectory>
+        <workingDirectory>tmp/pxf_automation_data</workingDirectory>
         <scheme>hdfs</scheme>
     </hdfs>
 

@@ -46,6 +46,9 @@ public class Hive extends DbSystemObject {
             if (StringUtils.isNotBlank(getSaslQop())) {
                 address += String.format(";saslQop=%s", getSaslQop());
             }
+        } else {
+            // our singlecluster uses simple auth; force noSasl to avoid Kerberos negotiation failures
+            address += ";auth=noSasl";
         }
 
         connect();

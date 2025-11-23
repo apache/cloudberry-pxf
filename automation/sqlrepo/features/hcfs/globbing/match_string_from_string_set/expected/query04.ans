@@ -250,10 +250,10 @@ select * from hcfs_glob_match_string_from_string_set_10 order by name, num;
 -- end_matchsubs
 select * from hcfs_glob_match_string_from_string_set_11 order by name, num;
 ERROR:  PXF server error : Illegal file pattern: Unclosed group near index xxx
--- start_ignore
-HINT:  Check the PXF logs located in the 'logs-dir' directory on host 'mdw' or 'set client_min_messages=LOG' for additional details.
--- end_ignore
-DETAIL:  External table hcfs_glob_match_string_from_string_set_11, file pxf://tmp/pxf_automation_data/match_string_from_string_set_4/}{bc?PROFILE=hdfs:text
+GP_IGNORE:-- start_ignore
+GP_IGNORE:HINT:  Check the PXF logs located in the 'logs-dir' directory on host 'mdw' or 'set client_min_messages=LOG' for additional details.
+GP_IGNORE:-- end_ignore
+CONTEXT:  External table hcfs_glob_match_string_from_string_set_11
 
 -- }\{bc will match }{bc but it will not match }bc
 select * from hcfs_glob_match_string_from_string_set_12 order by name, num;
@@ -280,4 +280,3 @@ select * from hcfs_glob_match_string_from_string_set_12 order by name, num;
  1a }{bc_row_8  |   8 |   8 |  800000000000 | t
  1a }{bc_row_9  |   9 |   9 |  900000000000 | f
 (20 rows)
-

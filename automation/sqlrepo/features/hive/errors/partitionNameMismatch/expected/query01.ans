@@ -16,7 +16,5 @@
 -- end_matchsubs
 SELECT * from pxf_hive_small_data ORDER BY t1;
 ERROR:  PXF server error : column 's2' does not exist in the Hive schema or Hive Partition
--- start_ignore
-HINT:  Ensure the column or partition exists and check the name spelling and case. Check the PXF logs located in the 'logs-dir' directory on host 'mdw' or 'set client_min_messages=LOG' for additional details.
--- end_ignore
-CONTEXT:  External table pxf_hive_small_data, file pxf://hive_rc_table?PROFILE=HiveRC
+HINT:  Ensure the column or partition exists and check the name spelling and case. Check the PXF logs located in the '/home/gpadmin/pxf-base/logs' directory on host '0.0.0.0' or 'set client_min_messages=LOG' for additional details.
+CONTEXT:  External table pxf_hive_small_data, line 1 of pxf://hive_rc_table?PROFILE=HiveRC: ""

@@ -20,5 +20,8 @@ export HADOOP_LOG_DIR=$LOGS_ROOT
 # The directory where pid files are stored. /tmp by default.
 export HADOOP_PID_DIR=$PIDS_ROOT
 
-# FIXME: remove after upgrading to new Hive version
-export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+# Rely on JAVA_HOME provided by gphd-env.sh (which already auto-detects arch/JDK).
+if [ -z "${JAVA_HOME:-}" ]; then
+  echo "Error: JAVA_HOME is not set (expected from gphd-env.sh)."
+  exit 1
+fi

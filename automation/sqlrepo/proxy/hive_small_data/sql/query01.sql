@@ -13,6 +13,7 @@ GRANT ALL ON TABLE pxf_proxy_hive_small_data_allowed TO PUBLIC;
 DROP ROLE IF EXISTS testuser;
 CREATE ROLE testuser LOGIN;
 
+\setenv PGHOST 127.0.0.1
 \connect - testuser
 SELECT * FROM pxf_proxy_hive_small_data_allowed ORDER BY name;
 

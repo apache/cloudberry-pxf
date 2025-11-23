@@ -1,5 +1,12 @@
 # paths
-export JAVA_HOME=${JAVA_HOME:=/Library/Java/Home}
+# Prefer JAVA_HADOOP (from pxf-env); otherwise fall back to a default JDK8 path.
+if [ -z "${JAVA_HOME:-}" ]; then
+  if [ -n "${JAVA_HADOOP:-}" ]; then
+    export JAVA_HOME="${JAVA_HADOOP}"
+  else
+    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk
+  fi
+fi
 export STORAGE_ROOT=$GPHD_ROOT/storage
 export HADOOP_STORAGE_ROOT=$STORAGE_ROOT/hadoop
 export ZOOKEEPER_STORAGE_ROOT=$STORAGE_ROOT/zookeeper
@@ -9,7 +16,7 @@ export PXF_STORAGE_ROOT=$STORAGE_ROOT/pxf
 export RANGER_STORAGE_ROOT=$STORAGE_ROOT/ranger
 
 # settings
-export SLAVES=${SLAVES:-3}
+export SLAVES=${SLAVES:-1}
 
 # Automatically start HBase during GPHD startup
 export START_HBASE=true
