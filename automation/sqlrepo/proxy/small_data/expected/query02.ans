@@ -1,20 +1,21 @@
 -- @description query02 for PXF proxy test on small data
-
 -- start_matchsubs
 --
 -- m/You are now connected.*/
 -- s/.*//g
 --
 -- end_matchsubs
-
 GRANT ALL ON TABLE pxf_proxy_small_data_allowed TO PUBLIC;
 GRANT
 \set OLD_GP_USER :USER
 DROP ROLE IF EXISTS testuser;
+psql:proxy/small_data/sql/query02.sql:13: NOTICE:  role "testuser" does not exist, skipping
 DROP ROLE
 CREATE ROLE testuser LOGIN;
+psql:proxy/small_data/sql/query02.sql:14: NOTICE:  resource queue required -- using default resource queue "pg_default"
 CREATE ROLE
 \connect - testuser
+You are now connected to database "pxfautomation" as user "testuser".
 SELECT name, num FROM pxf_proxy_small_data_allowed WHERE num > 50 ORDER BY name;
   name   | num 
 ---------+-----
@@ -71,5 +72,6 @@ SELECT name, num FROM pxf_proxy_small_data_allowed WHERE num > 50 ORDER BY name;
 (50 rows)
 
 \connect - :OLD_GP_USER
+You are now connected to database "pxfautomation" as user "gpadmin".
 DROP ROLE IF EXISTS testuser;
 DROP ROLE

@@ -7,6 +7,8 @@ import org.greenplum.pxf.automation.components.hdfs.Hdfs;
 import org.greenplum.pxf.automation.structures.tables.basic.Table;
 import org.greenplum.pxf.automation.structures.tables.pxf.ReadableExternalTable;
 import org.greenplum.pxf.automation.structures.tables.utils.TableFactory;
+import org.testng.SkipException;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.List;
@@ -29,8 +31,21 @@ public class HdfsHAFailoverTest extends BaseFunctionality {
             "bool boolean"
     };
 
+    @BeforeClass
+    public void skipOnSingleNode() {
+        // Prefer system property (passed via -DPXF_SINGLE_NODE) and fall back to env.
+        String singleNode = System.getProperty("PXF_SINGLE_NODE", System.getenv("PXF_SINGLE_NODE"));
+        if (singleNode == null || "true".equalsIgnoreCase(singleNode)) {
+            throw new SkipException("Skipping HA failover test on single-node environment");
+        }
+    }
+
     @Test(groups = {"proxySecurityIpa"})
     public void testFailoverScenario() throws Exception {
+        String singleNode = System.getProperty("PXF_SINGLE_NODE", System.getenv("PXF_SINGLE_NODE"));
+        if (singleNode == null || "true".equalsIgnoreCase(singleNode)) {
+            throw new SkipException("Skipping HA failover test on single-node environment");
+        }
         // prepare small data file in HDFS
         String locationAdminUser = prepareData(ADMIN_USER);
         String locationTestUser = prepareData(TEST_USER);

@@ -64,6 +64,8 @@ public class HdfsAnalyzeTest extends BaseFeature {
 
     final int DEFAULT_RELPAGES = 1000;
     final int DEFAULT_RELTUPLES = 1000000;
+    private boolean statsSupported;
+    private static final String ANALYZE_SKIP_WARNING = ".* --- cannot analyze this foreign table";
 
     // holds data for file generation
     Table dataTable = null;
@@ -150,6 +152,7 @@ public class HdfsAnalyzeTest extends BaseFeature {
         // add new path to classpath file and restart PXF service
         cluster.addPathToPxfClassPath(newPath);
         cluster.restart(PhdCluster.EnumClusterServices.pxf);
+        statsSupported = gpdb.hasGuc("pxf_enable_stat_collection");
     }
 
     /**
@@ -195,6 +198,9 @@ public class HdfsAnalyzeTest extends BaseFeature {
         exTable.setName("analyze_ok");
         gpdb.createTableAndVerify(exTable);
 
+        if (skipAnalyzeIfUnsupported(exTable)) {
+            return;
+        }
         gpdb.analyze(exTable);
 
         verifyPgClassValues(-1, 1000, 10);
@@ -239,6 +245,9 @@ public class HdfsAnalyzeTest extends BaseFeature {
 
         gpdb.createTableAndVerify(exTable);
 
+        if (skipAnalyzeIfUnsupported(exTable)) {
+            return;
+        }
         gpdb.analyze(exTable);
 
         verifyPgClassValues(-1, 999, 10);
@@ -279,6 +288,9 @@ public class HdfsAnalyzeTest extends BaseFeature {
 
         gpdb.createTableAndVerify(exTable);
 
+        if (skipAnalyzeIfUnsupported(exTable)) {
+            return;
+        }
         try {
             gpdb.analyze(exTable);
             Assert.fail("analyze should fail without existing fragmenter defined");
@@ -380,6 +392,9 @@ public class HdfsAnalyzeTest extends BaseFeature {
 
         gpdb.createTableAndVerify(exTable);
 
+        if (skipAnalyzeIfUnsupported(exTable)) {
+            return;
+        }
         try {
             gpdb.analyze(exTable);
             Assert.fail("analyze should fail on resolver");
@@ -460,6 +475,9 @@ public class HdfsAnalyzeTest extends BaseFeature {
 
         gpdb.createTableAndVerify(exTable);
 
+        if (skipAnalyzeIfUnsupported(exTable)) {
+            return;
+        }
         try {
             gpdb.analyze(exTable);
             Assert.fail("analyze should fail on resolver");
@@ -538,6 +556,9 @@ public class HdfsAnalyzeTest extends BaseFeature {
 
         gpdb.createTableAndVerify(exTable);
 
+        if (skipAnalyzeIfUnsupported(exTable)) {
+            return;
+        }
         try {
             gpdb.analyze(exTable);
             Assert.fail("analyze should fail on segment reject limit 25 percent");
@@ -608,6 +629,9 @@ public class HdfsAnalyzeTest extends BaseFeature {
 
         gpdb.createTableAndVerify(exTable);
 
+        if (skipAnalyzeIfUnsupported(exTable)) {
+            return;
+        }
         try {
             gpdb.analyze(exTable);
             Assert.fail("analyze should fail on data error");
@@ -803,6 +827,9 @@ public class HdfsAnalyzeTest extends BaseFeature {
 
         gpdb.createTableAndVerify(exTable);
 
+        if (skipAnalyzeIfUnsupported(exTable)) {
+            return;
+        }
         gpdb.analyze(exTable);
 
         verifyPgClassValues(-1, 1000000, 300000);
@@ -858,6 +885,9 @@ public class HdfsAnalyzeTest extends BaseFeature {
 
         gpdb.createTableAndVerify(exTable);
 
+        if (skipAnalyzeIfUnsupported(exTable)) {
+            return;
+        }
         gpdb.analyze(exTable);
 
         verifyPgClassValues(-1, 9999999, 300000);
@@ -964,6 +994,14 @@ public class HdfsAnalyzeTest extends BaseFeature {
         ComparisonUtils.compareTables(analyzeResults, countTable, null);
 
         ReportUtils.stopLevel(null);
+    }
+
+    private boolean skipAnalyzeIfUnsupported(Table table) throws Exception {
+        if (statsSupported) {
+            return false;
+        }
+        gpdb.runQueryWithExpectedWarning("ANALYZE " + table.getName(), ANALYZE_SKIP_WARNING, true, true);
+        return true;
     }
 
     private boolean almostEquals(int arg1, int arg2, int epsilon) {

@@ -531,17 +531,30 @@ public class Gpdb extends DbSystemObject {
 	 *            turned off by 'pxf_enable_stat_collection'</b>
 	 * @throws Exception
 	 */
-	public void analyze(Table table, boolean expectTurnedOffWarning) throws Exception {
+    public void analyze(Table table, boolean expectTurnedOffWarning) throws Exception {
 
-		String query = "ANALYZE " + table.getName();
+        String query = "ANALYZE " + table.getName();
 
-		if (expectTurnedOffWarning) {
-			runQueryWithExpectedWarning(query, "analyze for PXF tables is turned off by 'pxf_enable_stat_collection'", true);
+        if (expectTurnedOffWarning) {
+            runQueryWithExpectedWarning(query, "analyze for PXF tables is turned off by 'pxf_enable_stat_collection'", true);
 
-		} else {
-			runQuery(query);
-		}
-	}
+        } else {
+            runQuery(query);
+        }
+    }
+
+    /**
+     * Check whether a configuration parameter is present in the backend.
+     *
+     * @param gucName name of the parameter
+     * @return true if pg_settings contains the parameter, false otherwise
+     * @throws Exception when the lookup fails
+     */
+    public boolean hasGuc(String gucName) throws Exception {
+        Table result = new Table("guc_exists", null);
+        queryResults(result, "SELECT EXISTS (SELECT 1 FROM pg_settings WHERE name = '" + gucName + "')");
+        return !result.getData().isEmpty() && "t".equalsIgnoreCase(result.getData().get(0).get(0));
+    }
 
 	public String getSshUserName() {
 		return sshUserName;

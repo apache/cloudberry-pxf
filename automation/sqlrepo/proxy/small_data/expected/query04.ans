@@ -23,24 +23,27 @@
 -- s/line \d* of //g
 --
 -- end_matchsubs
-
 GRANT ALL ON TABLE pxf_proxy_small_data_allowed_no_impersonation TO PUBLIC;
 GRANT
 -- both :USER and testuser use the same service user to access the data
 SELECT * FROM pxf_proxy_small_data_allowed_no_impersonation ORDER BY name;
-ERROR:  PXF server error : Permission denied: user=foobar, access=READ, inode=SOME_PATH:-rwx------
+psql:proxy/small_data/sql/query04.sql:31: ERROR:  PXF server error : Permission denied: user=foobar, access=READ, inode="/tmp/pxf_automation_data/proxy/testuser/data.txt":testuser:testuser:-rwx------  (seg1 slice1 172.18.0.3:7003 pid=34047)
 HINT:  Check the PXF logs located in the '/home/gpadmin/pxf-base/logs' directory on host '0.0.0.0' or 'set client_min_messages=LOG' for additional details.
-CONTEXT:  External table pxf_proxy_small_data_allowed_no_impersonation, line 1 of pxf://pxf_automation_data/proxy/NON_IMPERSONATED_USER/data.txt?PROFILE=hdfs:text&SERVER=default-no-impersonation: ""
+CONTEXT:  External table pxf_proxy_small_data_allowed_no_impersonation, line 1 of pxf://tmp/pxf_automation_data/proxy/testuser/data.txt?PROFILE=hdfs:text&SERVER=default-no-impersonation: ""
 \set OLD_GP_USER :USER
 DROP ROLE IF EXISTS testuser;
+psql:proxy/small_data/sql/query04.sql:34: NOTICE:  role "testuser" does not exist, skipping
 DROP ROLE
 CREATE ROLE testuser LOGIN;
+psql:proxy/small_data/sql/query04.sql:35: NOTICE:  resource queue required -- using default resource queue "pg_default"
 CREATE ROLE
 \connect - testuser
+You are now connected to database "pxfautomation" as user "testuser".
 SELECT * FROM pxf_proxy_small_data_allowed_no_impersonation ORDER BY name;
-ERROR:  PXF server error : Permission denied: user=foobar, access=READ, inode=SOME_PATH:-rwx------
+psql:proxy/small_data/sql/query04.sql:38: ERROR:  PXF server error : Permission denied: user=foobar, access=READ, inode="/tmp/pxf_automation_data/proxy/testuser/data.txt":testuser:testuser:-rwx------  (seg1 slice1 172.18.0.3:7003 pid=34065)
 HINT:  Check the PXF logs located in the '/home/gpadmin/pxf-base/logs' directory on host '0.0.0.0' or 'set client_min_messages=LOG' for additional details.
-CONTEXT:  External table pxf_proxy_small_data_allowed_no_impersonation, line 1 of pxf://pxf_automation_data/proxy/NON_IMPERSONATED_USER/data.txt?PROFILE=hdfs:text&SERVER=default-no-impersonation: ""
+CONTEXT:  External table pxf_proxy_small_data_allowed_no_impersonation, line 1 of pxf://tmp/pxf_automation_data/proxy/testuser/data.txt?PROFILE=hdfs:text&SERVER=default-no-impersonation: ""
 \connect - :OLD_GP_USER
+You are now connected to database "pxfautomation" as user "gpadmin".
 DROP ROLE IF EXISTS testuser;
 DROP ROLE

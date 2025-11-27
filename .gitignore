@@ -10,3 +10,9 @@
 build/
 server/*/out
 server/tmp
+/.metals/metals.mv.db
+/.vscode/c_cpp_properties.json
+/.vscode/launch.json
+/.vscode/settings.json
+/automation/dataTempFolder/
+/cli/go/pkg/

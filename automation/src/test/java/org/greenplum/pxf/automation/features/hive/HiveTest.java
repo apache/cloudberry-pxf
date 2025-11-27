@@ -370,9 +370,9 @@ public class HiveTest extends HiveBaseTest {
     public void viewNegative() throws Exception {
 
         HiveTable hiveTable = new HiveTable(hiveSmallDataTable.getName() + "_view", null);
-        hive.runQuery("DROP VIEW " + hiveTable.getName());
+        hive.runQuery("DROP VIEW IF EXISTS " + hiveTable.getName());
         hive.runQuery("CREATE VIEW " + hiveTable.getName()
-                + " AS SELECT s1 FROM " + hiveSmallDataTable.getName());
+                + " AS SELECT t1 FROM " + hiveSmallDataTable.getName());
 
         createExternalTable("pxf_hive_view_table", new String[]{"t1 TEXT"}, hiveTable);
 
@@ -546,7 +546,7 @@ public class HiveTest extends HiveBaseTest {
 
         // Perform Analyze on external table and check suitable Warnings.
         gpdb.runQueryWithExpectedWarning("ANALYZE " + exTable.getName(),
-                "ANALYZE for Hive plugin is not supported", true);
+                ".* --- cannot analyze this foreign table", true, true);
 
         runSqlTest("features/hive/default_analyze");
     }

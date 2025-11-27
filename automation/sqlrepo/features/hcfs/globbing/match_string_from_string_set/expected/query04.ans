@@ -252,9 +252,10 @@ select * from hcfs_glob_match_string_from_string_set_10 order by name, num;
 --
 -- end_matchsubs
 select * from hcfs_glob_match_string_from_string_set_11 order by name, num;
-ERROR:  PXF server error : Unclosed group near index xxx
-HINT:  Check the PXF logs located in the '/home/gpadmin/pxf-base/logs' directory on host 'localhost' or 'set client_min_messages=LOG' for additional details.
-CONTEXT:  External table hcfs_glob_match_string_from_string_set_11, pxf://pxf_automation_data?PROFILE=*:text: ""
+psql:features/hcfs/globbing/match_string_from_string_set/sql/query04.sql:60: ERROR:  PXF server error : Illegal file pattern: Unclosed group near index 4  (seg0 slice1 172.18.0.3:7002 pid=46703)
+HINT:  Check the PXF logs located in the '/home/gpadmin/pxf-base/logs' directory on host '0.0.0.0' or 'set client_min_messages=LOG' for additional details.
+CONTEXT:  External table hcfs_glob_match_string_from_string_set_11, line 1 of pxf://tmp/pxf_automation_data/match_string_from_string_set_4/}{bc?PROFILE=hdfs:text: ""
+
 -- }\{bc will match }{bc but it will not match }bc
 select * from hcfs_glob_match_string_from_string_set_12 order by name, num;
       name      | num | dub |    longnum    | bool 

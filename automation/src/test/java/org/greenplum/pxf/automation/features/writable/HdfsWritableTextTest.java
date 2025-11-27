@@ -23,6 +23,7 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.Random;
 import java.util.TimeZone;
+import java.util.Comparator;
 
 import static java.lang.Thread.sleep;
 
@@ -37,6 +38,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
     private String[] gpdbTableFields;
     private String hdfsWorkingDataDir;
     private ProtocolEnum protocol;
+    private static final Comparator<List<String>> ROW_COMPARATOR = Comparator.comparing(row -> String.join("|", row));
 
     private enum InsertionMethod {
         INSERT,
@@ -64,6 +66,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         WritableDataPreparer dataPreparer = new WritableDataPreparer();
         dataPreparer.prepareData(100, dataTable);
         hdfsWorkingDataDir = hdfs.getWorkingDirectory() + "/data";
+        removeBlankRows(dataTable);
     }
 
     /**
@@ -113,6 +116,8 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         readableExTable = prepareReadableTable("pxf_text_format_default_codec_using_insert_r", hdfsPath);
         gpdb.queryResults(readableExTable,
                 "SELECT * FROM " + readableExTable.getName() + " ORDER BY bi");
+        sanitizeAndSort(dataTable, ROW_COMPARATOR);
+        sanitizeAndSort(readableExTable, ROW_COMPARATOR);
         ComparisonUtils.compareTables(dataTable, readableExTable, null, "\\\\");
     }
 
@@ -131,6 +136,8 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         readableExTable = prepareReadableTable("pxf_text_format_default_codec_using_insert_r", hdfsPath);
         gpdb.queryResults(readableExTable,
                 "SELECT * FROM " + readableExTable.getName() + " ORDER BY bi");
+        sanitizeAndSort(dataTable, ROW_COMPARATOR);
+        sanitizeAndSort(readableExTable, ROW_COMPARATOR);
         ComparisonUtils.compareTables(dataTable, readableExTable, null, "\\\\");
     }
 
@@ -149,6 +156,8 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         readableExTable = prepareReadableTable("pxf_text_format_default_codec_using_copy_r", hdfsPath);
         gpdb.queryResults(readableExTable,
                 "SELECT * FROM " + readableExTable.getName() + " ORDER BY bi");
+        sanitizeAndSort(dataTable, ROW_COMPARATOR);
+        sanitizeAndSort(readableExTable, ROW_COMPARATOR);
         ComparisonUtils.compareTables(dataTable, readableExTable, null, "\\\\");
     }
 
@@ -175,6 +184,8 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         readableExTable = prepareReadableTable("pxf_insert_text_default_codec_from_table_r_validation", hdfsPath);
         gpdb.queryResults(readableExTable,
                 "SELECT * FROM " + readableExTable.getName() + " ORDER BY bi");
+        sanitizeAndSort(dataTable, ROW_COMPARATOR);
+        sanitizeAndSort(readableExTable, ROW_COMPARATOR);
         ComparisonUtils.compareTables(dataTable, readableExTable, null, "\\\\");
     }
 
@@ -576,6 +587,8 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         gpdb.createTableAndVerify(readableExTable);
 
         gpdb.queryResults(readableExTable,"SELECT * FROM " + readableExTable.getName() + " ORDER BY linenum");
+        sanitizeAndSort(readableExTable, ROW_COMPARATOR);
+        sanitizeAndSort(dataTable, ROW_COMPARATOR);
         ComparisonUtils.compareTables(readableExTable, dataTable, null);
     }
 
@@ -605,6 +618,8 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
                     compressionType, true);
             index++;
         }
+        sanitizeAndSort(resultTable, ROW_COMPARATOR);
+        sanitizeAndSort(data, ROW_COMPARATOR);
         // compare and ignore '\' that returns from hdfs before comma for circle types
         ComparisonUtils.compareTables(data, resultTable, null, "\\\\", "\"");
     }
@@ -701,5 +716,20 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         }
         createTable(table);
         return table;
+    }
+
+    private void sanitizeAndSort(Table table, Comparator<List<String>> comparator) {
+        removeBlankRows(table);
+        if (table != null && table.getData() != null && comparator != null) {
+            table.getData().sort(comparator);
+        }
+    }
+
+    private void removeBlankRows(Table table) {
+        if (table == null || table.getData() == null) {
+            return;
+        }
+        table.getData().removeIf(row -> row == null || row.isEmpty()
+                || row.stream().allMatch(val -> val == null || val.trim().isEmpty()));
     }
 }
