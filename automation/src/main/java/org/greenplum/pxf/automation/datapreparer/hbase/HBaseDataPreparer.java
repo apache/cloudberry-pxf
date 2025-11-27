@@ -1,10 +1,11 @@
 package org.greenplum.pxf.automation.datapreparer.hbase;
 
 import java.math.BigInteger;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TimeZone;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -87,10 +88,11 @@ public class HBaseDataPreparer implements IDataPreparer {
 				addValue(newRow, columnFamily, qualifiers[10], bi.pow(i).toString());
 
 				// Qualifier 12. Timestamp
-				// Removing system timezone so tests will pass anywhere in the
-				// world :)
-				int timeZoneOffset = TimeZone.getDefault().getRawOffset();
-				addValue(newRow, columnFamily, qualifiers[11], (new Timestamp((6000 * i) - timeZoneOffset)).toString());
+				// Produce timezone-stable UTC timestamp strings so expected answers stay constant.
+				String timestampUtc = Instant.ofEpochMilli(6000L * i)
+						.atZone(ZoneOffset.UTC)
+						.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+				addValue(newRow, columnFamily, qualifiers[11], timestampUtc);
 
 				generatedRows.add(newRow);
 

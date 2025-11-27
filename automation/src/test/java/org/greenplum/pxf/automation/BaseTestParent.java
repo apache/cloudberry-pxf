@@ -124,6 +124,10 @@ public abstract class BaseTestParent {
                     // if other than MultiNodeCluster get pxfHost from hdfs
                     pxfHost = hdfs.getHost();
                 }
+                if (StringUtils.isEmpty(pxfHost)) {
+                    // fallback to localhost when host resolution is empty to keep URI validation stable
+                    pxfHost = "localhost";
+                }
             }
 
             // run users before class

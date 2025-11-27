@@ -20,6 +20,7 @@ import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
@@ -214,7 +215,21 @@ public class Hdfs extends BaseSystemObject implements IFSFunctionality {
 
     @Override
     public void setDefaultReplicationSize() {
-        setReplicationSize(fs.getDefaultReplication(new Path("/")));
+        short defaultReplication = fs.getDefaultReplication(new Path("/"));
+        if (fs instanceof DistributedFileSystem) {
+            try {
+                int liveNodes = ((DistributedFileSystem) fs).getDataNodeStats().length;
+                if (liveNodes > 0 && defaultReplication > liveNodes) {
+                    defaultReplication = (short) liveNodes;
+                }
+            } catch (IOException e) {
+                // if we fail to fetch live datanodes, fall back to the filesystem default
+            }
+        }
+        if (defaultReplication < 1) {
+            defaultReplication = 1;
+        }
+        setReplicationSize(defaultReplication);
     }
 
     @Override
@@ -550,7 +565,12 @@ public class Hdfs extends BaseSystemObject implements IFSFunctionality {
                         + destPath
                         + ((encoding != null) ? " encoding: " + encoding : ""));
 
-        FSDataOutputStream out = fs.create(getDatapath(destPath), true,
+        Path datapath = getDatapath(destPath);
+        Path parent = datapath.getParent();
+        if (parent != null) {
+            fs.mkdirs(parent);
+        }
+        FSDataOutputStream out = fs.create(datapath, true,
                 bufferSize, replicationSize, blockSize);
 
         DataOutputStream dos = out;

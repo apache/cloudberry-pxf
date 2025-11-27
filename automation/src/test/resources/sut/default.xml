@@ -2,12 +2,16 @@
     <cluster>
         <class>org.greenplum.pxf.automation.components.cluster.SingleCluster</class>
         <host>localhost</host>
+        <phdRoot>/home/gpadmin/workspace/singlecluster</phdRoot>
+        <pxfHome>/usr/local/pxf</pxfHome>
+        <pxfBase>/home/gpadmin/pxf-base</pxfBase>
     </cluster>
 
     <gpdb>
         <class>org.greenplum.pxf.automation.components.gpdb.Gpdb</class>
         <host>localhost</host>
         <masterHost>localhost</masterHost>
+        <port>7000</port>
         <db>pxfautomation</db>
     </gpdb>
 
@@ -15,6 +19,7 @@
         <class>org.greenplum.pxf.automation.components.gpdb.Gpdb</class>
         <host>localhost</host>
         <masterHost>localhost</masterHost>
+        <port>7000</port>
         <db>pxfautomation_encoding</db>
         <encoding>WIN1251</encoding>
         <localeCollate>ru_RU.CP1251</localeCollate>

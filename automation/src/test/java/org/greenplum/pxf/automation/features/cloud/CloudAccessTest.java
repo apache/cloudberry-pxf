@@ -21,6 +21,8 @@ import java.util.UUID;
 public class CloudAccessTest extends BaseFeature {
 
     private static final String PROTOCOL_S3 = "s3a://";
+    private static final String S3_ENDPOINT =
+            System.getProperty("S3_ENDPOINT", System.getenv().getOrDefault("S3_ENDPOINT", "http://localhost:9000"));
 
     private static final String[] PXF_MULTISERVER_COLS = {
             "name text",
@@ -54,6 +56,7 @@ public class CloudAccessTest extends BaseFeature {
         Configuration s3Configuration = new Configuration();
         s3Configuration.set("fs.s3a.access.key", ProtocolUtils.getAccess());
         s3Configuration.set("fs.s3a.secret.key", ProtocolUtils.getSecret());
+        applyS3Defaults(s3Configuration);
 
         FileSystem fs2 = FileSystem.get(URI.create(PROTOCOL_S3 + s3PathRead + fileName), s3Configuration);
         s3Server = new Hdfs(fs2, s3Configuration, true);
@@ -196,5 +199,14 @@ public class CloudAccessTest extends BaseFeature {
         gpdb.createTableAndVerify(exTable);
 
         runSqlTest("features/cloud_access/" + name);
+    }
+
+    private void applyS3Defaults(Configuration configuration) {
+        configuration.set("fs.s3a.endpoint", S3_ENDPOINT);
+        configuration.set("fs.s3a.path.style.access", "true");
+        configuration.set("fs.s3a.connection.ssl.enabled", "false");
+        configuration.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
+        configuration.set("fs.s3a.aws.credentials.provider",
+                "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
     }
 }

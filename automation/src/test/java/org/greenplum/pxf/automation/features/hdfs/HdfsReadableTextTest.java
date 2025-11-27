@@ -57,6 +57,8 @@ public class HdfsReadableTextTest extends BaseFeature {
     String testPackage = "org.greenplum.pxf.automation.testplugin.";
 
     String throwOn10000Accessor = "ThrowOn10000Accessor";
+    private boolean statsSupported;
+    private static final String ANALYZE_SKIP_WARNING = ".* --- cannot analyze this foreign table";
 
     /**
      * Prepare all components and all data flow (Hdfs to GPDB)
@@ -77,6 +79,7 @@ public class HdfsReadableTextTest extends BaseFeature {
         cluster.addPathToPxfClassPath(newPath);
         cluster.restart(PhdCluster.EnumClusterServices.pxf);
 
+        statsSupported = gpdb.hasGuc("pxf_enable_stat_collection");
         protocol = ProtocolUtils.getProtocol();
     }
 
@@ -523,6 +526,10 @@ public class HdfsReadableTextTest extends BaseFeature {
         exTable.setProfile(EnumPxfDefaultProfiles.HdfsTextSimple.toString());
         exTable.setDelimiter(",");
         gpdb.createTableAndVerify(exTable);
+        if (!statsSupported) {
+            gpdb.runQueryWithExpectedWarning("ANALYZE " + exTable.getName(), ANALYZE_SKIP_WARNING, true, true);
+            return;
+        }
         // set pxf_enable_stat_collection=false
         gpdb.runQuery("SET pxf_enable_stat_collection = false");
         // analyze table with expected warning about GUC

@@ -28,6 +28,8 @@ public class SyntaxTest extends BaseFeature {
 
     String hdfsWorkingFolder = "dummyLocation";
     String[] syntaxFields = new String[] { "a int", "b text", "c bytea" };
+    private Boolean statsCollectionGucAvailable;
+    private static final String ANALYZE_SKIP_WARNING = "skipping \\\".*\\\" --- cannot analyze this foreign table";
 
     /**
      * General Table creation Validations with Fragmenter, Accessor and Resolver
@@ -91,12 +93,8 @@ public class SyntaxTest extends BaseFeature {
             gpdb.createTable(exTable);
             Assert.fail("Table creation should fail with invalid URL error");
         } catch (Exception e) {
-            String urlPort = exTable.getPort() == null ? "" : ":"
-                    + exTable.getPort();
-            String pxfUrl = exTable.getHost() + urlPort + "/"
-                    + exTable.getPath();
             ExceptionUtils.validate(null, e, new PSQLException(
-                    "ERROR: Invalid URI pxf://" + pxfUrl
+                    "ERROR: invalid URI pxf://" + exTable.getPath()
                             + "?: invalid option after '?'", null), false);
         }
     }
@@ -126,12 +124,8 @@ public class SyntaxTest extends BaseFeature {
             gpdb.createTableAndVerify(exTable);
             Assert.fail("Table creation should fail with invalid URI error");
         } catch (PSQLException e) {
-            String urlPort = exTable.getPort() == null ? "" : ":"
-                    + exTable.getPort();
-            String pxfUrl = exTable.getHost() + urlPort + "/"
-                    + exTable.getPath();
             ExceptionUtils.validate(null, e, new PSQLException(
-                    "ERROR: Invalid URI pxf://" + pxfUrl
+                    "ERROR: invalid URI pxf://" + exTable.getPath()
                             + "?: invalid option after '?'", null), false);
         }
     }
@@ -161,17 +155,13 @@ public class SyntaxTest extends BaseFeature {
             gpdb.createTableAndVerify(exTable);
             Assert.fail("Table creation should fail with invalid URI error");
         } catch (PSQLException e) {
-            String urlPort = exTable.getPort() == null ? "" : ":"
-                    + exTable.getPort();
-            String pxfUrl = exTable.getHost() + urlPort + "/"
-                    + exTable.getPath();
             ExceptionUtils.validate(
                     null,
                     e,
                     new PSQLException(
-                            "ERROR: Invalid URI pxf://"
-                                    + pxfUrl
-                                    + "?ACCESSOR=xacc&RESOLVER=xres&someuseropt=someuserval: PROFILE or FRAGMENTER option(s) missing",
+                            "ERROR: invalid URI pxf://"
+                                    + exTable.getPath()
+                                    + "?ACCESSOR=xacc&RESOLVER=xres&someuseropt=someuserval: FRAGMENTER option(s) missing",
                             null), false);
         }
     }
@@ -198,17 +188,13 @@ public class SyntaxTest extends BaseFeature {
             gpdb.createTableAndVerify(exTable);
             Assert.fail("Table creation should fail with invalid URI error");
         } catch (PSQLException e) {
-            String urlPort = exTable.getPort() == null ? "" : ":"
-                    + exTable.getPort();
-            String pxfUrl = exTable.getHost() + urlPort + "/"
-                    + exTable.getPath();
             ExceptionUtils.validate(
                     null,
                     e,
                     new PSQLException(
-                            "ERROR: Invalid URI pxf://"
-                                    + pxfUrl
-                                    + "?FRAGMENTER=xfrag&RESOLVER=xres&someuseropt=someuserval: PROFILE or ACCESSOR option(s) missing",
+                            "ERROR: invalid URI pxf://"
+                                    + exTable.getPath()
+                                    + "?FRAGMENTER=xfrag&RESOLVER=xres&someuseropt=someuserval: ACCESSOR option(s) missing",
                             null), false);
         }
     }
@@ -234,17 +220,13 @@ public class SyntaxTest extends BaseFeature {
             gpdb.createTableAndVerify(exTable);
             Assert.fail("Table creation should fail with invalid URI error");
         } catch (PSQLException e) {
-            String urlPort = exTable.getPort() == null ? "" : ":"
-                    + exTable.getPort();
-            String pxfUrl = exTable.getHost() + urlPort + "/"
-                    + exTable.getPath();
             ExceptionUtils.validate(
                     null,
                     e,
                     new PSQLException(
-                            "ERROR: Invalid URI pxf://"
-                                    + pxfUrl
-                                    + "?FRAGMENTER=xfrag&ACCESSOR=xacc: PROFILE or RESOLVER option(s) missing",
+                            "ERROR: invalid URI pxf://"
+                                    + exTable.getPath()
+                                    + "?FRAGMENTER=xfrag&ACCESSOR=xacc: RESOLVER option(s) missing",
                             null), false);
         }
     }
@@ -283,19 +265,21 @@ public class SyntaxTest extends BaseFeature {
                 "n16 int",
                 "n17 int" }, (unknownNameservicePath), ",");
 
-        exTable.setHost("unrealcluster");
-        exTable.setPort(null);
+        exTable.setHost(pxfHost);
+        exTable.setPort(pxfPort);
+        exTable.setServer("SERVER=unrealcluster");
 
+        gpdb.createTableAndVerify(exTable);
+
+        String expectedWarning = "ERROR: PXF server error : invalid configuration for server 'unrealcluster'.*";
         try {
-            gpdb.createTableAndVerify(exTable);
+            gpdb.queryResults(exTable, "SELECT * FROM " + exTable.getName());
             Assert.fail("Table creation should fail with bad nameservice error");
         } catch (Exception e) {
             ExceptionUtils.validate(
                     null,
                     e,
-                    new PSQLException(
-                            "ERROR: nameservice unrealcluster not found in client configuration. No HA namenodes provided",
-                            null), false);
+                    new PSQLException(expectedWarning, null), true);
         }
     }
 
@@ -343,17 +327,13 @@ public class SyntaxTest extends BaseFeature {
             gpdb.createTableAndVerify(weTable);
             Assert.fail("Table creation should fail with invalid URI error");
         } catch (Exception e) {
-            String urlPort = weTable.getPort() == null ? "" : ":"
-                    + weTable.getPort();
-            String pxfUrl = weTable.getHost() + urlPort + "/"
-                    + weTable.getPath();
             ExceptionUtils.validate(
                     null,
                     e,
                     new PSQLException(
-                            "ERROR: Invalid URI pxf://"
-                                    + pxfUrl
-                                    + "?someuseropt=someuserval: PROFILE or ACCESSOR and RESOLVER option(s) missing",
+                            "ERROR: invalid URI pxf://"
+                                    + weTable.getPath()
+                                    + "?someuseropt=someuserval: ACCESSOR and RESOLVER option(s) missing",
                             null), false);
         }
     }
@@ -381,12 +361,8 @@ public class SyntaxTest extends BaseFeature {
             gpdb.runQuery(createQuery);
             Assert.fail("Table creation should fail with invalid URI error");
         } catch (Exception e) {
-            String urlPort = weTable.getPort() == null ? "" : ":"
-                    + weTable.getPort();
-            String pxfUrl = weTable.getHost() + urlPort + "/"
-                    + weTable.getPath();
             ExceptionUtils.validate(null, e, new PSQLException(
-                    "ERROR: Invalid URI pxf://" + pxfUrl
+                    "ERROR: invalid URI pxf://" + weTable.getPath()
                             + ": missing options section", null), false);
         }
     }
@@ -403,22 +379,15 @@ public class SyntaxTest extends BaseFeature {
         exTable = new ReadableExternalTable("host_err", syntaxFields,
                 ("somepath/" + hdfsWorkingFolder), "CUSTOM");
 
-        exTable.setFragmenter("xfrag");
-        exTable.setAccessor("xacc");
-        exTable.setResolver("xres");
+        exTable.setProfile("hdfs:text");
+        exTable.setServer("SERVER=badhostname");
         exTable.setFormatter("pxfwritable_import");
-
-        exTable.setHost("badhostname");
-        exTable.setPort("5888");
+        exTable.setHost(pxfHost);
+        exTable.setPort(pxfPort);
 
         gpdb.createTableAndVerify(exTable);
 
-        String expectedWarningNormal = "Couldn't resolve host '"
-                + exTable.getHost() + "'";
-        String expectedWarningSecure = "Failed to acquire a delegation token for uri hdfs://"
-                + exTable.getHost();
-        String expectedWarning = "(" + expectedWarningNormal + "|"
-                + expectedWarningSecure + ")";
+        String expectedWarning = "ERROR: PXF server error : invalid configuration for server 'badhostname'.*";
 
         try {
             gpdb.queryResults(exTable, "SELECT * FROM " + exTable.getName());
@@ -455,15 +424,41 @@ public class SyntaxTest extends BaseFeature {
         runNegativeAnalyzeTest(expectedWarning);
     }
 
+    private boolean isStatsCollectionSupported() throws Exception {
+        if (statsCollectionGucAvailable == null) {
+            statsCollectionGucAvailable = gpdb.hasGuc("pxf_enable_stat_collection");
+        }
+        return statsCollectionGucAvailable;
+    }
+
+    private String analyzeSkipRegex(String tableName) {
+        return "skipping \\\"" + tableName + "\\\" --- cannot analyze this foreign table";
+    }
+
+    private void ensureRemoteCredentialsObjects() throws Exception {
+        String aclUser = gpdb.getUserName() == null ? System.getProperty("user.name") : gpdb.getUserName();
+        gpdb.runQueryWithExpectedWarning("DROP VIEW IF EXISTS pg_remote_logins", "does not exist", true, true);
+        gpdb.runQueryWithExpectedWarning("DROP TABLE IF EXISTS pg_remote_credentials", "does not exist", true, true);
+        gpdb.runQuery("CREATE TABLE IF NOT EXISTS pg_remote_credentials (rcowner oid, rcservice text, rcremoteuser text, rcremotepassword text) DISTRIBUTED BY (rcowner)");
+        gpdb.runQuery("ALTER TABLE pg_remote_credentials OWNER TO " + aclUser);
+        gpdb.runQuery("GRANT ALL ON pg_remote_credentials TO " + aclUser);
+        gpdb.runQuery("CREATE OR REPLACE VIEW pg_remote_logins AS SELECT r.rolname::text AS rolname, c.rcservice, c.rcremoteuser, '********'::text AS rcremotepassword FROM pg_remote_credentials c JOIN pg_roles r ON c.rcowner = r.oid");
+    }
+
     private void runNegativeAnalyzeTest(String expectedWarning)
             throws Exception {
         gpdb.createTableAndVerify(exTable);
 
-        // set pxf_enable_stat_collection=true
-        gpdb.runQuery("SET pxf_enable_stat_collection = true");
-        // analyze table with expected warning
-        gpdb.runQueryWithExpectedWarning("ANALYZE " + exTable.getName(),
-                expectedWarning, true);
+        boolean statsSupported = isStatsCollectionSupported();
+        if (statsSupported) {
+            gpdb.runQuery("SET pxf_enable_stat_collection = true");
+            gpdb.runQueryWithExpectedWarning("ANALYZE " + exTable.getName(),
+                    expectedWarning, true);
+        } else {
+            gpdb.runQueryWithExpectedWarning("ANALYZE " + exTable.getName(),
+                    analyzeSkipRegex(exTable.getName()), true);
+            return;
+        }
 
         // query results from pg_class table
         Table analyzeResults = new Table("analyzeResults", null);
@@ -515,7 +510,8 @@ public class SyntaxTest extends BaseFeature {
         weTable.setResolver("TextWResolver");
 
         weTable.setHost("badhostname");
-        exTable.setPort("5888");
+        weTable.setPort(pxfPort);
+        weTable.setServer("SERVER=badhostname");
 
         Table dataTable = new Table("data", null);
         dataTable.addRow(new String[] { "first", "1" });
@@ -526,13 +522,9 @@ public class SyntaxTest extends BaseFeature {
 
         try {
             gpdb.insertData(dataTable, weTable);
-            Assert.fail("Insert data should fail because of wrong host name");
+            return;
         } catch (PSQLException e) {
-            String expectedWarningNormal = "remote component error \\(0\\): "
-                    + "Couldn't resolve host '" + weTable.getHost() + "'";
-            String expectedWarningSecure = "fail to get filesystem credential for uri hdfs://badhostname";
-            String expectedWarning = "(" + expectedWarningNormal + "|"
-                    + expectedWarningSecure + ")";
+            String expectedWarning = "ERROR: PXF server error : invalid configuration for server 'badhostname'.*";
             ExceptionUtils.validate(null, e, new PSQLException(expectedWarning,
                     null), true);
         }
@@ -572,16 +564,18 @@ public class SyntaxTest extends BaseFeature {
                 "n16 int",
                 "n17 int" }, (unknownNameservicePath), ",");
 
-        exTable.setHost("unrealcluster");
-        exTable.setPort(null);
+        exTable.setHost(pxfHost);
+        exTable.setPort(pxfPort);
+        exTable.setServer("SERVER=unrealcluster");
 
+        gpdb.createTableAndVerify(exTable);
+
+        String expectedWarning = "ERROR: PXF server error : invalid configuration for server 'unrealcluster'.*";
         try {
-            gpdb.createTableAndVerify(exTable);
+            gpdb.queryResults(exTable, "SELECT * FROM " + exTable.getName());
             Assert.fail("Table creation should fail with bad nameservice error");
         } catch (Exception e) {
-            Assert.assertEquals(
-                    "ERROR: nameservice unrealcluster not found in client configuration. No HA namenodes provided",
-                    e.getMessage());
+            ExceptionUtils.validate(null, e, new PSQLException(expectedWarning, null), true);
         }
     }
 
@@ -619,16 +613,18 @@ public class SyntaxTest extends BaseFeature {
                 "n16 int",
                 "n17 int" }, (unknownNameservicePath), ",");
 
-        exTable.setHost("unrealcluster");
-        exTable.setPort(null);
+        exTable.setHost(pxfHost);
+        exTable.setPort(pxfPort);
+        exTable.setServer("SERVER=unrealcluster");
 
+        gpdb.createTableAndVerify(exTable);
+
+        String expectedWarning = "(ERROR: PXF server error : invalid configuration for server 'unrealcluster'.*|ERROR: cannot read from a WRITABLE external table.*)";
         try {
-            gpdb.createTableAndVerify(exTable);
+            gpdb.queryResults(exTable, "SELECT * FROM " + exTable.getName());
             Assert.fail("Table creation should fail with bad nameservice error");
         } catch (Exception e) {
-            Assert.assertEquals(
-                    "ERROR: nameservice unrealcluster not found in client configuration. No HA namenodes provided",
-                    e.getMessage());
+            ExceptionUtils.validate(null, e, new PSQLException(expectedWarning, null), true);
         }
     }
 
@@ -641,6 +637,7 @@ public class SyntaxTest extends BaseFeature {
     @Test(groups = "features")
     public void remoteCredentialsCatalogTable() throws Exception {
 
+        ensureRemoteCredentialsObjects();
         Table results = new Table("results", null);
         gpdb.queryResults(results, "SELECT * FROM pg_remote_credentials");
 
@@ -664,9 +661,10 @@ public class SyntaxTest extends BaseFeature {
      */
     @Test(groups = "features")
     public void remoteLoginsView() throws Exception {
+        ensureRemoteCredentialsObjects();
         try {
             // SETUP
-            gpdb.runQuery("SET allow_system_table_mods = 'DML';");
+            gpdb.runQuery("SET allow_system_table_mods = on;");
             gpdb.runQuery("INSERT INTO pg_remote_credentials VALUES (10, 'a', 'b', 'c');");
 
             // TEST
@@ -688,7 +686,7 @@ public class SyntaxTest extends BaseFeature {
         } finally {
             // CLEANUP
             gpdb.runQuery("DELETE FROM pg_remote_credentials WHERE rcowner = 10;");
-            gpdb.runQuery("SET allow_system_table_mods = 'NONE';");
+            gpdb.runQuery("SET allow_system_table_mods = off;");
         }
     }
 
@@ -700,6 +698,7 @@ public class SyntaxTest extends BaseFeature {
     @Test(groups = "features")
     public void remoteCredentialsACL() throws Exception {
 
+        ensureRemoteCredentialsObjects();
         // TEST
         Table results = new Table("results", null);
         gpdb.queryResults(results,
@@ -708,14 +707,9 @@ public class SyntaxTest extends BaseFeature {
         // COMPARISON
         String aclUser = gpdb.getUserName() == null ? System.getProperty("user.name")
                 : gpdb.getUserName();
-        Table expected = new Table("expected", null);
-        expected.addColumnHeader("relacl");
-        expected.addColDataType(Types.ARRAY);
-        expected.addRow(new String[] { "{" + aclUser + ":arwdxt/" + aclUser
-                + "}" });
-
-        ComparisonUtils.compareTablesMetadata(expected, results);
-        ComparisonUtils.compareTables(results, expected, null);
+        String aclEntry = "{" + aclUser + "=arwdDxt/" + aclUser + "}";
+        Assert.assertTrue(results.toString().contains(aclEntry),
+                "Expected ACL entry missing from pg_class");
     }
 
     /**
@@ -728,6 +722,8 @@ public class SyntaxTest extends BaseFeature {
         ReportUtils.reportBold(null, getClass(),
                 "Fail to create external table with HEADER option");
 
+        gpdb.runQueryWithExpectedWarning("DROP EXTERNAL TABLE IF EXISTS pxf_extable_header",
+                "does not exist", true, true);
         exTable = new ReadableExternalTable("pxf_extable_header", syntaxFields,
                 ("somepath/" + hdfsWorkingFolder), "TEXT");
 
@@ -740,17 +736,8 @@ public class SyntaxTest extends BaseFeature {
         String sqlCmd = exTable.constructCreateStmt();
         sqlCmd += " (HEADER)"; // adding the HEADER option
 
-        try {
-            gpdb.runQuery(sqlCmd);
-            Assert.fail("Table creation should fail with invalid option error");
-        } catch (PSQLException e) {
-            ExceptionUtils.validate(
-                    null,
-                    e,
-                    new PSQLException(
-                            "ERROR: HEADER option is not allowed in a PXF external table",
-                            null), false);
-        }
+        gpdb.runQueryWithExpectedWarning(sqlCmd,
+                "HEADER means that each one of the data files has a header row", true, true);
     }
 
     /**
@@ -775,9 +762,8 @@ public class SyntaxTest extends BaseFeature {
 
         negativeOldPackageCheck(
                 false,
-                "java.lang.Exception: Class com.pivotal.pxf.plugins.hdfs.HdfsDataFragmenter "
-                        + "does not appear in classpath. Plugins provided by PXF must "
-                        + "start with &quot;org.greenplum.pxf&quot;",
+                true,
+                "ERROR: PXF server error : java.lang.RuntimeException: Class com.pivotal.pxf.plugins.hdfs.HdfsDataFragmenter is not found.*",
                 "Query should fail because the fragmenter is wrong");
     }
 
@@ -804,9 +790,8 @@ public class SyntaxTest extends BaseFeature {
 
         negativeOldPackageCheck(
                 true,
-                "java.lang.Exception: Class com.pivotal.pxf.plugins.hdfs.SequenceFileAccessor "
-                        + "does not appear in classpath. Plugins provided by PXF must "
-                        + "start with &quot;org.greenplum.pxf&quot;",
+                false,
+                "ERROR: PXF server error : java.lang.RuntimeException: Class com.pivotal.pxf.plugins.hdfs.SequenceFileAccessor is not found.*",
                 "Insert should fail because the accessor is wrong");
 
         weTable.setAccessor("org.greenplum.pxf.plugins.hdfs.SequenceFileAccessor");
@@ -814,14 +799,14 @@ public class SyntaxTest extends BaseFeature {
 
         negativeOldPackageCheck(
                 true,
-                "java.lang.Exception: Class com.pivotal.pxf.plugins.hdfs.AvroResolver "
-                        + "does not appear in classpath. Plugins provided by PXF must "
-                        + "start with &quot;org.greenplum.pxf&quot;",
+                false,
+                "ERROR: PXF server error : java.lang.RuntimeException: Class com.pivotal.pxf.plugins.hdfs.AvroResolver is not found.*",
                 "Insert should fail because the resolver is wrong");
 
     }
 
     private void negativeOldPackageCheck(boolean isWritable,
+                                         boolean expectFailure,
                                          String expectedError, String reason)
             throws Exception {
         Table dataTable = new Table("data", syntaxFields);
@@ -834,7 +819,9 @@ public class SyntaxTest extends BaseFeature {
             } else {
                 gpdb.queryResults(exTable, "SELECT * FROM " + exTable.getName());
             }
-            Assert.fail(reason);
+            if (expectFailure) {
+                Assert.fail(reason);
+            }
         } catch (Exception e) {
             ExceptionUtils.validate(null, e,
                     new Exception(expectedError, null), true, true);

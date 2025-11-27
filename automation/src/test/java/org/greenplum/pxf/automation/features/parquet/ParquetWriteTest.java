@@ -319,7 +319,7 @@ public class ParquetWriteTest extends BaseWritableFeature {
         String readTableName = "pxf_parquet_write_list_read_with_hive_readable";
         String fullTestPath = hdfsPath + "parquet_write_list_read_with_hive";
 
-        prepareWritableExternalTable(writeTableName, PARQUET_LIST_TABLE_COLUMNS, fullTestPath, null);
+        prepareWritableExternalTable(writeTableName, PARQUET_LIST_TABLE_COLUMNS, fullTestPath, new String[] { "COMPRESSION_CODEC=uncompressed" });
         insertArrayDataWithoutNulls(writableExTable, 33);
 
         // load the data into hive to check that PXF-written Parquet files can be read by other data

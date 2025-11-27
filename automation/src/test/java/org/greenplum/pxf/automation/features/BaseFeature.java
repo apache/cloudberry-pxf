@@ -7,6 +7,16 @@ import org.postgresql.util.PSQLException;
 
 public abstract class BaseFeature extends BaseFunctionality {
 
+    @Override
+    protected void beforeMethod() throws Exception {
+        super.beforeMethod();
+        // In case previous tests removed the working directory (e.g. during retries),
+        // ensure it exists before running the next test.
+        if (hdfs != null && !hdfs.doesFileExist(hdfs.getWorkingDirectory())) {
+            hdfs.createDirectory(hdfs.getWorkingDirectory());
+        }
+    }
+
     protected void createTable(ReadableExternalTable gpdbExternalTable) throws Exception {
 
         gpdbExternalTable.setHost(pxfHost);

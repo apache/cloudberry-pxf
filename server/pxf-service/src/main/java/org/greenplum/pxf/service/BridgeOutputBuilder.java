@@ -478,13 +478,18 @@ public class BridgeOutputBuilder {
     private String fieldListToCSVString(List<OneField> fields) {
         return fields.stream()
                 .map(field -> {
+                    if (field == null) {
+                        return greenplumCSV.getValueOfNull();
+                    }
                     // Check first if the field.val is null then using .toString() is safe in else branches.
                     if (field.val == null) {
                         return greenplumCSV.getValueOfNull();
                     } else if (field.type == DataType.BYTEA.getOID()) {
                         // check for Format Type here. if the Format Type is CSV, we should escape using single \
                         // for Text or Custom Format types, it should \\
-                        String hexPrepend = gpdbTableformat.equalsIgnoreCase("csv") ? "\\x" : "\\\\x";
+                        String hexPrepend = (gpdbTableformat != null && gpdbTableformat.equalsIgnoreCase("csv"))
+                                ? "\\x"
+                                : "\\\\x";
                         return hexPrepend + Hex.encodeHexString((byte[]) field.val);
                     } else if (field.type == DataType.NUMERIC.getOID() || !DataType.isTextForm(field.type)) {
                         return field.val.toString();

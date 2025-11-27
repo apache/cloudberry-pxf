@@ -486,7 +486,7 @@ main() {
   prepare_hadoop_stack
   deploy_minio
   health_check
-  #run_tests
+  run_tests
   log "entrypoint finished; keeping container alive"
 }
 

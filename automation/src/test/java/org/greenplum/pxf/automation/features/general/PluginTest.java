@@ -23,6 +23,7 @@ public class PluginTest extends BaseFeature {
 
     String[] testPluginFileNames = { "DummyFragmenter", "DummyAccessor", "DummyResolver",
             "FaultyGUCFragmenter", "FaultyGUCAccessor" };
+    private boolean remoteCredentialsGucSupported;
 
     @Override
     public void beforeClass() throws Exception {
@@ -39,6 +40,7 @@ public class PluginTest extends BaseFeature {
         // add new path to classpath file and restart PXF service
         cluster.addPathToPxfClassPath(newPath);
         cluster.restart(PhdCluster.EnumClusterServices.pxf);
+        remoteCredentialsGucSupported = gpdb.hasGuc("pxf_remote_service_login");
     }
 
     /**
@@ -78,7 +80,8 @@ public class PluginTest extends BaseFeature {
 
         ComparisonUtils.compareTables(exTable, dataCompareTable, null);
 
-        gpdb.analyze(exTable);
+        gpdb.runQueryWithExpectedWarning("ANALYZE " + exTable.getName(),
+                ".* --- cannot analyze this foreign table", true, true);
     }
 
     /**
@@ -164,16 +167,16 @@ public class PluginTest extends BaseFeature {
         exTable.setHost(pxfHost);
         exTable.setPort(pxfPort);
 
-        gpdb.runQuery("SET pxf_remote_service_login = 'mommy'");
-        gpdb.runQuery("SET pxf_remote_service_secret = 'daddy'");
+        String expectedLogin = remoteCredentialsGucSupported ? "mommy" : "null";
+        String expectedSecret = remoteCredentialsGucSupported ? "daddy" : "null";
+        setRemoteCredentials("mommy", "daddy");
         gpdb.createTableAndVerify(exTable);
         try {
             gpdb.queryResults(exTable, "SELECT num1, t1 FROM " + exTable.getName() + " ORDER BY num1, t1");
         } catch (Exception e) {
-            ExceptionUtils.validate(null, e, new PSQLException("FaultyGUCFragmenter: login mommy secret daddy", null), true);
+            ExceptionUtils.validate(null, e, new PSQLException("FaultyGUCFragmenter: login " + expectedLogin + " secret " + expectedSecret, null), true);
         } finally {
-            gpdb.runQuery("SET pxf_remote_service_login = ''");
-            gpdb.runQuery("SET pxf_remote_service_secret = ''");
+            clearRemoteCredentials();
         }
     }
 
@@ -193,16 +196,16 @@ public class PluginTest extends BaseFeature {
         exTable.setHost(pxfHost);
         exTable.setPort(pxfPort);
 
-        gpdb.runQuery("SET pxf_remote_service_login = 'mommy'");
-        gpdb.runQuery("SET pxf_remote_service_secret = 'daddy'");
+        String expectedLogin = remoteCredentialsGucSupported ? "mommy" : "null";
+        String expectedSecret = remoteCredentialsGucSupported ? "daddy" : "null";
+        setRemoteCredentials("mommy", "daddy");
         gpdb.createTableAndVerify(exTable);
         try {
             gpdb.queryResults(exTable, "SELECT num1, t1 FROM " + exTable.getName() + " ORDER BY num1, t1");
         } catch (Exception e) {
-            ExceptionUtils.validate(null, e, new PSQLException("FaultyGUCAccessor: login mommy secret daddy", null), true);
+            ExceptionUtils.validate(null, e, new PSQLException("FaultyGUCAccessor: login " + expectedLogin + " secret " + expectedSecret, null), true);
         } finally {
-            gpdb.runQuery("SET pxf_remote_service_login = ''");
-            gpdb.runQuery("SET pxf_remote_service_secret = ''");
+            clearRemoteCredentials();
         }
     }
 
@@ -222,8 +225,7 @@ public class PluginTest extends BaseFeature {
         exTable.setHost(pxfHost);
         exTable.setPort(pxfPort);
 
-        gpdb.runQuery("SET pxf_remote_service_login = ''");
-        gpdb.runQuery("SET pxf_remote_service_secret = ''");
+        clearRemoteCredentials();
         gpdb.createTableAndVerify(exTable);
         try {
             gpdb.queryResults(exTable, "SELECT num1, t1 FROM " + exTable.getName() + " ORDER BY num1, t1");
@@ -248,11 +250,28 @@ public class PluginTest extends BaseFeature {
         exTable.setHost(pxfHost);
         exTable.setPort(pxfPort);
 
+        clearRemoteCredentials();
         gpdb.createTableAndVerify(exTable);
         try {
             gpdb.queryResults(exTable, "SELECT num1, t1 FROM " + exTable.getName() + " ORDER BY num1, t1");
         } catch (Exception e) {
             ExceptionUtils.validate(null, e, new PSQLException("FaultyGUCAccessor: login null secret null", null), true);
         }
+    }
+
+    private void setRemoteCredentials(String login, String secret) throws Exception {
+        if (!remoteCredentialsGucSupported) {
+            return;
+        }
+        gpdb.runQuery("SET pxf_remote_service_login = '" + login + "'");
+        gpdb.runQuery("SET pxf_remote_service_secret = '" + secret + "'");
+    }
+
+    private void clearRemoteCredentials() throws Exception {
+        if (!remoteCredentialsGucSupported) {
+            return;
+        }
+        gpdb.runQuery("SET pxf_remote_service_login = ''");
+        gpdb.runQuery("SET pxf_remote_service_secret = ''");
     }
 }

@@ -39,6 +39,13 @@ public class HiveMetastoreCompatibilityTest {
     private ThriftHiveMetastore.Client mockThriftClient;
     private Map<String, String> hiveTableParameters;
 
+    private HiveConf newHiveConf() {
+        // Do not pick up any real hive-site.xml that could point to a live metastore
+        HiveConf hiveConf = new HiveConf(new Configuration(false), HiveConf.class);
+        hiveConf.setVar(HiveConf.ConfVars.METASTOREURIS, "");
+        return hiveConf;
+    }
+
     @BeforeEach
     @SuppressWarnings("unchecked")
     public void setup() throws MetaException {
@@ -60,8 +67,7 @@ public class HiveMetastoreCompatibilityTest {
 
             when(mockThriftClient.get_table_req(any())).thenThrow(new MetaException("some meta failure"));
 
-            Configuration configuration = new Configuration();
-            hiveCompatiblityClient = new HiveMetaStoreClientCompatibility1xx(new HiveConf(configuration, HiveConf.class));
+            hiveCompatiblityClient = new HiveMetaStoreClientCompatibility1xx(newHiveConf());
             Exception e = assertThrows(MetaException.class,
                     () -> hiveCompatiblityClient.getTable("default", name));
             assertEquals("some meta failure", e.getMessage());
@@ -79,8 +85,7 @@ public class HiveMetastoreCompatibilityTest {
 
             when(mockThriftClient.get_table_req(any())).thenThrow(new NoSuchObjectException("where's my table"));
 
-            Configuration configuration = new Configuration();
-            hiveCompatiblityClient = new HiveMetaStoreClientCompatibility1xx(new HiveConf(configuration, HiveConf.class));
+            hiveCompatiblityClient = new HiveMetaStoreClientCompatibility1xx(newHiveConf());
             Exception e = assertThrows(NoSuchObjectException.class,
                     () -> hiveCompatiblityClient.getTable("default", name));
             assertEquals("where's my table", e.getMessage());
@@ -102,8 +107,7 @@ public class HiveMetastoreCompatibilityTest {
             when(mockThriftClient.get_table_req(any())).thenThrow(new TApplicationException("fallback"));
             when(mockThriftClient.get_table("default", name)).thenReturn(hiveTable);
 
-            Configuration configuration = new Configuration();
-            hiveCompatiblityClient = new HiveMetaStoreClientCompatibility1xx(new HiveConf(configuration, HiveConf.class));
+            hiveCompatiblityClient = new HiveMetaStoreClientCompatibility1xx(newHiveConf());
             Table resultTable = hiveCompatiblityClient.getTable("default", name);
             assertEquals(name, resultTable.getTableName());
         }
@@ -121,8 +125,7 @@ public class HiveMetastoreCompatibilityTest {
             when(mockThriftClient.get_table_req(any())).thenThrow(new TApplicationException("fallback"));
             when(mockThriftClient.get_table("default", name)).thenThrow(new TTransportException("oops. where's the metastore?"));
 
-            Configuration configuration = new Configuration();
-            hiveCompatiblityClient = new HiveMetaStoreClientCompatibility1xx(new HiveConf(configuration, HiveConf.class));
+            hiveCompatiblityClient = new HiveMetaStoreClientCompatibility1xx(newHiveConf());
             Exception e = assertThrows(TTransportException.class,
                     () -> hiveCompatiblityClient.getTable("default", name));
             assertEquals("oops. where's the metastore?", e.getMessage());
@@ -140,8 +143,7 @@ public class HiveMetastoreCompatibilityTest {
 
             when(mockThriftClient.get_table_req(any())).thenThrow(new TTransportException("oops. where's the metastore?"));
 
-            Configuration configuration = new Configuration();
-            hiveCompatiblityClient = new HiveMetaStoreClientCompatibility1xx(new HiveConf(configuration, HiveConf.class));
+            hiveCompatiblityClient = new HiveMetaStoreClientCompatibility1xx(newHiveConf());
             Exception e = assertThrows(TTransportException.class,
                     () -> hiveCompatiblityClient.getTable("default", name));
             assertEquals("oops. where's the metastore?", e.getMessage());
@@ -167,8 +169,7 @@ public class HiveMetastoreCompatibilityTest {
                     .thenThrow(new TTransportException("oops. where's the metastore? 3"))
                     .thenReturn(hiveTable);
 
-            Configuration configuration = new Configuration();
-            HiveConf hiveConf = new HiveConf(configuration, HiveConf.class);
+            HiveConf hiveConf = newHiveConf();
             hiveConf.setIntVar(HiveConf.ConfVars.METASTORETHRIFTFAILURERETRIES, 0);
 
             IMetaStoreClient client = hiveClientFactory.initHiveClient(hiveConf).getClient();
@@ -196,8 +197,7 @@ public class HiveMetastoreCompatibilityTest {
                             .thenThrow(new TTransportException("oops. where's the metastore?"));
                 }
         )) {
-            Configuration configuration = new Configuration();
-            HiveConf hiveConf = new HiveConf(configuration, HiveConf.class);
+            HiveConf hiveConf = newHiveConf();
             hiveConf.setIntVar(HiveConf.ConfVars.METASTORETHRIFTFAILURERETRIES, 5);
             hiveConf.setVar(HiveConf.ConfVars.METASTOREURIS, "test://test:1234");
 
@@ -240,8 +240,7 @@ public class HiveMetastoreCompatibilityTest {
                      }
 
              )) {
-            Configuration configuration = new Configuration();
-            HiveConf hiveConf = new HiveConf(configuration, HiveConf.class);
+            HiveConf hiveConf = newHiveConf();
             hiveConf.setIntVar(HiveConf.ConfVars.METASTORETHRIFTFAILURERETRIES, 1);
             hiveConf.setVar(HiveConf.ConfVars.METASTOREURIS, "test://test:1234");
 
@@ -303,8 +302,7 @@ public class HiveMetastoreCompatibilityTest {
                          return null;
                      }
              )) {
-            Configuration configuration = new Configuration();
-            HiveConf hiveConf = new HiveConf(configuration, HiveConf.class);
+            HiveConf hiveConf = newHiveConf();
             hiveConf.setIntVar(HiveConf.ConfVars.METASTORETHRIFTFAILURERETRIES, 5);
             hiveConf.setVar(HiveConf.ConfVars.METASTOREURIS, "test://test:1234");
 

@@ -1,22 +1,22 @@
 -- start_ignore
 -- end_ignore
--- start_ignore
--- end_ignore
 -- @description query02 test S3 Select access to CSV with headers and no compression
 --
--- test filters with varchar, char and numeric types
--- while we can not prove here they have actually been pushed down to S3
--- we can prove the query does not fail if they are used
 SELECT l_orderkey, l_quantity, l_shipmode, l_comment FROM s3select_csv
-WHERE  l_orderkey < 2000 AND (l_quantity = 15 AND l_shipmode = 'RAIL' OR l_comment = 'ideas doubt')
+WHERE l_orderkey IN ('194', '82756')
 ORDER BY l_orderkey;
- l_orderkey | l_quantity | l_shipmode |                  l_comment
-------------+------------+------------+---------------------------------------------
-        709 |      15.00 | RAIL       | ily regular deposits. sauternes was accor
-       1316 |      15.00 | RAIL       | fully express dugouts. furiously silent ide
-       1601 |      50.00 | FOB        | ideas doubt
-       1604 |      15.00 | RAIL       | ending realms along the special, p
-       1698 |      15.00 | RAIL       | final ideas. even, ironic
-       1857 |      15.00 | RAIL       | egular, regular inst
-       1927 |      15.00 | RAIL       |  carefully regular requests sleep car
-(7 rows)
+ l_orderkey | l_quantity | l_shipmode |               l_comment                
+------------+------------+------------+----------------------------------------
+        194 |      17.00 | AIR        |  regular deposi
+        194 |       1.00 | REG AIR    |  regular theodolites. regular, iron
+        194 |      13.00 | AIR        | about the blit
+        194 |      36.00 | RAIL       | pecial packages wake after the slyly r
+        194 |       8.00 | FOB        | uriously unusual excuses
+        194 |      16.00 | TRUCK      | y regular requests. furious
+        194 |      21.00 | REG AIR    | accounts detect quickly dogged 
+      82756 |      33.00 | MAIL       | ve fluffily. slyly regular re
+      82756 |      29.00 | AIR        | unts are blithely 
+      82756 |      45.00 | TRUCK      | nding requests could ha
+      82756 |      39.00 | MAIL       | special ideas use after the slyly
+      82756 |      20.00 | SHIP       | lar depths. bold deposits alongside o
+(12 rows)

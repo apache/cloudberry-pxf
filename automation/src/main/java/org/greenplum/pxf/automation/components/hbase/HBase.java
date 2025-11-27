@@ -547,6 +547,10 @@ public class HBase extends BaseSystemObject implements IDbFunctionality {
                 Action.WRITE, Action.ADMIN);
     }
 
+    public Configuration getConfiguration() {
+        return config;
+    }
+
     public void setHbaseRoot(String hbaseRoot) {
         this.hbaseRoot = hbaseRoot;
     }

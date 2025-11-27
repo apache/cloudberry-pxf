@@ -365,7 +365,7 @@ public class HiveOrcTest extends HiveBaseTest {
 
         // Perform Analyze on external table and check suitable Warnings.
         gpdb.runQueryWithExpectedWarning("ANALYZE " + exTable.getName(),
-                "ANALYZE for HiveRc, HiveText, and HiveOrc plugins is not supported", true);
+                ".* --- cannot analyze this foreign table", true, true);
 
         runSqlTest("features/hive/default_analyze");
     }
