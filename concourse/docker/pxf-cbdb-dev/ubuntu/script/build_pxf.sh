@@ -13,6 +13,10 @@ sudo apt install -y openjdk-11-jdk maven
 
 cd /home/gpadmin/workspace/cloudberry-pxf
 
+# Ensure gpadmin owns the source directory
+sudo chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry-pxf
+sudo chown -R gpadmin:gpadmin /usr/local/cloudberry-db
+
 # mirror
 # If the download fails, you can uncomment the line to switch to another mirror address.
 # Configure Gradle to use Aliyun mirror

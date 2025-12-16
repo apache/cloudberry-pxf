@@ -369,7 +369,7 @@ public class ParquetWriteTest extends BaseWritableFeature {
         }
 
         // use the Hive JDBC profile to avoid using the PXF Parquet reader implementation
-        String jdbcUrl = HIVE_JDBC_URL_PREFIX + hive.getHost() + ":10000/default";
+        String jdbcUrl = HIVE_JDBC_URL_PREFIX + hive.getHost() + ":10000/default;auth=noSasl";
 
         ExternalTable exHiveJdbcTable = TableFactory.getPxfJdbcReadableTable(
                 readTableName, PARQUET_PRIMITIVE_ARRAYS_TABLE_COLUMNS_READ_FROM_HIVE,

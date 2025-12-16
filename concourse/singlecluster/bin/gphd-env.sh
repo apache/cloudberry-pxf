@@ -43,6 +43,7 @@ export HIVE_BIN=${HIVE_ROOT}/bin
 
 export HADOOP_CONF=${HADOOP_ROOT}/etc/hadoop
 export ZOOKEEPER_CONF=${ZOOKEEPER_ROOT}/conf
+export HBASE_HOME=${HBASE_ROOT}
 export HBASE_CONF=${HBASE_ROOT}/conf
 export HIVE_CONF=${HIVE_ROOT}/conf
 export TEZ_CONF=${TEZ_ROOT}/conf

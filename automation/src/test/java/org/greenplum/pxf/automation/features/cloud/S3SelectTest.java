@@ -5,6 +5,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.greenplum.pxf.automation.components.hdfs.Hdfs;
 import org.greenplum.pxf.automation.features.BaseFeature;
 import org.greenplum.pxf.automation.structures.tables.pxf.ReadableExternalTable;
+import org.greenplum.pxf.automation.utils.system.ProtocolEnum;
 import org.greenplum.pxf.automation.utils.system.ProtocolUtils;
 import org.testng.annotations.Test;
 
@@ -55,6 +56,9 @@ public class S3SelectTest extends BaseFeature {
      */
     @Override
     public void beforeClass() throws Exception {
+        if (ProtocolUtils.getProtocol() == ProtocolEnum.HDFS) {
+            return;
+        }
         // Initialize server objects
         s3Path = String.format("gpdb-ud-scratch/tmp/pxf_automation_data/%s/s3select/", UUID.randomUUID().toString());
         Configuration s3Configuration = new Configuration();
@@ -73,7 +77,7 @@ public class S3SelectTest extends BaseFeature {
         }
     }
 
-    @Test(groups = {"gpdb", "s3"})
+    @Test(groups = {"s3"})
     public void testPlainCsvWithHeaders() throws Exception {
         String[] userParameters = {"FILE_HEADER=IGNORE", "S3_SELECT=ON"};
         runTestScenario("csv", "s3", "csv", s3Path,
@@ -81,7 +85,7 @@ public class S3SelectTest extends BaseFeature {
                 "|", userParameters);
     }
 
-    @Test(groups = {"gpdb", "s3"})
+    @Test(groups = {"s3"})
     public void testPlainCsvWithHeadersUsingHeaderInfo() throws Exception {
         String[] userParameters = {"FILE_HEADER=USE", "S3_SELECT=ON"};
         runTestScenario("csv_use_headers", "s3", "csv", s3Path,
@@ -89,7 +93,7 @@ public class S3SelectTest extends BaseFeature {
                 "|", userParameters);
     }
 
-    @Test(groups = {"gpdb", "s3"})
+    @Test(groups = {"s3"})
     public void testCsvWithHeadersUsingHeaderInfoWithWrongColumnNames() throws Exception {
         String[] userParameters = {"FILE_HEADER=USE", "S3_SELECT=ON"};
         runTestScenario("errors/", "csv_use_headers_with_wrong_col_names", "s3", "csv", s3Path,
@@ -97,7 +101,7 @@ public class S3SelectTest extends BaseFeature {
                 "|", userParameters, PXF_S3_SELECT_INVALID_COLS);
     }
 
-    @Test(groups = {"gpdb", "s3"})
+    @Test(groups = {"s3"})
     public void testPlainCsvWithNoHeaders() throws Exception {
         String[] userParameters = {"FILE_HEADER=NONE", "S3_SELECT=ON"};
         runTestScenario("csv_noheaders", "s3", "csv", s3Path,
@@ -105,7 +109,7 @@ public class S3SelectTest extends BaseFeature {
                 "|", userParameters);
     }
 
-    @Test(groups = {"gpdb", "s3"})
+    @Test(groups = {"s3"})
     public void testGzipCsvWithHeadersUsingHeaderInfo() throws Exception {
         String[] userParameters = {"FILE_HEADER=USE", "S3_SELECT=ON", "COMPRESSION_CODEC=gzip"};
         runTestScenario("gzip_csv_use_headers", "s3", "csv", s3Path,
@@ -113,7 +117,7 @@ public class S3SelectTest extends BaseFeature {
                 "|", userParameters);
     }
 
-    @Test(groups = {"gpdb", "s3"})
+    @Test(groups = {"s3"})
     public void testBzip2CsvWithHeadersUsingHeaderInfo() throws Exception {
         String[] userParameters = {"FILE_HEADER=USE", "S3_SELECT=ON", "COMPRESSION_CODEC=bzip2"};
         runTestScenario("bzip2_csv_use_headers", "s3", "csv", s3Path,
@@ -121,7 +125,7 @@ public class S3SelectTest extends BaseFeature {
                 "|", userParameters);
     }
 
-    @Test(groups = {"gpdb", "s3"})
+    @Test(groups = {"s3"})
     public void testParquet() throws Exception {
         String[] userParameters = {"S3_SELECT=ON"};
         runTestScenario("parquet", "s3", "parquet", s3Path,
@@ -129,7 +133,7 @@ public class S3SelectTest extends BaseFeature {
                 null, userParameters);
     }
 
-    @Test(groups = {"gpdb", "s3"})
+    @Test(groups = {"s3"})
     public void testParquetWildcardLocation() throws Exception {
         String[] userParameters = {"S3_SELECT=ON"};
         runTestScenario("", "parquet", "s3", "parquet", s3Path,
@@ -137,7 +141,7 @@ public class S3SelectTest extends BaseFeature {
                 null, userParameters, LINEITEM_SCHEMA);
     }
 
-    @Test(groups = {"gpdb", "s3"})
+    @Test(groups = {"s3"})
     public void testSnappyParquet() throws Exception {
         String[] userParameters = {"S3_SELECT=ON"};
         runTestScenario("parquet_snappy", "s3", "parquet", s3Path,
@@ -145,7 +149,7 @@ public class S3SelectTest extends BaseFeature {
                 null, userParameters);
     }
 
-    @Test(groups = {"gpdb", "s3"})
+    @Test(groups = {"s3"})
     public void testGzipParquet() throws Exception {
         String[] userParameters = {"S3_SELECT=ON"};
         runTestScenario("parquet_gzip", "s3", "parquet", s3Path,

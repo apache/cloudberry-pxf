@@ -8,6 +8,7 @@ import org.greenplum.pxf.automation.features.BaseFeature;
 import org.greenplum.pxf.automation.structures.tables.basic.Table;
 import org.greenplum.pxf.automation.structures.tables.utils.TableFactory;
 import org.greenplum.pxf.automation.utils.system.ProtocolUtils;
+import org.greenplum.pxf.automation.utils.system.ProtocolEnum;
 import org.testng.annotations.Test;
 
 import java.net.URI;
@@ -42,6 +43,9 @@ public class CloudAccessTest extends BaseFeature {
      */
     @Override
     public void beforeClass() throws Exception {
+        if (ProtocolUtils.getProtocol() == ProtocolEnum.HDFS) {
+            return;
+        }
         // Initialize server objects
         String random = UUID.randomUUID().toString();
         s3PathRead  = String.format("gpdb-ud-scratch/tmp/pxf_automation_data_read/%s/" , random);

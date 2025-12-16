@@ -184,38 +184,38 @@ public class HdfsWritableSequenceTest extends BaseWritableFeature {
     @Test(groups = {"features", "gpdb", "hcfs", "security"})
     public void negativeCharType() throws Exception {
 
-        String[] fields = {"a1 INTEGER", "c1 CHAR"};
+        String[] fields = {"a1 INTEGER", "c1 JSON"};
         String hdfsDir = hdfsPath + "/negative_char_type";
         writableExTable = prepareWritableSequenceTable("pxf_negative_char_type_w",
                 fields, hdfsDir, schemaPackage + customSchemaWithCharFileName);
 
         Table dataTable = new Table("data", null);
-        dataTable.addRow(new String[]{"100", "a"});
-        dataTable.addRow(new String[]{"1000", "b"});
+        dataTable.addRow(new String[]{"100", "'{\"key\":\"value\"}'"});
+        dataTable.addRow(new String[]{"1000", "'{\"key\":\"value\"}'"});
 
         try {
             gpdb.insertData(dataTable, writableExTable);
             Assert.fail("Insert data should fail because of unsupported type");
         } catch (PSQLException e) {
-            ExceptionUtils.validate(null, e, new PSQLException("ERROR.*Type char is not supported " +
+            ExceptionUtils.validate(null, e, new PSQLException("ERROR.*Type json is not supported " +
                     "by GPDBWritable.*?", null), true);
         }
     }
 
     /**
-     * Test COMPRESSION_TYPE = NONE -- negative
+     * Test COMPRESSION_TYPE = INVALID -- negative
      *
      * @throws Exception if test fails to run
      */
     @Test(groups = {"features", "gpdb", "hcfs", "security"})
     public void negativeCompressionTypeNone() throws Exception {
 
-        String[] fields = {"a1 INTEGER", "c1 CHAR"};
+        String[] fields = {"a1 INTEGER", "c1 TEXT"};
         String hdfsDir = hdfsPath + "/negative_compression_type_none";
 
         writableExTable = prepareWritableSequenceTable("pxf_negative_compression_type_none",
                 fields, hdfsDir, schemaPackage + customSchemaWithCharFileName,
-                new String[]{"COMPRESSION_TYPE=NONE"}, null);
+                new String[]{"COMPRESSION_TYPE=XZ"}, null);
 
         Table dataTable = new Table("data", null);
         dataTable.addRow(new String[]{"100", "a"});
@@ -226,8 +226,7 @@ public class HdfsWritableSequenceTest extends BaseWritableFeature {
             Assert.fail("Insert data should fail because of illegal compression type");
         } catch (PSQLException e) {
             ExceptionUtils.validate(null, e,
-                    new PSQLException("ERROR.*Illegal compression type 'NONE'\\. For disabling compression " +
-                            "remove COMPRESSION_CODEC parameter\\..*?", null), true);
+                    new PSQLException("ERROR.*Illegal compression type 'XZ'.*?", null), true);
         }
     }
 
