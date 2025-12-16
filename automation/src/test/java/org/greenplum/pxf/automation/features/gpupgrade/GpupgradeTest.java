@@ -20,18 +20,18 @@ public class GpupgradeTest extends BaseFunctionality {
     private ReadableExternalTable externalTable;
 
     @Override
-    protected void beforeMethod() throws Exception {
-        super.beforeMethod();
+    protected void beforeClass() throws Exception {
+        super.beforeClass();
         String location = prepareData();
         createReadablePxfTable("default", location);
     }
 
     @Override
-    protected void afterMethod() throws Exception {
+    protected void afterClass() throws Exception {
         if (gpdb != null) {
             gpdb.dropTable(externalTable, true);
         }
-        super.afterMethod();
+        super.afterClass();
     }
 
     @Test(groups = {"features", "gpdb"})

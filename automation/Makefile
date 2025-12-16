@@ -8,6 +8,8 @@
 SHELL := bash
 UNAME_S := $(shell uname -s)
 MAVEN_TEST_OPTS+= -B -e
+MAVEN_OPTS ?= -Xmx2g -Xms512m
+export MAVEN_OPTS
 PXF_TMP_LIB := $(HOME)/automation_tmp_lib
 BASE_PATH   ?= /mnt/nfs/var/nfsshare
 USE_FDW     ?= false
@@ -20,7 +22,7 @@ ifneq "$(GROUP)" ""
 	MAVEN_TEST_OPTS+= -Dgroups=$(GROUP)
 endif
 
-MAVEN_TEST_OPTS+= -Djava.awt.headless=true -DuseFDW=$(USE_FDW)
+MAVEN_TEST_OPTS+= -Djava.awt.headless=true -DuseFDW=$(USE_FDW) -Duser.timezone=UTC
 
 ifneq "$(OFFLINE)" "true"
 	MAVEN_TEST_OPTS+= -U

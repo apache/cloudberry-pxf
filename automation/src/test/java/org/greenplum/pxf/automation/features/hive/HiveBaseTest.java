@@ -371,11 +371,25 @@ public class HiveBaseTest extends BaseFeature {
 
     void loadDataIntoHive(Hdfs hdfs, Hive hive, String fileName, HiveTable tableName) throws Exception {
 
+        String localPath = localDataResourcesFolder + "/hive/" + fileName;
+        String hdfsPath = hdfs.getWorkingDirectory() + "/" + fileName;
+
+        // Verify local file exists
+        java.io.File localFile = new java.io.File(localPath);
+        if (!localFile.exists()) {
+            throw new RuntimeException("Local file does not exist: " + localFile.getAbsolutePath());
+        }
+
         // copy data to hdfs
-        hdfs.copyFromLocal(localDataResourcesFolder + "/hive/" + fileName,
-                hdfs.getWorkingDirectory() + "/" + fileName);
+        hdfs.copyFromLocal(localPath, hdfsPath);
+
+        // Verify file was copied to HDFS
+        if (!hdfs.doesFileExist(hdfsPath)) {
+            throw new RuntimeException("File was not copied to HDFS: " + hdfsPath);
+        }
+        
         // load to hive table
-        hive.loadData(tableName, hdfs.getWorkingDirectory() + "/" + fileName, false);
+        hive.loadData(tableName, hdfsPath, false);
     }
 
     String[] hiveTestFilter(String filterString) {

@@ -24,19 +24,89 @@ env:
   PXF_HOME: "/usr/local/pxf"
 
 jobs:
-  pxf-build-install-test:
-    name: Build, Install & Test PXF
+  build-cloudberry-deb:
+    name: Build Cloudberry DEB Package
     runs-on: ubuntu-latest
+    container:
+      image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest
+      options: --user root
     steps:
-    - name: Checkout Apache Cloudberry source
+    - name: Checkout Cloudberry source
       uses: actions/checkout@v4
       with:
         repository: apache/cloudberry
-        ref: main
-        fetch-depth: 1
-        persist-credentials: false
-        path: cloudberry
+        ref: ${{ env.CLOUDBERRY_VERSION }}
+        path: workspace/cloudberry
         submodules: true
+
+    - name: Checkout PXF source (for build script)
+      uses: actions/checkout@v4
+      with:
+        path: cloudberry-pxf
+
+    - name: Build Cloudberry DEB
+      run: |
+        export WORKSPACE=$PWD/workspace
+        export CLOUDBERRY_VERSION=99.0.0
+        export CLOUDBERRY_BUILD=1
+        bash cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu/script/build_cloudberry_deb.sh
+
+    - name: Package Cloudberry source
+      run: |
+        cd workspace
+        tar czf cloudberry-source.tar.gz cloudberry/
+
+    - name: Upload DEB artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: cloudberry-deb
+        path: workspace/cloudberry-deb/*.deb
+        retention-days: 7
+
+    - name: Upload Cloudberry source artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: cloudberry-source
+        path: workspace/cloudberry-source.tar.gz
+        retention-days: 7
+
+  build-docker-images:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout PXF source
+      uses: actions/checkout@v4
+      with:
+        path: cloudberry-pxf
+
+    - name: Build singlecluster image
+      run: |
+        cd ${{ github.workspace }}/cloudberry-pxf/concourse/singlecluster
+        docker build -t pxf/singlecluster:3 .
+        docker save pxf/singlecluster:3 > /tmp/singlecluster-image.tar
+
+    - name: Upload singlecluster image
+      uses: actions/upload-artifact@v4
+      with:
+        name: singlecluster-image
+        path: /tmp/singlecluster-image.tar
+        retention-days: 1
+
+  pxf-build-install-test:
+    name: Build, Install & Test PXF
+    needs: [build-cloudberry-deb, build-docker-images]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/hostedtoolcache
+        sudo docker system prune -af
+        df -h
+
     - name: Checkout Apache Cloudberry pxf source
       uses: actions/checkout@v4
       with:
@@ -46,182 +116,287 @@ jobs:
         persist-credentials: false
         path: cloudberry-pxf
         submodules: true
-    - name: Cache singlecluster Docker image
-      id: cache-singlecluster
-      uses: actions/cache@v4
+
+    - name: Download Cloudberry DEB
+      uses: actions/download-artifact@v4
       with:
-        path: /tmp/singlecluster-image.tar
-        key: singlecluster-${{ hashFiles('cloudberry-pxf/concourse/singlecluster/Dockerfile', 'cloudberry-pxf/concourse/singlecluster/**') }}
-    - name: Build singlecluster image
-      if: steps.cache-singlecluster.outputs.cache-hit != 'true'
-      run: |
-        cd ${{ github.workspace }}/cloudberry-pxf/concourse/singlecluster
-        docker build -t pxf/singlecluster:3 .
-        docker save pxf/singlecluster:3 > /tmp/singlecluster-image.tar
+        name: cloudberry-deb
+        path: /tmp
+    
+    - name: Download Cloudberry source
+      uses: actions/download-artifact@v4
+      with:
+        name: cloudberry-source
+        path: /tmp
+    
+    - name: Download singlecluster image
+      uses: actions/download-artifact@v4
+      with:
+        name: singlecluster-image
+        path: /tmp
+
     - name: Load singlecluster image
-      if: steps.cache-singlecluster.outputs.cache-hit == 'true'
       run: |
         docker load < /tmp/singlecluster-image.tar
-    - name: Run Test
+    
+    - name: Prepare Cloudberry source
       run: |
-        cd ${{ github.workspace }}/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu/
-        docker compose up -d
-        # Wait for container to be ready
-        sleep 10
-        # Execute entrypoint script with correct working directory
-        docker compose exec -T pxf-cbdb-dev /bin/bash -c "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/entrypoint.sh"
-    - name: Extract test artifacts from container
+        cd ${{ github.workspace }}
+        tar xzf /tmp/cloudberry-source.tar.gz
+        chmod -R u+rwX,go+rX cloudberry
+    
+    - name: Build and Start Services
+      id: build_start
+      continue-on-error: true
+      run: |
+        cd ${{ github.workspace }}/cloudberry-pxf
+        docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v
+        docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml build
+        docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml up -d
+        docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry
+        docker cp /tmp/*.deb pxf-cbdb-dev:/tmp/
+        docker exec pxf-cbdb-dev sudo chown gpadmin:gpadmin /tmp/*.deb
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/entrypoint.sh"
+
+    - name: Test PXF CLI
+      id: test_cli
+      continue-on-error: true
       if: always()
       run: |
-        echo "Test results are already available in mounted volume:"
-        ls -la ${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/ || echo "No test_artifacts directory found"
-        
-        # Show summary if available
-        if [ -f ${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/summary.csv ]; then
-          echo "Test Summary:"
-          cat ${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/summary.csv
-        fi
-        
+        cd ${{ github.workspace }}/cloudberry-pxf
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh cli"
+
+    - name: Test PXF Server
+      id: test_server
+      continue-on-error: true
+      if: always()
+      run: |
+        cd ${{ github.workspace }}/cloudberry-pxf
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh server"
+
+    - name: Test PXF Automation
+      id: test_automation
+      continue-on-error: true
+      if: always()
+      run: |
+        cd ${{ github.workspace }}/cloudberry-pxf
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh automation"
+    - name: Collect and upload artifacts
+      if: always()
+      run: |
+        mkdir -p artifacts/logs
+        # Always create a manifest to ensure non-empty artifact bundle
+        echo "PXF artifacts bundle" > artifacts/manifest.txt
+        # Collect test artifacts from mounted volume
+        cp -r ${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/* artifacts/ 2>/dev/null || true
+        # Collect PXF logs from container if available
+        docker exec pxf-cbdb-dev bash -c "cp -r /usr/local/pxf/logs/* /tmp/pxf-logs/ 2>/dev/null || true" || true
+        docker cp pxf-cbdb-dev:/tmp/pxf-logs artifacts/logs/ 2>/dev/null || true
+        # Record collected files into manifest
+        find artifacts -type f -print >> artifacts/manifest.txt 2>/dev/null || true
+      shell: bash
+
     - name: Cleanup containers
       if: always()
       run: |
-        cd cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu/
-        docker compose down -v || true
+        cd ${{ github.workspace }}/cloudberry-pxf
+        docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v || true
 
 
-    - name: Save artifacts
+    - name: Upload PXF artifacts
       if: always()
       uses: actions/upload-artifact@v4
       id: upload_automation_step
       with:
         name: automation-test-results-pxf-cbdb-dev
-        path: |
-          ${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/
+        path: artifacts/**
+        if-no-files-found: ignore
         retention-days: 30
 
     - name: Evaluate module build/test results
-      if: success() || failure()
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const fs = require('fs');
-          const path = require('path');
-          
-          console.log('Processing test reports for PXF...');
-          
-          // Start building the step summary
-          const summary = core.summary
-            .addHeading('PXF Test Results Summary')
-            .addHeading('📦 Artifacts', 3)
-            .addLink('Raw Test Results', "${{ steps.upload_automation_step.outputs.artifact-url }}");
-          
-          let hasErrors = false;
-          
-          // Check if test summary exists
-          const testSummaryPath = '${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/summary.csv';
-          if (fs.existsSync(testSummaryPath)) {
-            try {
-              const csvContent = fs.readFileSync(testSummaryPath, 'utf8');
-              const lines = csvContent.trim().split('\n');
-              
-              if (lines.length > 1) {
-                // Parse CSV and create table
-                const headers = lines[0].split(',');
-                const rows = lines.slice(1).map(line => line.split(','));
-                
-                // Add test results table
-                summary.addHeading('🧪 Test Results', 3);
-                summary.addTable([
-                  headers,
-                  ...rows
-                ]);
-                
-                // Check for failures
-                let totalTests = 0;
-                let failedTests = 0;
-                let passedTests = 0;
-                
-                rows.forEach(row => {
-                  totalTests++;
-                  if (row[1] === 'FAIL') {
-                    failedTests++;
-                    hasErrors = true;
-                  } else if (row[1] === 'PASS') {
-                    passedTests++;
-                  }
-                });
-                
-                summary.addRaw(`\n\n**Summary**: ${totalTests} test components, ${passedTests} passed, ${failedTests} failed\n\n`);
-                
-                if (failedTests > 0) {
-                  core.error(`${failedTests} test component(s) failed`);
-                }
-              }
-            } catch (error) {
-              console.log('Error processing test summary:', error.message);
-              core.error('Error processing test summary');
-              hasErrors = true;
-            }
-          } else {
-            summary.addRaw('No test summary found\n\n');
-          }
-          
-          // Check if TestNG results exist
-          const testReportsDir = '${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/surefire-reports';
-          if (fs.existsSync(testReportsDir)) {
-            const testngResultsPath = path.join(testReportsDir, 'testng-results.xml');
-            if (fs.existsSync(testngResultsPath)) {
-              try {
-                const xmlContent = fs.readFileSync(testngResultsPath, 'utf8');
-              
-                // Extract test statistics using regex
-                const totalMatch = xmlContent.match(/total="(\d+)"/);
-                const passedMatch = xmlContent.match(/passed="(\d+)"/);
-                const failedMatch = xmlContent.match(/failed="(\d+)"/);
-                const skippedMatch = xmlContent.match(/skipped="(\d+)"/);
-              
-                const total = totalMatch ? totalMatch[1] : '0';
-                const passed = passedMatch ? passedMatch[1] : '0';
-                const failed = failedMatch ? failedMatch[1] : '0';
-                const skipped = skippedMatch ? skippedMatch[1] : '0';
-              
-                // Add TestNG statistics to summary
-                summary
-                  .addHeading('🔬 Automation Test Details', 3)
-                  .addTable([
-                    ['Metric', 'Count'],
-                    ['Total Tests', total],
-                    ['Passed', passed],
-                    ['Failed', failed],
-                    ['Skipped', skipped]
-                  ]);
-              
-                // Check if there are failed tests
-                const failedCount = parseInt(failed) || 0;
-                const skippedCount = parseInt(skipped) || 0;
-              
-                if (failedCount > 0) {
-                  core.error(`Automation tests failed: ${failedCount} test(s) failed`);
-                  hasErrors = true;
-                }
-                if (skippedCount > 0) {
-                  core.warning(`Automation tests incomplete: ${skippedCount} test(s) skipped`);
-                }
-              } catch (error) {
-                console.log('Error processing TestNG results:', error.message);
-                core.error('Error processing automation test results');
-                hasErrors = true;
-              }
-            }
-          }
-          
-          // Write to step summary
-          await summary.write();
-          
-          // Exit with error code if there were errors
-          if (hasErrors) {
-            process.exit(1);
-          }
+      if: always()
+      env:
+        BUILD_START: ${{ steps.build_start.outcome }}
+        TEST_CLI: ${{ steps.test_cli.outcome }}
+        TEST_FDW: ${{ steps.test_fdw.outcome }}
+        TEST_SERVER: ${{ steps.test_server.outcome }}
+        TEST_AUTOMATION: ${{ steps.test_automation.outcome }}
+      run: |
+        set -eo pipefail
 
+        status_icon() {
+          case "$1" in
+            success) echo "✅";;
+            failure) echo "❌";;
+            cancelled) echo "🛑";;
+            skipped|"") echo "⏭️";;
+            *) echo "$1";;
+          esac
+        }
 
+        # Use files from Docker volume mapping (no need to copy from container)
+        echo "=== Checking for test results ==="
+        ls -la ${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/ 2>/dev/null || echo "No test_artifacts directory"
 
+        # Copy test results from mapped volume
+        if [ -f "${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/test_summary.json" ]; then
+          cp "${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/test_summary.json" ./test_summary.json
+          echo "Found test_summary.json"
+        else
+          echo '{"overall":{"total":0,"passed":0,"failed":0,"skipped":0},"groups":{}}' > ./test_summary.json
+          echo "No test_summary.json, created default"
+        fi
+
+        if [ -f "${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/component_results.csv" ]; then
+          cp "${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/component_results.csv" ./component_results.csv
+        else
+          echo "Component,Status,ExitCode" > ./component_results.csv
+        fi
+
+        if [ -d "${{ github.workspace }}/cloudberry-pxf/automation/target/surefire-reports" ]; then
+          cp -r "${{ github.workspace }}/cloudberry-pxf/automation/target/surefire-reports" ./surefire-reports
+        else
+          mkdir -p ./surefire-reports
+        fi
+
+        echo "=== test_summary.json content ==="
+        if [ -f ./test_summary.json ]; then
+          cat ./test_summary.json
+        else
+          echo "test_summary.json not found"
+        fi
+        echo "=== end of test_summary.json ==="
+
+        BUILD_ICON=$(status_icon "${BUILD_START}")
+        CLI_ICON=$(status_icon "${TEST_CLI}")
+        FDW_ICON=$(status_icon "${TEST_FDW}")
+        SERVER_ICON=$(status_icon "${TEST_SERVER}")
+        AUTO_ICON=$(status_icon "${TEST_AUTOMATION}")
+
+        # Parse component results
+        get_status() {
+          grep "^$1," ./component_results.csv 2>/dev/null | cut -d',' -f2 || echo "N/A"
+        }
+
+        CLI_STATUS=$(get_status "CLI")
+        FDW_STATUS=$(get_status "FDW")
+        SERVER_STATUS=$(get_status "Server")
+        AUTO_STATUS=$(get_status "Automation")
+
+        # Read test summary from JSON
+        if command -v jq >/dev/null 2>&1 && [ -f ./test_summary.json ]; then
+          TOTAL_TESTS=$(jq -r '.overall.total // 0' ./test_summary.json 2>/dev/null || echo "0")
+          PASSED_TESTS=$(jq -r '.overall.passed // 0' ./test_summary.json 2>/dev/null || echo "0")
+          FAILED_TESTS=$(jq -r '.overall.failed // 0' ./test_summary.json 2>/dev/null || echo "0")
+          SKIPPED_TESTS=$(jq -r '.overall.skipped // 0' ./test_summary.json 2>/dev/null || echo "0")
+        else
+          # Fallback to parsing without jq
+          TOTAL_TESTS=$(grep -o '"total":[[:space:]]*[0-9]*' ./test_summary.json 2>/dev/null | head -1 | grep -o '[0-9]*' || echo "0")
+          PASSED_TESTS=$(grep -o '"passed":[[:space:]]*[0-9]*' ./test_summary.json 2>/dev/null | head -1 | grep -o '[0-9]*' || echo "0")
+          FAILED_TESTS=$(grep -o '"failed":[[:space:]]*[0-9]*' ./test_summary.json 2>/dev/null | head -1 | grep -o '[0-9]*' || echo "0")
+          SKIPPED_TESTS=$(grep -o '"skipped":[[:space:]]*[0-9]*' ./test_summary.json 2>/dev/null | head -1 | grep -o '[0-9]*' || echo "0")
+        fi
+
+        # Ensure variables are numeric
+        TOTAL_TESTS=${TOTAL_TESTS:-0}
+        PASSED_TESTS=${PASSED_TESTS:-0}
+        FAILED_TESTS=${FAILED_TESTS:-0}
+        SKIPPED_TESTS=${SKIPPED_TESTS:-0}
+
+        # Validate numeric values
+        [[ "$TOTAL_TESTS" =~ ^[0-9]+$ ]] || TOTAL_TESTS=0
+        [[ "$PASSED_TESTS" =~ ^[0-9]+$ ]] || PASSED_TESTS=0
+        [[ "$FAILED_TESTS" =~ ^[0-9]+$ ]] || FAILED_TESTS=0
+        [[ "$SKIPPED_TESTS" =~ ^[0-9]+$ ]] || SKIPPED_TESTS=0
+
+        {
+          echo "## PXF Component Test Results"
+          echo ""
+          echo "| Component | Workflow Status | Test Status |"
+          echo "|----------:|:---------------:|:-----------:|"
+          echo "| Build & Start | ${BUILD_ICON} ${BUILD_START:-skipped} | - |"
+          echo "| CLI | ${CLI_ICON} ${TEST_CLI:-skipped} | ${CLI_STATUS} |"
+          echo "| FDW | ${FDW_ICON} ${TEST_FDW:-skipped} | ${FDW_STATUS} |"
+          echo "| Server | ${SERVER_ICON} ${TEST_SERVER:-skipped} | ${SERVER_STATUS} |"
+          echo "| Automation | ${AUTO_ICON} ${TEST_AUTOMATION:-skipped} | ${AUTO_STATUS} |"
+          echo ""
+
+          # Automation detailed results
+          if [ "$TOTAL_TESTS" -gt 0 ] 2>/dev/null; then
+            echo "### Automation Test Summary"
+            echo ""
+            echo "| Metric | Count |"
+            echo "|-------:|------:|"
+            echo "| Total | $TOTAL_TESTS |"
+            echo "| Passed | $PASSED_TESTS |"
+            echo "| Failed | $FAILED_TESTS |"
+            echo "| Skipped | $SKIPPED_TESTS |"
+            echo ""
+            
+            # Test results by group from JSON
+            if [ -f ./test_summary.json ]; then
+              echo "### Test Results by Group"
+              echo ""
+              echo "| Test Group | Status | Passed | Failed | Skipped | Total |"
+              echo "|-----------:|:------:|-------:|-------:|--------:|------:|"
+              
+              # Extract group data dynamically
+              groups=$(grep -o '"[^"]*":' ./test_summary.json | grep -v '"overall":\|"groups":\|"timestamp":\|"total":\|"passed":\|"failed":\|"skipped":' | sed 's/[":]*//g' | sort -u)
+              for group in $groups; do
+                if grep -q "\"$group\":" ./test_summary.json; then
+                  group_section=$(sed -n "/\"$group\":/,/}/p" ./test_summary.json)
+                  g_total=$(echo "$group_section" | grep -o '"total":[[:space:]]*[0-9]*' | grep -o '[0-9]*' || echo "0")
+                  g_passed=$(echo "$group_section" | grep -o '"passed":[[:space:]]*[0-9]*' | grep -o '[0-9]*' || echo "0")
+                  g_failed=$(echo "$group_section" | grep -o '"failed":[[:space:]]*[0-9]*' | grep -o '[0-9]*' || echo "0")
+                  g_skipped=$(echo "$group_section" | grep -o '"skipped":[[:space:]]*[0-9]*' | grep -o '[0-9]*' || echo "0")
+                  
+                  [ "$g_total" -eq 0 ] && continue
+                  
+                  if [ "$g_failed" -gt 0 ]; then
+                    status_icon="❌ FAIL"
+                  else
+                    status_icon="✅ PASS"
+                  fi
+                  
+                  echo "| ${group} | ${status_icon} | ${g_passed} | ${g_failed} | ${g_skipped} | ${g_total} |"
+                fi
+              done
+              echo ""
+            fi
+          fi
+
+          # Count failures
+          failed_count=$(grep -c ",FAIL," ./component_results.csv 2>/dev/null || echo 0)
+          passed_count=$(grep -c ",PASS," ./component_results.csv 2>/dev/null || echo 0)
+          total_count=$((failed_count + passed_count))
+
+          if [ "$failed_count" -gt 0 ] 2>/dev/null || [ "$FAILED_TESTS" -gt 0 ] 2>/dev/null; then
+            echo "### ⚠️ Summary"
+            [ "$failed_count" -gt 0 ] 2>/dev/null && echo "- Components: $failed_count of $total_count failed"
+            [ "$FAILED_TESTS" -gt 0 ] 2>/dev/null && echo "- Automation: $FAILED_TESTS of $TOTAL_TESTS test cases failed"
+          elif [ "$total_count" -gt 0 ] 2>/dev/null; then
+            echo "### ✅ Summary: All tests passed"
+            [ "$TOTAL_TESTS" -gt 0 ] 2>/dev/null && echo "- Automation: $PASSED_TESTS of $TOTAL_TESTS test cases passed"
+          else
+            echo "### ℹ️ Summary: No test results available"
+          fi
+          echo ""
+          echo "### Artifacts"
+          echo "- Uploaded artifact bundle: 'automation-test-results-pxf-cbdb-dev'"
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        fail=0
+        for v in "${BUILD_START}" "${TEST_CLI}" "${TEST_FDW}" "${TEST_SERVER}" "${TEST_AUTOMATION}"; do
+          if [ "$v" = "failure" ]; then fail=1; fi
+        done
+
+        # Also fail if automation tests had failures
+        if [ "$FAILED_TESTS" -gt 0 ] 2>/dev/null; then
+          echo "Automation tests had $FAILED_TESTS failures. Marking job as failed."
+          fail=1
+        fi
+
+        if [ "$fail" -ne 0 ]; then
+          echo "One or more components failed. Marking job as failed."
+          exit 1
+        fi

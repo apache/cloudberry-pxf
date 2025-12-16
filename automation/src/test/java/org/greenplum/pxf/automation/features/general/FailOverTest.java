@@ -30,7 +30,11 @@ public class FailOverTest extends BaseFeature {
         super.afterClass();
         // We need to restore the service after it has been stopped
         if (cluster != null) {
-            cluster.start(PhdCluster.EnumClusterServices.pxf);
+            try {
+                cluster.start(PhdCluster.EnumClusterServices.pxf);
+            } catch (Exception e) {
+                // Ignore if service is already running
+            }
         }
     }
 

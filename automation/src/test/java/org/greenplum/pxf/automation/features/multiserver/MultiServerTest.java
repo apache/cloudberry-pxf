@@ -9,6 +9,7 @@ import org.greenplum.pxf.automation.structures.tables.basic.Table;
 import org.greenplum.pxf.automation.structures.tables.pxf.ExternalTable;
 import org.greenplum.pxf.automation.structures.tables.utils.TableFactory;
 import org.greenplum.pxf.automation.utils.system.ProtocolUtils;
+import org.greenplum.pxf.automation.utils.system.ProtocolEnum;
 import org.testng.annotations.Test;
 
 import java.net.URI;
@@ -47,6 +48,9 @@ public class MultiServerTest extends BaseFeature {
      */
     @Override
     public void beforeClass() throws Exception {
+        if (ProtocolUtils.getProtocol() == ProtocolEnum.HDFS) {
+            return;
+        }
         // Initialize an additional HDFS system object (optional system object)
         hdfs2 = (Hdfs) systemManager.
                 getSystemObject("/sut", "hdfs2", -1, null, false, null, SutFactory.getInstance().getSutInstance());

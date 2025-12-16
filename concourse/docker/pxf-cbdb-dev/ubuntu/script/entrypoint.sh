@@ -82,13 +82,138 @@ EOF
   fi
 }
 
+install_cloudberry_from_deb() {
+  log "installing Cloudberry from .deb package"
+  local deb_file=$(find /tmp -name "apache-cloudberry-db*.deb" 2>/dev/null | head -1)
+  if [ -z "$deb_file" ]; then
+    die "No .deb package found in /tmp"
+  fi
+
+  # Install sudo & git
+  sudo apt update && sudo apt install -y sudo git
+
+  # Required configuration
+  ## Add Cloudberry environment setup to .bashrc
+  echo -e '\n# Add Cloudberry entries
+  if [ -f /usr/local/cloudberry-db/cloudberry-env.sh ]; then
+    source /usr/local/cloudberry-db/cloudberry-env.sh
+  fi
+  ## US English with UTF-8 character encoding
+  export LANG=en_US.UTF-8
+  ' >> /home/gpadmin/.bashrc
+  ## Set up SSH for passwordless access
+  mkdir -p /home/gpadmin/.ssh
+  if [ ! -f /home/gpadmin/.ssh/id_rsa ]; then
+    ssh-keygen -t rsa -b 2048 -C 'apache-cloudberry-dev' -f /home/gpadmin/.ssh/id_rsa -N ""
+  fi
+  cat /home/gpadmin/.ssh/id_rsa.pub >> /home/gpadmin/.ssh/authorized_keys
+  ## Set proper SSH directory permissions
+  chmod 700 /home/gpadmin/.ssh
+  chmod 600 /home/gpadmin/.ssh/authorized_keys
+  chmod 644 /home/gpadmin/.ssh/id_rsa.pub
+
+# Configure system settings
+sudo tee /etc/security/limits.d/90-db-limits.conf << 'EOF'
+## Core dump file size limits for gpadmin
+gpadmin soft core unlimited
+gpadmin hard core unlimited
+## Open file limits for gpadmin
+gpadmin soft nofile 524288
+gpadmin hard nofile 524288
+## Process limits for gpadmin
+gpadmin soft nproc 131072
+gpadmin hard nproc 131072
+EOF
+
+  # Verify resource limits
+  ulimit -a
+
+  # Install basic system packages
+  sudo apt update
+  sudo apt install -y bison \
+    bzip2 \
+    cmake \
+    curl \
+    flex \
+    gcc \
+    g++ \
+    iproute2 \
+    iputils-ping \
+    language-pack-en \
+    locales \
+    libapr1-dev \
+    libbz2-dev \
+    libcurl4-gnutls-dev \
+    libevent-dev \
+    libkrb5-dev \
+    libipc-run-perl \
+    libldap2-dev \
+    libpam0g-dev \
+    libprotobuf-dev \
+    libreadline-dev \
+    libssl-dev \
+    libuv1-dev \
+    liblz4-dev \
+    libxerces-c-dev \
+    libxml2-dev \
+    libyaml-dev \
+    libzstd-dev \
+    libperl-dev \
+    make \
+    pkg-config \
+    protobuf-compiler \
+    python3-dev \
+    python3-pip \
+    python3-setuptools \
+    rsync \
+    libsnappy-dev
+
+
+  # Continue as gpadmin user
+
+
+  # Prepare the build environment for Apache Cloudberry
+  sudo rm -rf /usr/local/cloudberry-db
+  sudo chmod a+w /usr/local
+  mkdir -p /usr/local/cloudberry-db
+  sudo chown -R gpadmin:gpadmin /usr/local/cloudberry-db
+
+  sudo dpkg -i "$deb_file" || sudo apt-get install -f -y
+  log "Cloudberry installed from $deb_file"
+  
+  # Initialize and start Cloudberry cluster
+  source /usr/local/cloudberry-db/cloudberry-env.sh
+  make create-demo-cluster -C ~/workspace/cloudberry || {
+    log "create-demo-cluster failed, trying manual setup"
+    cd ~/workspace/cloudberry
+    ./configure --prefix=/usr/local/cloudberry-db --enable-debug --with-perl --with-python --with-libxml --enable-depend
+    make create-demo-cluster
+  }
+  source ~/workspace/cloudberry/gpAux/gpdemo/gpdemo-env.sh
+  psql -P pager=off template1 -c 'SELECT * from gp_segment_configuration'
+  psql template1 -c 'SELECT version()'
+}
+
 build_cloudberry() {
-  log "build Cloudberry"
+  log "building Cloudberry from source"
   log "cleanup stale gpdemo data and PG locks"
   rm -rf /home/gpadmin/workspace/cloudberry/gpAux/gpdemo/datadirs
   rm -f /tmp/.s.PGSQL.700*
   find "${ROOT_DIR}" -not -path '*/.git/*' -exec sudo chown gpadmin:gpadmin {} + 2>/dev/null || true
   "${PXF_SCRIPTS}/build_cloudberrry.sh"
+}
+
+setup_cloudberry() {
+  # Auto-detect: if deb exists, install it; otherwise build from source
+  if [ -f /tmp/apache-cloudberry-db*.deb ]; then
+    log "detected .deb package, using fast install"
+    install_cloudberry_from_deb
+  elif [ "${CLOUDBERRY_USE_DEB:-}" = "true" ]; then
+    die "CLOUDBERRY_USE_DEB=true but no .deb found in /tmp"
+  else
+    log "no .deb found, building from source (local dev mode)"
+    build_cloudberry
+  fi
 }
 
 build_pxf() {
@@ -123,7 +248,7 @@ XML
     sed -i 's#</configuration>#  <property>\n    <name>pxf.service.user.name</name>\n    <value>foobar</value>\n  </property>\n  <property>\n    <name>pxf.service.user.impersonation</name>\n    <value>false</value>\n  </property>\n</configuration>#' "$PXF_BASE/servers/default-no-impersonation/pxf-site.xml"
   fi
 
-  # Configure pxf-profiles.xml for Parquet support
+  # Configure pxf-profiles.xml for Parquet and test profiles
   cat > "$PXF_BASE/conf/pxf-profiles.xml" <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <profiles>
@@ -134,6 +259,15 @@ XML
             <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
             <accessor>org.greenplum.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
             <resolver>org.greenplum.pxf.plugins.hdfs.ParquetResolver</resolver>
+        </plugins>
+    </profile>
+    <profile>
+        <name>test:text</name>
+        <description>Test profile for text files</description>
+        <plugins>
+            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
 </profiles>
@@ -149,6 +283,15 @@ EOF
             <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
             <accessor>org.greenplum.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
             <resolver>org.greenplum.pxf.plugins.hdfs.ParquetResolver</resolver>
+        </plugins>
+    </profile>
+    <profile>
+        <name>test:text</name>
+        <description>Test profile for text files</description>
+        <plugins>
+            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
 </profiles>
@@ -289,6 +432,33 @@ start_hive_services() {
   # start HS2 with NOSASL
   HIVE_OPTS="--hiveconf hive.server2.authentication=NOSASL --hiveconf hive.metastore.uris=thrift://localhost:9083 --hiveconf javax.jdo.option.ConnectionURL=jdbc:derby:;databaseName=${GPHD_ROOT}/storage/hive/metastore_db;create=true" \
     "${GPHD_ROOT}/bin/hive-service.sh" hiveserver2 start
+
+  # wait for HiveServer2 to be ready
+  log "waiting for HiveServer2 to start on port 10000..."
+  for i in {1..60}; do
+    if ss -ln | grep -q ":10000 " || lsof -i :10000 >/dev/null 2>&1; then
+      log "HiveServer2 port is listening, testing connection..."
+      if echo "SHOW DATABASES;" | beeline -u "jdbc:hive2://localhost:10000/default" --silent=true >/dev/null 2>&1; then
+        log "HiveServer2 is ready and accessible"
+        break
+      else
+        log "HiveServer2 port is up but not ready for connections, waiting... (attempt $i/60)"
+      fi
+    else
+      log "HiveServer2 port 10000 not yet listening... (attempt $i/60)"
+    fi
+    if [ $i -eq 60 ]; then
+      log "ERROR: HiveServer2 failed to start properly after 60 seconds"
+      log "Checking HiveServer2 process:"
+      pgrep -f HiveServer2 || log "No HiveServer2 process found"
+      log "Checking port 10000:"
+      ss -ln | grep ":10000" || lsof -i :10000 || log "Port 10000 not listening"
+      log "HiveServer2 logs:"
+      tail -20 "${GPHD_ROOT}/storage/logs/hive-gpadmin-hiveserver2-mdw.out" 2>/dev/null || log "No HiveServer2 log found"
+      exit 1
+    fi
+    sleep 1
+  done
 }
 
 run_tests() {
@@ -309,7 +479,7 @@ main() {
   detect_java_paths
   setup_locale_and_packages
   setup_ssh
-  build_cloudberry
+  setup_cloudberry
   relax_pg_hba
   build_pxf
   configure_pxf
@@ -318,7 +488,6 @@ main() {
   health_check
   #run_tests
   log "entrypoint finished; keeping container alive"
-  tail -f /dev/null
 }
 
 main "$@"

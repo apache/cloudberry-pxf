@@ -75,7 +75,8 @@ sudo apt install -y bison \
   python3-dev \
   python3-pip \
   python3-setuptools \
-  rsync
+  rsync \
+  libsnappy-dev
 
 # Continue as gpadmin user
 

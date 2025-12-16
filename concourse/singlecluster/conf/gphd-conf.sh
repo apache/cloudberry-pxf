@@ -4,7 +4,14 @@ if [ -z "${JAVA_HOME:-}" ]; then
   if [ -n "${JAVA_HADOOP:-}" ]; then
     export JAVA_HOME="${JAVA_HADOOP}"
   else
-    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk
+    # Auto-detect Java 8 path for different architectures
+    if [ -d "/usr/lib/jvm/java-8-openjdk-$(dpkg --print-architecture)" ]; then
+      export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-$(dpkg --print-architecture)"
+    elif [ -d "/usr/lib/jvm/java-8-openjdk" ]; then
+      export JAVA_HOME="/usr/lib/jvm/java-8-openjdk"
+    else
+      export JAVA_HOME=$(readlink -f /usr/bin/java | sed 's:/bin/java::')
+    fi
   fi
 fi
 export STORAGE_ROOT=$GPHD_ROOT/storage
@@ -34,7 +41,7 @@ export START_YARN=true
 export START_YARN_HISTORY_SERVER=false
 
 # Automatically start Hive Metastore server
-export START_HIVEMETASTORE=true
+export START_HIVEMETASTORE=false
 
 # Automatically start PXF service
 export START_PXF=true
