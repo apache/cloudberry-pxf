@@ -3,6 +3,9 @@
 --
 -- # create a match/subs
 --
+-- m/PXF server error.*(java.lang.OutOfMemoryError|java.lang.RuntimeException: Class).*/
+-- s/PXF server error.*/PXF server error : java.lang.OutOfMemoryError: Java heap space/
+--
 -- m/Check the PXF logs located in the.*/
 -- s/Check the PXF logs located in the.*/Check the PXF logs located in the 'log' directory on host 'mdw' or 'set client_min_messages=LOG' for additional details./
 --
@@ -12,8 +15,14 @@
 -- m/CONTEXT:.*line.*/
 -- s/line \d* of //g
 --
+-- m/CONTEXT:.*External table.*/
+-- s/CONTEXT:.*External table.*//
+--
 -- m/Failed (to )?connect to/
 -- s/Failed (to )?connect to.*/Failed to connect to server, must be down/
+--
+-- m/, file.*pxf:\/\//
+-- s/, file.*pxf:\/\//pxf:\/\//
 --
 -- end_matchsubs
 

@@ -13,9 +13,33 @@ sudo apt install -y openjdk-11-jdk maven
 
 cd /home/gpadmin/workspace/cloudberry-pxf
 
+# mirror
+# If the download fails, you can uncomment the line to switch to another mirror address.
+# Configure Gradle to use Aliyun mirror
+# mkdir -p ~/.gradle
+# cat > ~/.gradle/init.gradle <<'EOF'
+# allprojects {
+#     repositories {
+#         maven { url 'https://maven.aliyun.com/repository/public/' }
+#         maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+#         mavenCentral()
+#     }
+#     buildscript {
+#         repositories {
+#             maven { url 'https://maven.aliyun.com/repository/public/' }
+#             maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+#             mavenCentral()
+#         }
+#     }
+# }
+# EOF
+
 # Set Go environment
 export GOPATH=$HOME/go
 export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+# mirror
+# If the download fails, you can uncomment the line to switch to another mirror address.
+# export GOPROXY=https://goproxy.cn,direct
 mkdir -p $GOPATH
 export PXF_HOME=/usr/local/pxf
 sudo mkdir -p "$PXF_HOME"

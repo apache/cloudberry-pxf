@@ -18,7 +18,9 @@ public class BaseWritableFeature extends BaseFeature {
     @Override
     protected void beforeClass() throws Exception {
         super.beforeClass();
-        hdfsWritePath = hdfs.getWorkingDirectory() + "/writable_results/";
+        if (hdfs != null) {
+            hdfsWritePath = hdfs.getWorkingDirectory() + "/writable_results/";
+        }
     }
 
     /**
@@ -27,6 +29,8 @@ public class BaseWritableFeature extends BaseFeature {
     @Override
     protected void afterMethod() throws Exception {
         super.afterMethod();
-        hdfs.removeDirectory(hdfsWritePath);
+        if (hdfs != null && hdfsWritePath != null) {
+            hdfs.removeDirectory(hdfsWritePath);
+        }
     }
 }

@@ -14,6 +14,8 @@ services:
     hostname: mdw
     depends_on:
       - singlecluster
+    ports:
+      - "2222:22"
     volumes:
       - ../../../../../cloudberry-pxf:/home/gpadmin/workspace/cloudberry-pxf
       - ../../../../../cloudberry:/home/gpadmin/workspace/cloudberry

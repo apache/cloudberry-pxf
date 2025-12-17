@@ -12,11 +12,17 @@
 -- m/DETAIL/
 -- s/DETAIL/CONTEXT/
 --
+-- m/CONTEXT:.*line.*/
+-- s/line \d* of //g
+--
 -- m/pxf:\/\/(.*)\/pxf_automation_data/
 -- s/pxf:\/\/.*PROFILE/pxf:\/\/pxf_automation_data?PROFILE/
 --
 -- m/CONTEXT:.*line.*/
 -- s/line \d* of //g
+--
+-- m/CONTEXT:.*External table.*/
+-- s/CONTEXT:.*External table.*//
 --
 -- m/default_s3/
 -- s/default_s3/default/
