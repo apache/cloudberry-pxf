@@ -6,17 +6,23 @@
 --
 -- # create a match/subs
 --
--- m/PXF server error.*(com.amazonaws.services.s3.model.AmazonS3Exception: Forbidden).*/
+-- m/PXF server error.*(doesBucketExist|com.amazonaws).*/
 -- s/PXF server error.*/PXF server error : com.amazonaws.services.s3.model.AmazonS3Exception: Forbidden/
 --
 -- m/DETAIL/
 -- s/DETAIL/CONTEXT/
+--
+-- m/CONTEXT:.*line.*/
+-- s/line \d* of //g
 --
 -- m/pxf:\/\/(.*)\/pxf_automation_data/
 -- s/pxf:\/\/.*PROFILE/pxf:\/\/pxf_automation_data?PROFILE/
 --
 -- m/CONTEXT:.*line.*/
 -- s/line \d* of //g
+--
+-- m/CONTEXT:.*External table.*/
+-- s/CONTEXT:.*External table.*//
 --
 -- m/, file.*pxf_automation_data/
 -- s/, file.*pxf_automation_data.*/pxf_automation_data/

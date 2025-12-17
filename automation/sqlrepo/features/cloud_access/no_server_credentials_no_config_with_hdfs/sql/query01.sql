@@ -15,6 +15,9 @@
 -- m/CONTEXT:.*line.*/
 -- s/line \d* of //g
 --
+-- m/CONTEXT:.*External table.*/
+-- s/CONTEXT:.*External table.*//
+--
 -- m/pxf:\/\/(.*)\/pxf_automation_data/
 -- s/pxf:\/\/.*PROFILE=s3:text&.*/pxf:\/\/pxf_automation_data?PROFILE=s3:text&ACCESS_AND_SECRET_KEY/
 --

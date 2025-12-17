@@ -36,6 +36,17 @@ export COMMON_JAVA_OPTS=${COMMON_JAVA_OPTS:-}
 export PGHOST=${PGHOST:-localhost}
 export PGPORT=${PGPORT:-7000}
 export MASTER_DATA_DIRECTORY=${MASTER_DATA_DIRECTORY:-/home/gpadmin/workspace/cloudberry/gpAux/gpdemo/datadirs/qddir/demoDataDir-1}
+# set cloudberry timezone utc
+export PGTZ=UTC
+
+# --------------------------------------------------------------------
+# Minio defaults
+# --------------------------------------------------------------------
+export AWS_ACCESS_KEY_ID=admin
+export AWS_SECRET_ACCESS_KEY=password
+export PROTOCOL=minio
+export ACCESS_KEY_ID=admin
+export SECRET_ACCESS_KEY=password
 
 # --------------------------------------------------------------------
 # PXF defaults

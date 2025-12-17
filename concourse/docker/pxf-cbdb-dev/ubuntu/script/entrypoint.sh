@@ -87,7 +87,7 @@ build_cloudberry() {
   log "cleanup stale gpdemo data and PG locks"
   rm -rf /home/gpadmin/workspace/cloudberry/gpAux/gpdemo/datadirs
   rm -f /tmp/.s.PGSQL.700*
-  sudo chown -R gpadmin:gpadmin "${ROOT_DIR}" || true
+  find "${ROOT_DIR}" -not -path '*/.git/*' -exec sudo chown gpadmin:gpadmin {} + 2>/dev/null || true
   "${PXF_SCRIPTS}/build_cloudberrry.sh"
 }
 
@@ -122,6 +122,84 @@ XML
   if ! grep -q "pxf.service.user.name" "$PXF_BASE/servers/default-no-impersonation/pxf-site.xml"; then
     sed -i 's#</configuration>#  <property>\n    <name>pxf.service.user.name</name>\n    <value>foobar</value>\n  </property>\n  <property>\n    <name>pxf.service.user.impersonation</name>\n    <value>false</value>\n  </property>\n</configuration>#' "$PXF_BASE/servers/default-no-impersonation/pxf-site.xml"
   fi
+
+  # Configure pxf-profiles.xml for Parquet support
+  cat > "$PXF_BASE/conf/pxf-profiles.xml" <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<profiles>
+    <profile>
+        <name>pxf:parquet</name>
+        <description>Profile for reading and writing Parquet files</description>
+        <plugins>
+            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.greenplum.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
+            <resolver>org.greenplum.pxf.plugins.hdfs.ParquetResolver</resolver>
+        </plugins>
+    </profile>
+</profiles>
+EOF
+
+  cat > "$PXF_HOME/conf/pxf-profiles.xml" <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<profiles>
+    <profile>
+        <name>pxf:parquet</name>
+        <description>Profile for reading and writing Parquet files</description>
+        <plugins>
+            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.greenplum.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
+            <resolver>org.greenplum.pxf.plugins.hdfs.ParquetResolver</resolver>
+        </plugins>
+    </profile>
+</profiles>
+EOF
+
+  # Configure S3 settings
+  mkdir -p "$PXF_BASE/servers/s3" "$PXF_HOME/servers/s3"
+  
+  for s3_site in "$PXF_BASE/servers/s3/s3-site.xml" "$PXF_BASE/servers/default/s3-site.xml" "$PXF_HOME/servers/s3/s3-site.xml"; do
+    mkdir -p "$(dirname "$s3_site")"
+    cat > "$s3_site" <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property>
+        <name>fs.s3a.endpoint</name>
+        <value>http://localhost:9000</value>
+    </property>
+    <property>
+        <name>fs.s3a.access.key</name>
+        <value>admin</value>
+    </property>
+    <property>
+        <name>fs.s3a.secret.key</name>
+        <value>password</value>
+    </property>
+    <property>
+        <name>fs.s3a.path.style.access</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>fs.s3a.connection.ssl.enabled</name>
+        <value>false</value>
+    </property>
+    <property>
+        <name>fs.s3a.impl</name>
+        <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
+    </property>
+    <property>
+        <name>fs.s3a.aws.credentials.provider</name>
+        <value>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider</value>
+    </property>
+</configuration>
+EOF
+  done
+  mkdir -p /home/gpadmin/.aws/
+  cat > "/home/gpadmin/.aws/credentials" <<'EOF'
+[default]
+aws_access_key_id = admin
+aws_secret_access_key = password
+EOF
+
 }
 
 prepare_hadoop_stack() {
@@ -222,6 +300,11 @@ run_tests() {
   "${PXF_SCRIPTS}/run_tests.sh" "${GROUP:-}"
 }
 
+deploy_minio() {
+  log "deploying MinIO"
+  bash "${REPO_DIR}/dev/start_minio.bash"
+}
+
 main() {
   detect_java_paths
   setup_locale_and_packages
@@ -231,6 +314,7 @@ main() {
   build_pxf
   configure_pxf
   prepare_hadoop_stack
+  deploy_minio
   health_check
   #run_tests
   log "entrypoint finished; keeping container alive"

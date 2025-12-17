@@ -52,6 +52,9 @@ select * from hcfs_glob_match_string_from_string_set_10 order by name, num;
 -- m/CONTEXT:.*file.*/
 -- s/, file.*//g
 --
+-- m/CONTEXT:.*External table.*line \d* of pxf.*/
+-- s/, line \d* of pxf.*//g
+--
 -- end_matchsubs
 
 select * from hcfs_glob_match_string_from_string_set_11 order by name, num;
