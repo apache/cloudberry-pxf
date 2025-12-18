@@ -4,7 +4,6 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
     types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
@@ -41,8 +40,8 @@ jobs:
     - name: Checkout Apache Cloudberry pxf source
       uses: actions/checkout@v4
       with:
-        repository: MisterRaindrop/cloudberry-pxf
-        ref: liuxiaoyu/merge_2
+        repository: apache/cloudberry-pxf
+        ref: merge-with-upstream
         fetch-depth: 1
         persist-credentials: false
         path: cloudberry-pxf
