@@ -2,7 +2,7 @@ name: PXF CI Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ merge-with-upstream ]
   pull_request:
     branches: [ merge-with-upstream ]
     types: [opened, synchronize, reopened, edited]
