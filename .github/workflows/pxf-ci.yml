@@ -81,7 +81,7 @@ jobs:
 
     - name: Build singlecluster image
       run: |
-        cd ${{ github.workspace }}/cloudberry-pxf/concourse/singlecluster
+        cd cloudberry-pxf/concourse/singlecluster
         docker build -t pxf/singlecluster:3 .
         docker save pxf/singlecluster:3 > /tmp/singlecluster-image.tar
 
@@ -141,7 +141,6 @@ jobs:
     
     - name: Prepare Cloudberry source
       run: |
-        cd ${{ github.workspace }}
         tar xzf /tmp/cloudberry-source.tar.gz
         chmod -R u+rwX,go+rX cloudberry
     
@@ -149,7 +148,7 @@ jobs:
       id: build_start
       continue-on-error: true
       run: |
-        cd ${{ github.workspace }}/cloudberry-pxf
+        cd cloudberry-pxf
         docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v
         docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml build
         docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml up -d
@@ -163,7 +162,7 @@ jobs:
       continue-on-error: true
       if: always()
       run: |
-        cd ${{ github.workspace }}/cloudberry-pxf
+        cd cloudberry-pxf
         docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh cli"
 
     - name: Test PXF Server
@@ -171,7 +170,7 @@ jobs:
       continue-on-error: true
       if: always()
       run: |
-        cd ${{ github.workspace }}/cloudberry-pxf
+        cd cloudberry-pxf
         docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh server"
 
     - name: Test PXF Automation
@@ -179,7 +178,7 @@ jobs:
       continue-on-error: true
       if: always()
       run: |
-        cd ${{ github.workspace }}/cloudberry-pxf
+        cd cloudberry-pxf
         docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh automation"
     - name: Collect and upload artifacts
       if: always()
@@ -188,7 +187,7 @@ jobs:
         # Always create a manifest to ensure non-empty artifact bundle
         echo "PXF artifacts bundle" > artifacts/manifest.txt
         # Collect test artifacts from mounted volume
-        cp -r ${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/* artifacts/ 2>/dev/null || true
+        cp -r cloudberry-pxf/automation/test_artifacts/* artifacts/ 2>/dev/null || true
         # Collect PXF logs from container if available
         docker exec pxf-cbdb-dev bash -c "cp -r /usr/local/pxf/logs/* /tmp/pxf-logs/ 2>/dev/null || true" || true
         docker cp pxf-cbdb-dev:/tmp/pxf-logs artifacts/logs/ 2>/dev/null || true
@@ -199,7 +198,7 @@ jobs:
     - name: Cleanup containers
       if: always()
       run: |
-        cd ${{ github.workspace }}/cloudberry-pxf
+        cd cloudberry-pxf
         docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v || true
 
 
@@ -236,25 +235,25 @@ jobs:
 
         # Use files from Docker volume mapping (no need to copy from container)
         echo "=== Checking for test results ==="
-        ls -la ${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/ 2>/dev/null || echo "No test_artifacts directory"
+        ls -la cloudberry-pxf/automation/test_artifacts/ 2>/dev/null || echo "No test_artifacts directory"
 
         # Copy test results from mapped volume
-        if [ -f "${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/test_summary.json" ]; then
-          cp "${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/test_summary.json" ./test_summary.json
+        if [ -f "cloudberry-pxf/automation/test_artifacts/test_summary.json" ]; then
+          cp "cloudberry-pxf/automation/test_artifacts/test_summary.json" ./test_summary.json
           echo "Found test_summary.json"
         else
           echo '{"overall":{"total":0,"passed":0,"failed":0,"skipped":0},"groups":{}}' > ./test_summary.json
           echo "No test_summary.json, created default"
         fi
 
-        if [ -f "${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/component_results.csv" ]; then
-          cp "${{ github.workspace }}/cloudberry-pxf/automation/test_artifacts/component_results.csv" ./component_results.csv
+        if [ -f "cloudberry-pxf/automation/test_artifacts/component_results.csv" ]; then
+          cp "cloudberry-pxf/automation/test_artifacts/component_results.csv" ./component_results.csv
         else
           echo "Component,Status,ExitCode" > ./component_results.csv
         fi
 
-        if [ -d "${{ github.workspace }}/cloudberry-pxf/automation/target/surefire-reports" ]; then
-          cp -r "${{ github.workspace }}/cloudberry-pxf/automation/target/surefire-reports" ./surefire-reports
+        if [ -d "cloudberry-pxf/automation/target/surefire-reports" ]; then
+          cp -r "cloudberry-pxf/automation/target/surefire-reports" ./surefire-reports
         else
           mkdir -p ./surefire-reports
         fi
