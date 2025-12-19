@@ -718,6 +718,11 @@ run_single_group() {
       cd "${REPO_ROOT}/cli"
       make test
       ;;
+    external-table)
+      [ -f "/usr/local/cloudberry-db/cloudberry-env.sh" ] && source /usr/local/cloudberry-db/cloudberry-env.sh
+      cd "${REPO_ROOT}/external-table"
+      make installcheck
+      ;;
     server)
       cd "${REPO_ROOT}/server"
       ./gradlew test
@@ -769,7 +774,7 @@ run_single_group() {
       ;;
     *)
       echo "Unknown test group: $group"
-      echo "Available groups: cli, server, sanity, smoke, hdfs, hcatalog, hcfs, hive, hbase, profile, jdbc, proxy, unused, s3, features, gpdb"
+      echo "Available groups: cli, external-table, server, sanity, smoke, hdfs, hcatalog, hcfs, hive, hbase, profile, jdbc, proxy, unused, s3, features, gpdb"
       exit 1
       ;;
   esac

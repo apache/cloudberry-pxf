@@ -103,6 +103,7 @@ jobs:
       matrix:
         test_group:
           - cli
+          - external-table
           - server
           - sanity
           - smoke
