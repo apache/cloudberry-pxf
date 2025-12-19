@@ -461,15 +461,6 @@ start_hive_services() {
   done
 }
 
-run_tests() {
-  if [ "${RUN_TESTS:-true}" != "true" ]; then
-    log "RUN_TESTS=false, skipping automation run"
-    return
-  fi
-  log "running tests group=${GROUP:-}"
-  "${PXF_SCRIPTS}/run_tests.sh" "${GROUP:-}"
-}
-
 deploy_minio() {
   log "deploying MinIO"
   bash "${REPO_DIR}/dev/start_minio.bash"
@@ -486,8 +477,7 @@ main() {
   prepare_hadoop_stack
   deploy_minio
   health_check
-  run_tests
-  log "entrypoint finished; keeping container alive"
+  log "entrypoint finished; environment ready for tests"
 }
 
 main "$@"

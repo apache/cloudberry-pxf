@@ -18,13 +18,13 @@ concurrency:
 env:
   JAVA_VERSION: "11"
   JAVA_HOME: "/usr/lib/jvm/java-11-openjdk"
-  GPADMIN_HOME: "/home/gpadmin"
   GO_VERSION: "1.21"
   GPHOME: "/usr/local/cloudberry-db"
   CLOUDBERRY_VERSION: "main"
   PXF_HOME: "/usr/local/pxf"
 
 jobs:
+  # Stage 1: Build artifacts (runs in parallel)
   build-cloudberry-deb:
     name: Build Cloudberry DEB Package
     runs-on: ubuntu-latest
@@ -93,10 +93,29 @@ jobs:
         path: /tmp/singlecluster-image.tar
         retention-days: 1
 
-  pxf-build-install-test:
-    name: Build, Install & Test PXF
+  # Stage 2: Parallel test jobs using matrix strategy
+  pxf-test:
+    name: Test PXF - ${{ matrix.test_group }}
     needs: [build-cloudberry-deb, build-docker-images]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test_group:
+          - cli
+          - server
+          - sanity
+          - smoke
+          - hdfs
+          - hcatalog
+          - hcfs
+          - hive
+          - hbase
+          - profile
+          - jdbc
+          - proxy
+          - features
+          - gpdb
     steps:
     - name: Free disk space
       run: |
@@ -108,7 +127,7 @@ jobs:
         sudo docker system prune -af
         df -h
 
-    - name: Checkout Apache Cloudberry pxf source
+    - name: Checkout PXF source
       uses: actions/checkout@v4
       with:
         fetch-depth: 1
@@ -120,13 +139,13 @@ jobs:
       with:
         name: cloudberry-deb
         path: /tmp
-    
+
     - name: Download Cloudberry source
       uses: actions/download-artifact@v4
       with:
         name: cloudberry-source
         path: /tmp
-    
+
     - name: Download singlecluster image
       uses: actions/download-artifact@v4
       with:
@@ -136,20 +155,15 @@ jobs:
     - name: Load singlecluster image
       run: |
         docker load < /tmp/singlecluster-image.tar
-    
+
     - name: Prepare Cloudberry source
       run: |
         tar xzf /tmp/cloudberry-source.tar.gz
         chmod -R u+rwX,go+rX cloudberry
-    
-    - name: Build and Start Services
-      id: build_start
-      continue-on-error: true
+
+    - name: Start Services
+      id: start_services
       run: |
-        echo "Current directory: $(pwd)"
-        echo "Listing workspace:"
-        ls -la
-        ls -la cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu/
         cd cloudberry-pxf
         docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v || true
         docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml build
@@ -159,40 +173,26 @@ jobs:
         docker exec pxf-cbdb-dev sudo chown gpadmin:gpadmin /tmp/*.deb
         docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/entrypoint.sh"
 
-    - name: Test PXF CLI
-      id: test_cli
+    - name: Run Test - ${{ matrix.test_group }}
+      id: run_test
       continue-on-error: true
-      if: steps.build_start.outcome == 'success'
       run: |
-        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh cli"
+        TEST_GROUP="${{ matrix.test_group }}"
+        if [[ "$TEST_GROUP" == "cli" || "$TEST_GROUP" == "server" ]]; then
+          docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh $TEST_GROUP"
+        else
+          docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/automation && source ../concourse/docker/pxf-cbdb-dev/ubuntu/script/pxf-env.sh && make GROUP=$TEST_GROUP"
+        fi
 
-    - name: Test PXF Server
-      id: test_server
-      continue-on-error: true
-      if: steps.build_start.outcome == 'success'
-      run: |
-        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh server"
-
-    - name: Test PXF Automation
-      id: test_automation
-      continue-on-error: true
-      if: steps.build_start.outcome == 'success'
-      run: |
-        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh automation"
-    - name: Collect and upload artifacts
+    - name: Collect artifacts
       if: always()
       run: |
         mkdir -p artifacts/logs
-        # Always create a manifest to ensure non-empty artifact bundle
-        echo "PXF artifacts bundle" > artifacts/manifest.txt
-        # Collect test artifacts from mounted volume
+        echo "Test group: ${{ matrix.test_group }}" > artifacts/manifest.txt
+        echo "Test result: ${{ steps.run_test.outcome }}" >> artifacts/manifest.txt
         cp -r cloudberry-pxf/automation/test_artifacts/* artifacts/ 2>/dev/null || true
-        # Collect PXF logs from container if available
         docker exec pxf-cbdb-dev bash -c "cp -r /usr/local/pxf/logs/* /tmp/pxf-logs/ 2>/dev/null || true" || true
         docker cp pxf-cbdb-dev:/tmp/pxf-logs artifacts/logs/ 2>/dev/null || true
-        # Record collected files into manifest
-        find artifacts -type f -print >> artifacts/manifest.txt 2>/dev/null || true
-      shell: bash
 
     - name: Cleanup containers
       if: always()
@@ -200,201 +200,55 @@ jobs:
         cd cloudberry-pxf
         docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v || true
 
-
-    - name: Upload PXF artifacts
+    - name: Upload test artifacts
       if: always()
       uses: actions/upload-artifact@v4
-      id: upload_automation_step
       with:
-        name: automation-test-results-pxf-cbdb-dev
+        name: test-results-${{ matrix.test_group }}
         path: artifacts/**
         if-no-files-found: ignore
-        retention-days: 30
+        retention-days: 7
 
-    - name: Evaluate module build/test results
+    - name: Check test result
       if: always()
-      env:
-        BUILD_START: ${{ steps.build_start.outcome }}
-        TEST_CLI: ${{ steps.test_cli.outcome }}
-        TEST_FDW: ${{ steps.test_fdw.outcome }}
-        TEST_SERVER: ${{ steps.test_server.outcome }}
-        TEST_AUTOMATION: ${{ steps.test_automation.outcome }}
       run: |
-        set -eo pipefail
-
-        status_icon() {
-          case "$1" in
-            success) echo "✅";;
-            failure) echo "❌";;
-            cancelled) echo "🛑";;
-            skipped|"") echo "⏭️";;
-            *) echo "$1";;
-          esac
-        }
-
-        # Use files from Docker volume mapping (no need to copy from container)
-        echo "=== Checking for test results ==="
-        ls -la cloudberry-pxf/automation/test_artifacts/ 2>/dev/null || echo "No test_artifacts directory"
-
-        # Copy test results from mapped volume
-        if [ -f "cloudberry-pxf/automation/test_artifacts/test_summary.json" ]; then
-          cp "cloudberry-pxf/automation/test_artifacts/test_summary.json" ./test_summary.json
-          echo "Found test_summary.json"
-        else
-          echo '{"overall":{"total":0,"passed":0,"failed":0,"skipped":0},"groups":{}}' > ./test_summary.json
-          echo "No test_summary.json, created default"
-        fi
-
-        if [ -f "cloudberry-pxf/automation/test_artifacts/component_results.csv" ]; then
-          cp "cloudberry-pxf/automation/test_artifacts/component_results.csv" ./component_results.csv
-        else
-          echo "Component,Status,ExitCode" > ./component_results.csv
-        fi
-
-        if [ -d "cloudberry-pxf/automation/target/surefire-reports" ]; then
-          cp -r "cloudberry-pxf/automation/target/surefire-reports" ./surefire-reports
-        else
-          mkdir -p ./surefire-reports
-        fi
-
-        echo "=== test_summary.json content ==="
-        if [ -f ./test_summary.json ]; then
-          cat ./test_summary.json
-        else
-          echo "test_summary.json not found"
-        fi
-        echo "=== end of test_summary.json ==="
-
-        BUILD_ICON=$(status_icon "${BUILD_START}")
-        CLI_ICON=$(status_icon "${TEST_CLI}")
-        FDW_ICON=$(status_icon "${TEST_FDW}")
-        SERVER_ICON=$(status_icon "${TEST_SERVER}")
-        AUTO_ICON=$(status_icon "${TEST_AUTOMATION}")
-
-        # Parse component results
-        get_status() {
-          grep "^$1," ./component_results.csv 2>/dev/null | cut -d',' -f2 || echo "N/A"
-        }
-
-        CLI_STATUS=$(get_status "CLI")
-        FDW_STATUS=$(get_status "FDW")
-        SERVER_STATUS=$(get_status "Server")
-        AUTO_STATUS=$(get_status "Automation")
-
-        # Read test summary from JSON
-        if command -v jq >/dev/null 2>&1 && [ -f ./test_summary.json ]; then
-          TOTAL_TESTS=$(jq -r '.overall.total // 0' ./test_summary.json 2>/dev/null || echo "0")
-          PASSED_TESTS=$(jq -r '.overall.passed // 0' ./test_summary.json 2>/dev/null || echo "0")
-          FAILED_TESTS=$(jq -r '.overall.failed // 0' ./test_summary.json 2>/dev/null || echo "0")
-          SKIPPED_TESTS=$(jq -r '.overall.skipped // 0' ./test_summary.json 2>/dev/null || echo "0")
-        else
-          # Fallback to parsing without jq
-          TOTAL_TESTS=$(grep -o '"total":[[:space:]]*[0-9]*' ./test_summary.json 2>/dev/null | head -1 | grep -o '[0-9]*' || echo "0")
-          PASSED_TESTS=$(grep -o '"passed":[[:space:]]*[0-9]*' ./test_summary.json 2>/dev/null | head -1 | grep -o '[0-9]*' || echo "0")
-          FAILED_TESTS=$(grep -o '"failed":[[:space:]]*[0-9]*' ./test_summary.json 2>/dev/null | head -1 | grep -o '[0-9]*' || echo "0")
-          SKIPPED_TESTS=$(grep -o '"skipped":[[:space:]]*[0-9]*' ./test_summary.json 2>/dev/null | head -1 | grep -o '[0-9]*' || echo "0")
-        fi
-
-        # Ensure variables are numeric
-        TOTAL_TESTS=${TOTAL_TESTS:-0}
-        PASSED_TESTS=${PASSED_TESTS:-0}
-        FAILED_TESTS=${FAILED_TESTS:-0}
-        SKIPPED_TESTS=${SKIPPED_TESTS:-0}
-
-        # Validate numeric values
-        [[ "$TOTAL_TESTS" =~ ^[0-9]+$ ]] || TOTAL_TESTS=0
-        [[ "$PASSED_TESTS" =~ ^[0-9]+$ ]] || PASSED_TESTS=0
-        [[ "$FAILED_TESTS" =~ ^[0-9]+$ ]] || FAILED_TESTS=0
-        [[ "$SKIPPED_TESTS" =~ ^[0-9]+$ ]] || SKIPPED_TESTS=0
-
-        {
-          echo "## PXF Component Test Results"
-          echo ""
-          echo "| Component | Workflow Status | Test Status |"
-          echo "|----------:|:---------------:|:-----------:|"
-          echo "| Build & Start | ${BUILD_ICON} ${BUILD_START:-skipped} | - |"
-          echo "| CLI | ${CLI_ICON} ${TEST_CLI:-skipped} | ${CLI_STATUS} |"
-          echo "| FDW | ${FDW_ICON} ${TEST_FDW:-skipped} | ${FDW_STATUS} |"
-          echo "| Server | ${SERVER_ICON} ${TEST_SERVER:-skipped} | ${SERVER_STATUS} |"
-          echo "| Automation | ${AUTO_ICON} ${TEST_AUTOMATION:-skipped} | ${AUTO_STATUS} |"
-          echo ""
-
-          # Automation detailed results
-          if [ "$TOTAL_TESTS" -gt 0 ] 2>/dev/null; then
-            echo "### Automation Test Summary"
-            echo ""
-            echo "| Metric | Count |"
-            echo "|-------:|------:|"
-            echo "| Total | $TOTAL_TESTS |"
-            echo "| Passed | $PASSED_TESTS |"
-            echo "| Failed | $FAILED_TESTS |"
-            echo "| Skipped | $SKIPPED_TESTS |"
-            echo ""
-            
-            # Test results by group from JSON
-            if [ -f ./test_summary.json ]; then
-              echo "### Test Results by Group"
-              echo ""
-              echo "| Test Group | Status | Passed | Failed | Skipped | Total |"
-              echo "|-----------:|:------:|-------:|-------:|--------:|------:|"
-              
-              # Extract group data dynamically
-              groups=$(grep -o '"[^"]*":' ./test_summary.json | grep -v '"overall":\|"groups":\|"timestamp":\|"total":\|"passed":\|"failed":\|"skipped":' | sed 's/[":]*//g' | sort -u)
-              for group in $groups; do
-                if grep -q "\"$group\":" ./test_summary.json; then
-                  group_section=$(sed -n "/\"$group\":/,/}/p" ./test_summary.json)
-                  g_total=$(echo "$group_section" | grep -o '"total":[[:space:]]*[0-9]*' | grep -o '[0-9]*' || echo "0")
-                  g_passed=$(echo "$group_section" | grep -o '"passed":[[:space:]]*[0-9]*' | grep -o '[0-9]*' || echo "0")
-                  g_failed=$(echo "$group_section" | grep -o '"failed":[[:space:]]*[0-9]*' | grep -o '[0-9]*' || echo "0")
-                  g_skipped=$(echo "$group_section" | grep -o '"skipped":[[:space:]]*[0-9]*' | grep -o '[0-9]*' || echo "0")
-                  
-                  [ "$g_total" -eq 0 ] && continue
-                  
-                  if [ "$g_failed" -gt 0 ]; then
-                    status_icon="❌ FAIL"
-                  else
-                    status_icon="✅ PASS"
-                  fi
-                  
-                  echo "| ${group} | ${status_icon} | ${g_passed} | ${g_failed} | ${g_skipped} | ${g_total} |"
-                fi
-              done
-              echo ""
-            fi
-          fi
-
-          # Count failures
-          failed_count=$(grep -c ",FAIL," ./component_results.csv 2>/dev/null || echo 0)
-          passed_count=$(grep -c ",PASS," ./component_results.csv 2>/dev/null || echo 0)
-          total_count=$((failed_count + passed_count))
-
-          if [ "$failed_count" -gt 0 ] 2>/dev/null || [ "$FAILED_TESTS" -gt 0 ] 2>/dev/null; then
-            echo "### ⚠️ Summary"
-            [ "$failed_count" -gt 0 ] 2>/dev/null && echo "- Components: $failed_count of $total_count failed"
-            [ "$FAILED_TESTS" -gt 0 ] 2>/dev/null && echo "- Automation: $FAILED_TESTS of $TOTAL_TESTS test cases failed"
-          elif [ "$total_count" -gt 0 ] 2>/dev/null; then
-            echo "### ✅ Summary: All tests passed"
-            [ "$TOTAL_TESTS" -gt 0 ] 2>/dev/null && echo "- Automation: $PASSED_TESTS of $TOTAL_TESTS test cases passed"
-          else
-            echo "### ℹ️ Summary: No test results available"
-          fi
-          echo ""
-          echo "### Artifacts"
-          echo "- Uploaded artifact bundle: 'automation-test-results-pxf-cbdb-dev'"
-        } >> "$GITHUB_STEP_SUMMARY"
-
-        fail=0
-        for v in "${BUILD_START}" "${TEST_CLI}" "${TEST_FDW}" "${TEST_SERVER}" "${TEST_AUTOMATION}"; do
-          if [ "$v" = "failure" ]; then fail=1; fi
-        done
-
-        # Also fail if automation tests had failures
-        if [ "$FAILED_TESTS" -gt 0 ] 2>/dev/null; then
-          echo "Automation tests had $FAILED_TESTS failures. Marking job as failed."
-          fail=1
-        fi
-
-        if [ "$fail" -ne 0 ]; then
-          echo "One or more components failed. Marking job as failed."
+        if [ "${{ steps.run_test.outcome }}" == "failure" ]; then
+          echo "Test group ${{ matrix.test_group }} failed"
           exit 1
         fi
+
+  # Stage 3: Summary job
+  test-summary:
+    name: Test Summary
+    needs: [pxf-test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all test artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: all-artifacts
+        pattern: test-results-*
+
+    - name: Generate summary
+      run: |
+        echo "## PXF Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Group | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+        
+        for dir in all-artifacts/test-results-*; do
+          if [ -d "$dir" ]; then
+            group=$(basename "$dir" | sed 's/test-results-//')
+            if [ -f "$dir/manifest.txt" ]; then
+              result=$(grep "Test result:" "$dir/manifest.txt" | cut -d: -f2 | tr -d ' ')
+              if [ "$result" == "success" ]; then
+                echo "| $group | ✅ success |" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "| $group | ❌ failure |" >> $GITHUB_STEP_SUMMARY
+              fi
+            else
+              echo "| $group | ⚠️ unknown |" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+        done
