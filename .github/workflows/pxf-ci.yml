@@ -111,10 +111,7 @@ jobs:
     - name: Checkout Apache Cloudberry pxf source
       uses: actions/checkout@v4
       with:
-        repository: apache/cloudberry-pxf
-        ref: merge-with-upstream
         fetch-depth: 1
-        persist-credentials: false
         path: cloudberry-pxf
         submodules: true
 
@@ -149,8 +146,12 @@ jobs:
       id: build_start
       continue-on-error: true
       run: |
+        echo "Current directory: $(pwd)"
+        echo "Listing workspace:"
+        ls -la
+        ls -la cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu/
         cd cloudberry-pxf
-        docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v
+        docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v || true
         docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml build
         docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml up -d
         docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry
@@ -161,25 +162,22 @@ jobs:
     - name: Test PXF CLI
       id: test_cli
       continue-on-error: true
-      if: always()
+      if: steps.build_start.outcome == 'success'
       run: |
-        cd cloudberry-pxf
         docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh cli"
 
     - name: Test PXF Server
       id: test_server
       continue-on-error: true
-      if: always()
+      if: steps.build_start.outcome == 'success'
       run: |
-        cd cloudberry-pxf
         docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh server"
 
     - name: Test PXF Automation
       id: test_automation
       continue-on-error: true
-      if: always()
+      if: steps.build_start.outcome == 'success'
       run: |
-        cd cloudberry-pxf
         docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh automation"
     - name: Collect and upload artifacts
       if: always()
