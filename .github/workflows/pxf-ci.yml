@@ -114,6 +114,8 @@ jobs:
           - profile
           - jdbc
           - proxy
+          - unused
+          - s3
           - features
           - gpdb
     steps:
@@ -177,22 +179,56 @@ jobs:
       id: run_test
       continue-on-error: true
       run: |
-        TEST_GROUP="${{ matrix.test_group }}"
-        if [[ "$TEST_GROUP" == "cli" || "$TEST_GROUP" == "server" ]]; then
-          docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/pxf-test.sh $TEST_GROUP"
-        else
-          docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/automation && source ../concourse/docker/pxf-cbdb-dev/ubuntu/script/pxf-env.sh && make GROUP=$TEST_GROUP"
-        fi
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu/script && ./run_single_test.sh ${{ matrix.test_group }}"
 
-    - name: Collect artifacts
+    - name: Collect artifacts and generate stats
       if: always()
       run: |
         mkdir -p artifacts/logs
-        echo "Test group: ${{ matrix.test_group }}" > artifacts/manifest.txt
-        echo "Test result: ${{ steps.run_test.outcome }}" >> artifacts/manifest.txt
+        TEST_GROUP="${{ matrix.test_group }}"
+        TEST_RESULT="${{ steps.run_test.outcome }}"
+        
+        # Initialize counters
+        TOTAL=0
+        PASSED=0
+        FAILED=0
+        SKIPPED=0
+        
+        # Copy test artifacts
         cp -r cloudberry-pxf/automation/test_artifacts/* artifacts/ 2>/dev/null || true
         docker exec pxf-cbdb-dev bash -c "cp -r /usr/local/pxf/logs/* /tmp/pxf-logs/ 2>/dev/null || true" || true
         docker cp pxf-cbdb-dev:/tmp/pxf-logs artifacts/logs/ 2>/dev/null || true
+        
+        # Parse surefire reports for automation tests
+        if [[ "$TEST_GROUP" != "cli" && "$TEST_GROUP" != "server" ]]; then
+          for xml in cloudberry-pxf/automation/target/surefire-reports/TEST-*.xml; do
+            if [ -f "$xml" ]; then
+              tests=$(grep -oP 'tests="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+              failures=$(grep -oP 'failures="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+              errors=$(grep -oP 'errors="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+              skipped=$(grep -oP 'skipped="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+              
+              TOTAL=$((TOTAL + tests))
+              FAILED=$((FAILED + failures + errors))
+              SKIPPED=$((SKIPPED + skipped))
+            fi
+          done
+          PASSED=$((TOTAL - FAILED - SKIPPED))
+        fi
+        
+        # Generate stats JSON
+        cat > artifacts/test_stats.json <<EOF
+        {
+          "group": "$TEST_GROUP",
+          "result": "$TEST_RESULT",
+          "total": $TOTAL,
+          "passed": $PASSED,
+          "failed": $FAILED,
+          "skipped": $SKIPPED
+        }
+        EOF
+        
+        echo "Test stats for $TEST_GROUP: total=$TOTAL, passed=$PASSED, failed=$FAILED, skipped=$SKIPPED"
 
     - name: Cleanup containers
       if: always()
@@ -234,21 +270,77 @@ jobs:
       run: |
         echo "## PXF Test Results Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "| Test Group | Status |" >> $GITHUB_STEP_SUMMARY
-        echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+        
+        # Overall counters
+        OVERALL_TOTAL=0
+        OVERALL_PASSED=0
+        OVERALL_FAILED=0
+        OVERALL_SKIPPED=0
+        GROUPS_PASSED=0
+        GROUPS_FAILED=0
+        
+        # Collect all test stats
+        declare -A GROUP_STATS
         
         for dir in all-artifacts/test-results-*; do
-          if [ -d "$dir" ]; then
-            group=$(basename "$dir" | sed 's/test-results-//')
-            if [ -f "$dir/manifest.txt" ]; then
-              result=$(grep "Test result:" "$dir/manifest.txt" | cut -d: -f2 | tr -d ' ')
-              if [ "$result" == "success" ]; then
-                echo "| $group | ✅ success |" >> $GITHUB_STEP_SUMMARY
-              else
-                echo "| $group | ❌ failure |" >> $GITHUB_STEP_SUMMARY
-              fi
+          if [ -d "$dir" ] && [ -f "$dir/test_stats.json" ]; then
+            group=$(cat "$dir/test_stats.json" | grep -oP '"group":\s*"\K[^"]+' || basename "$dir" | sed 's/test-results-//')
+            result=$(cat "$dir/test_stats.json" | grep -oP '"result":\s*"\K[^"]+' || echo "unknown")
+            total=$(cat "$dir/test_stats.json" | grep -oP '"total":\s*\K\d+' || echo "0")
+            passed=$(cat "$dir/test_stats.json" | grep -oP '"passed":\s*\K\d+' || echo "0")
+            failed=$(cat "$dir/test_stats.json" | grep -oP '"failed":\s*\K\d+' || echo "0")
+            skipped=$(cat "$dir/test_stats.json" | grep -oP '"skipped":\s*\K\d+' || echo "0")
+            
+            GROUP_STATS[$group]="$result,$total,$passed,$failed,$skipped"
+            
+            OVERALL_TOTAL=$((OVERALL_TOTAL + total))
+            OVERALL_PASSED=$((OVERALL_PASSED + passed))
+            OVERALL_FAILED=$((OVERALL_FAILED + failed))
+            OVERALL_SKIPPED=$((OVERALL_SKIPPED + skipped))
+            
+            if [ "$result" == "success" ]; then
+              GROUPS_PASSED=$((GROUPS_PASSED + 1))
             else
-              echo "| $group | ⚠️ unknown |" >> $GITHUB_STEP_SUMMARY
+              GROUPS_FAILED=$((GROUPS_FAILED + 1))
             fi
           fi
         done
+        
+        # Overall summary
+        echo "### Overall Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ $GROUPS_FAILED -eq 0 ]; then
+          echo "✅ **All ${GROUPS_PASSED} test groups passed**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ **${GROUPS_FAILED} of $((GROUPS_PASSED + GROUPS_FAILED)) test groups failed**" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- Total Tests: $OVERALL_TOTAL" >> $GITHUB_STEP_SUMMARY
+        echo "- Passed: $OVERALL_PASSED" >> $GITHUB_STEP_SUMMARY
+        echo "- Failed: $OVERALL_FAILED" >> $GITHUB_STEP_SUMMARY
+        echo "- Skipped: $OVERALL_SKIPPED" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Detailed table
+        echo "### Test Results by Group" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Group | Status | Passed | Failed | Skipped | Total |" >> $GITHUB_STEP_SUMMARY
+        echo "|------------|--------|-------:|-------:|--------:|------:|" >> $GITHUB_STEP_SUMMARY
+        
+        for group in $(echo "${!GROUP_STATS[@]}" | tr ' ' '\n' | sort); do
+          IFS=',' read -r result total passed failed skipped <<< "${GROUP_STATS[$group]}"
+          if [ "$result" == "success" ]; then
+            status="✅ PASS"
+          else
+            status="❌ FAIL"
+          fi
+          echo "| $group | $status | $passed | $failed | $skipped | $total |" >> $GITHUB_STEP_SUMMARY
+        done
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Check if any group failed
+        if [ $GROUPS_FAILED -gt 0 ]; then
+          echo "::error::${GROUPS_FAILED} test group(s) failed"
+          exit 1
+        fi
