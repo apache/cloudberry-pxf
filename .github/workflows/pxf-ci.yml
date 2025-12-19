@@ -4,6 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
+    branches: [ merge-with-upstream ]
     types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
