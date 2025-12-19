@@ -702,22 +702,105 @@ generate_test_summary() {
   fi
 }
 
-main() {
-  echo "[run_tests] Running all test groups..."
-
+run_single_group() {
+  local group="$1"
+  echo "[run_tests] Running single test group: $group"
+  
   # Run health check first
   health_check_with_retry
+  
+  ensure_testuser_pg_hba
+  export PGHOST=127.0.0.1
+  export PATH="${GPHOME}/bin:${PATH}"
+  
+  case "$group" in
+    cli)
+      cd "${REPO_ROOT}/cli"
+      make test
+      ;;
+    server)
+      cd "${REPO_ROOT}/server"
+      ./gradlew test
+      ;;
+    hive)
+      cleanup_hive_state
+      ensure_hive_tez_settings
+      ensure_yarn_vmem_settings
+      export PROTOCOL=
+      make GROUP="hive"
+      save_test_reports "hive"
+      ;;
+    hbase)
+      cleanup_hbase_state
+      export PROTOCOL=
+      make GROUP="hbase"
+      save_test_reports "hbase"
+      ;;
+    s3)
+      ensure_minio_bucket
+      ensure_hadoop_s3a_config
+      configure_pxf_s3_server
+      configure_pxf_default_s3_server
+      export PROTOCOL=s3
+      export HADOOP_OPTIONAL_TOOLS=hadoop-aws
+      make GROUP="s3"
+      save_test_reports "s3"
+      ;;
+    features|gpdb)
+      ensure_gpupgrade_helpers
+      ensure_testplugin_jar
+      ensure_minio_bucket
+      ensure_hadoop_s3a_config
+      configure_pxf_s3_server
+      configure_pxf_default_hdfs_server
+      export PROTOCOL=
+      make GROUP="$group"
+      save_test_reports "$group"
+      ;;
+    proxy)
+      export PROTOCOL=
+      make GROUP="proxy"
+      save_test_reports "proxy"
+      ;;
+    sanity|smoke|hdfs|hcatalog|hcfs|profile|jdbc|unused)
+      export PROTOCOL=
+      make GROUP="$group"
+      save_test_reports "$group"
+      ;;
+    *)
+      echo "Unknown test group: $group"
+      echo "Available groups: cli, server, sanity, smoke, hdfs, hcatalog, hcfs, hive, hbase, profile, jdbc, proxy, unused, s3, features, gpdb"
+      exit 1
+      ;;
+  esac
+  
+  echo "[run_tests] Test group $group completed"
+}
 
-  # Run base tests (includes smoke, hdfs, hcatalog, hcfs, hive, etc.)
-  base_test
+main() {
+  local group="${1:-}"
+  
+  if [ -n "$group" ]; then
+    # Run single test group
+    run_single_group "$group"
+  else
+    # Run all test groups (original behavior)
+    echo "[run_tests] Running all test groups..."
 
-  # Run feature tests (includes features, gpdb)
-  feature_test
+    # Run health check first
+    health_check_with_retry
 
-  echo "[run_tests] All test groups completed, generating summary..."
+    # Run base tests (includes smoke, hdfs, hcatalog, hcfs, hive, etc.)
+    base_test
 
-  # Generate test summary and return appropriate exit code
-  generate_test_summary
+    # Run feature tests (includes features, gpdb)
+    feature_test
+
+    echo "[run_tests] All test groups completed, generating summary..."
+
+    # Generate test summary and return appropriate exit code
+    generate_test_summary
+  fi
 }
 
 main "$@"

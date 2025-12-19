@@ -179,7 +179,7 @@ jobs:
       id: run_test
       continue-on-error: true
       run: |
-        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu/script && ./run_single_test.sh ${{ matrix.test_group }}"
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/automation && source ../concourse/docker/pxf-cbdb-dev/ubuntu/script/pxf-env.sh && ../concourse/docker/pxf-cbdb-dev/ubuntu/script/run_tests.sh ${{ matrix.test_group }}"
 
     - name: Collect artifacts and generate stats
       if: always()
