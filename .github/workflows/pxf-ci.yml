@@ -179,6 +179,7 @@ jobs:
     - name: Run Test - ${{ matrix.test_group }}
       id: run_test
       continue-on-error: true
+      timeout-minutes: 120
       run: |
         docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/automation && source ../concourse/docker/pxf-cbdb-dev/ubuntu/script/pxf-env.sh && ../concourse/docker/pxf-cbdb-dev/ubuntu/script/run_tests.sh ${{ matrix.test_group }}"
 
