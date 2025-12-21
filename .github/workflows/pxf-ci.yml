@@ -182,9 +182,10 @@ jobs:
       timeout-minutes: 120
       run: |
         docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/automation && source ../concourse/docker/pxf-cbdb-dev/ubuntu/script/pxf-env.sh && ../concourse/docker/pxf-cbdb-dev/ubuntu/script/run_tests.sh ${{ matrix.test_group }}"
-
+        
     - name: Collect artifacts and generate stats
       if: always()
+      id: collect_artifacts
       run: |
         mkdir -p artifacts/logs
         TEST_GROUP="${{ matrix.test_group }}"
@@ -230,6 +231,8 @@ jobs:
         }
         EOF
         
+        echo "failed_count=$FAILED" >> $GITHUB_OUTPUT
+        echo "skipped_count=$SKIPPED" >> $GITHUB_OUTPUT
         echo "Test stats for $TEST_GROUP: total=$TOTAL, passed=$PASSED, failed=$FAILED, skipped=$SKIPPED"
 
     - name: Cleanup containers
@@ -250,8 +253,11 @@ jobs:
     - name: Check test result
       if: always()
       run: |
-        if [ "${{ steps.run_test.outcome }}" == "failure" ]; then
-          echo "Test group ${{ matrix.test_group }} failed"
+        FAILED_COUNT="${{ steps.collect_artifacts.outputs.failed_count || 0 }}"
+        SKIPPED_COUNT="${{ steps.collect_artifacts.outputs.skipped_count || 0 }}"
+        
+        if [ "${{ steps.run_test.outcome }}" == "failure" ] || [ "$FAILED_COUNT" -gt 0 ]; then
+          echo "Test group ${{ matrix.test_group }} failed (Failures: $FAILED_COUNT, Skipped: $SKIPPED_COUNT)"
           exit 1
         fi
 
@@ -280,6 +286,7 @@ jobs:
         OVERALL_SKIPPED=0
         GROUPS_PASSED=0
         GROUPS_FAILED=0
+        FAILED_GROUP_NAMES=""
         
         # Collect all test stats
         declare -A GROUP_STATS
@@ -300,10 +307,11 @@ jobs:
             OVERALL_FAILED=$((OVERALL_FAILED + failed))
             OVERALL_SKIPPED=$((OVERALL_SKIPPED + skipped))
             
-            if [ "$result" == "success" ]; then
+            if [ "$result" == "success" ] && [ "$failed" -eq 0 ]; then
               GROUPS_PASSED=$((GROUPS_PASSED + 1))
             else
               GROUPS_FAILED=$((GROUPS_FAILED + 1))
+              FAILED_GROUP_NAMES="${FAILED_GROUP_NAMES}${group} "
             fi
           fi
         done
@@ -331,7 +339,7 @@ jobs:
         
         for group in $(echo "${!GROUP_STATS[@]}" | tr ' ' '\n' | sort); do
           IFS=',' read -r result total passed failed skipped <<< "${GROUP_STATS[$group]}"
-          if [ "$result" == "success" ]; then
+          if [ "$result" == "success" ] && [ "$failed" -eq 0 ]; then
             status="✅ PASS"
           else
             status="❌ FAIL"
@@ -343,6 +351,6 @@ jobs:
         
         # Check if any group failed
         if [ $GROUPS_FAILED -gt 0 ]; then
-          echo "::error::${GROUPS_FAILED} test group(s) failed"
+          echo "::error::${GROUPS_FAILED} test group(s) failed: ${FAILED_GROUP_NAMES}"
           exit 1
         fi
