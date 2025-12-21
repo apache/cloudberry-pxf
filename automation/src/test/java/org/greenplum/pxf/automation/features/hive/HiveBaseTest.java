@@ -384,9 +384,7 @@ public class HiveBaseTest extends BaseFeature {
         hdfs.copyFromLocal(localPath, hdfsPath);
 
         // Verify file was copied to HDFS
-        if (!hdfs.doesFileExist(hdfsPath)) {
-            throw new RuntimeException("File was not copied to HDFS: " + hdfsPath);
-        }
+        hdfs.waitForFile(hdfsPath, 3);
         
         // load to hive table
         hive.loadData(tableName, hdfsPath, false);
