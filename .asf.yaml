@@ -46,6 +46,10 @@ github:
     merge: false
     # enable rebase button:
     rebase: true
+  collaborators:
+    - ostinru
+    - MisterRaindrop
+    - Mulily0513
   protected_branches:
     main:
       required_status_checks:
