@@ -207,7 +207,7 @@ public class OrcWriteTest extends BaseFeature {
         hive.runQuery(ctasHiveQuery);
 
         // use the Hive JDBC profile to avoid using the PXF ORC reader implementation
-        String jdbcUrl = HIVE_JDBC_URL_PREFIX + hive.getHost() + ":10000/default;auth=noSasl";
+        String jdbcUrl = HIVE_JDBC_URL_PREFIX + hive.getHost() + ":10000/default";
         ExternalTable exHiveJdbcTable = TableFactory.getPxfJdbcReadableTable(
                 gpdbTableNamePrefix + "_readable", ORC_PRIMITIVE_TABLE_COLUMNS_READ_FROM_HIVE,
                 hiveTable.getName() + "_ctas", HIVE_JDBC_DRIVER_CLASS, jdbcUrl, null);

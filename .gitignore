@@ -16,3 +16,4 @@ server/tmp
 /.vscode/settings.json
 /automation/dataTempFolder/
 /cli/go/pkg/
+/automation/test_artifacts

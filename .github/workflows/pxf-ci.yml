@@ -119,6 +119,9 @@ jobs:
           - s3
           - features
           - gpdb
+          - load
+          - performance
+          - pxf_extension
     steps:
     - name: Free disk space
       run: |
