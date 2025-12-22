@@ -170,9 +170,11 @@ public class PerformanceTest extends BaseFeature {
 
     private void prepareNativeGpdbData() throws Exception {
         gpdbNativeTable = new Table("perf_test", getColumnTypeGpdb());
+        gpdbNativeTable.setDistributionFields(new String[] { "int0" });
         gpdb.createTableAndVerify(gpdbNativeTable);
 
-        gpdb.insertData(gpdbTextHiveProfile, gpdbNativeTable);
+        gpdb.runQuery(String.format("INSERT INTO %s SELECT * FROM %s",
+                gpdbNativeTable.getName(), gpdbTextHiveProfile.getName()));
     }
 
     @Override

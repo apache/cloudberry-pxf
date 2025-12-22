@@ -14,7 +14,14 @@ public class ProtocolUtils {
 
         ProtocolEnum result;
         try {
-            result = ProtocolEnum.valueOf(System.getProperty(PROTOCOL_KEY, ProtocolEnum.HDFS.name()).toUpperCase());
+            String protocol = System.getProperty(PROTOCOL_KEY);
+            if (protocol == null) {
+                protocol = System.getenv(PROTOCOL_KEY);
+            }
+            if (protocol == null) {
+                protocol = ProtocolEnum.HDFS.name();
+            }
+            result = ProtocolEnum.valueOf(protocol.toUpperCase());
         } catch (Exception e) {
             result = ProtocolEnum.HDFS; // use HDFS as default mode
         }
@@ -23,15 +30,19 @@ public class ProtocolUtils {
     }
 
     public static String getSecret() {
-        return System.getProperty(AWS_SECRET_ACCESS_KEY);
+        String secret = System.getProperty(AWS_SECRET_ACCESS_KEY);
+        return secret != null ? secret : System.getenv(AWS_SECRET_ACCESS_KEY);
     }
 
     public static String getAccess() {
-        return System.getProperty(AWS_ACCESS_KEY_ID);
+        String access = System.getProperty(AWS_ACCESS_KEY_ID);
+        String result = access != null ? access : System.getenv(AWS_ACCESS_KEY_ID);
+        return result;
     }
 
     public static String getPxfTestKeepData() {
-        return System.getProperty(PXF_TEST_KEEP_DATA, "false");
+        String keepData = System.getProperty(PXF_TEST_KEEP_DATA);
+        return keepData != null ? keepData : System.getenv().getOrDefault(PXF_TEST_KEEP_DATA, "false");
     }
 
 

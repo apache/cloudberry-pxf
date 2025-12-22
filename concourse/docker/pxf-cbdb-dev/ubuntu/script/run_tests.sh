@@ -521,9 +521,17 @@ feature_test(){
   ensure_gpupgrade_helpers
   ensure_testplugin_jar
 
+  # Make sure core services are alive before preparing configs
+  health_check_with_retry || true
+
   export PGHOST=127.0.0.1
   export PATH="${GPHOME}/bin:${PATH}"
   ensure_testuser_pg_hba
+  # Clean stale state from previous runs so feature suite starts fresh
+  cleanup_hdfs_test_data
+  hdfs dfs -rm -r -f /tmp/pxf_automation_data >/dev/null 2>&1 || true
+  cleanup_hive_state
+  cleanup_hbase_state
 
   # Prepare MinIO/S3 and restore default server to local HDFS/Hive/HBase
   ensure_minio_bucket
@@ -538,10 +546,6 @@ feature_test(){
   make GROUP="features" || true
   save_test_reports "features"
   echo "[run_tests] GROUP=features finished"
-
-  make GROUP="gpdb" || true
-  save_test_reports "gpdb"
-  echo "[run_tests] GROUP=gpdb finished"
 }
 
 gpdb_test() {
@@ -551,11 +555,87 @@ gpdb_test() {
   echo "[run_tests] GROUP=gpdb finished"
 }
 
+pxf_extension_test(){
+  local sudo_cmd=""
+  if [ "$(id -u)" -ne 0 ]; then
+    sudo_cmd="sudo -n"
+  fi
+  local extension_dir="${GPHOME}/share/postgresql/extension"
+  local pxf_fdw_control="${extension_dir}/pxf_fdw.control"
+  if [ -d "${REPO_ROOT}/fdw" ] && [ -d "${extension_dir}" ]; then
+    for sql in pxf_fdw--2.0.sql pxf_fdw--1.0--2.0.sql pxf_fdw--2.0--1.0.sql; do
+      if [ -f "${REPO_ROOT}/fdw/${sql}" ]; then
+        ${sudo_cmd} cp -f "${REPO_ROOT}/fdw/${sql}" "${extension_dir}/${sql}"
+      fi
+    done
+  fi
+
+  set_pxf_fdw_default_version() {
+    local version="$1"
+    if [ -f "${pxf_fdw_control}" ]; then
+      ${sudo_cmd} sed -i "s/^default_version = '.*'/default_version = '${version}'/" "${pxf_fdw_control}"
+    fi
+  }
+
+  set_pxf_fdw_default_version "2.0"
+  make GROUP="pxfExtensionVersion2" || true
+  save_test_reports "pxfExtensionVersion2"
+  make GROUP="pxfExtensionVersion2_1" || true
+  save_test_reports "pxfExtensionVersion2_1"
+
+  set_pxf_fdw_default_version "1.0"
+  make GROUP="pxfFdwExtensionVersion1" || true
+  save_test_reports "pxfFdwExtensionVersion1"
+
+  set_pxf_fdw_default_version "2.0"
+  make GROUP="pxfFdwExtensionVersion2" || true
+  save_test_reports "pxfFdwExtensionVersion2"
+}
+
+bench_prepare_env() {
+  export HADOOP_HEAPSIZE=${HADOOP_HEAPSIZE:-2048}
+  export JAVA_HOME="${JAVA_HADOOP}"
+  export PATH="${JAVA_HOME}/bin:${HADOOP_HOME}/bin:${PATH}"
+
+  hdfs dfs -rm -r -f /tmp/pxf_automation_data /gpdb-ud-scratch/tmp/pxf_automation_data >/dev/null 2>&1 || true
+  for scratch in /tmp/pxf_automation_data /gpdb-ud-scratch/tmp/pxf_automation_data; do
+    hdfs dfs -mkdir -p "${scratch}" >/dev/null 2>&1 || true
+    hdfs dfs -chmod -R 775 "$(dirname "${scratch}")" >/dev/null 2>&1 || true
+  done
+  hdfs dfs -mkdir -p /tmp/hive >/dev/null 2>&1 || true
+  hdfs dfs -chmod -R 777 /tmp/hive >/dev/null 2>&1 || true
+
+  export PROTOCOL=
+  export PXF_TEST_KEEP_DATA=${PXF_TEST_KEEP_DATA:-true}
+
+  ensure_hive_ready
+}
+
+load_test(){
+  bench_prepare_env
+  make GROUP="load" || true
+  save_test_reports "load"
+  echo "[run_tests] GROUP=load finished"
+}
+
+performance_test(){
+  bench_prepare_env
+  make GROUP="performance" || true
+  save_test_reports "performance"
+  echo "[run_tests] GROUP=performance finished"
+}
+
+bench_test(){
+  load_test
+  performance_test
+}
+
 # Save test reports for a specific group to avoid overwriting
 save_test_reports() {
   local group="$1"
   local surefire_dir="${REPO_ROOT}/automation/target/surefire-reports"
   local logs_dir="${REPO_ROOT}/automation/automation_logs"
+  local pxf_logs_dir="${PXF_BASE:-/home/gpadmin/pxf-base}/logs"
   local artifacts_dir="${REPO_ROOT}/automation/test_artifacts"
   local group_dir="${artifacts_dir}/${group}"
 
@@ -573,6 +653,15 @@ save_test_reports() {
     cp -r "$logs_dir" "$group_dir/" 2>/dev/null || true
   else
     echo "[run_tests] No automation logs found for $group"
+  fi
+
+  # Capture PXF service logs to aid debugging
+  if [ -d "$pxf_logs_dir" ] && [ "$(ls -A "$pxf_logs_dir" 2>/dev/null)" ]; then
+    echo "[run_tests] Saving PXF logs to $group_dir/pxf-logs"
+    mkdir -p "$group_dir/pxf-logs"
+    cp -r "$pxf_logs_dir"/* "$group_dir/pxf-logs/" 2>/dev/null || true
+  else
+    echo "[run_tests] No PXF logs found at $pxf_logs_dir"
   fi
 }
 
@@ -599,7 +688,7 @@ generate_test_summary() {
 
     local group=$(basename "$group_dir")
     # Skip if it's not a test group directory
-    [[ "$group" =~ ^(smoke|hcatalog|hcfs|hdfs|hive|gpdb|sanity|hbase|profile|jdbc|proxy|unused|s3|features)$ ]] || continue
+    [[ "$group" =~ ^(smoke|hcatalog|hcfs|hdfs|hive|gpdb|sanity|hbase|profile|jdbc|proxy|unused|s3|features|load|performance|pxfExtensionVersion2|pxfExtensionVersion2_1|pxfFdwExtensionVersion1|pxfFdwExtensionVersion2)$ ]] || continue
 
     echo "Processing $group test reports from $group_dir"
 
@@ -759,16 +848,22 @@ run_single_group() {
       make GROUP="s3"
       save_test_reports "s3"
       ;;
-    features|gpdb)
-      ensure_gpupgrade_helpers
-      ensure_testplugin_jar
-      ensure_minio_bucket
-      ensure_hadoop_s3a_config
-      configure_pxf_s3_server
-      configure_pxf_default_hdfs_server
-      export PROTOCOL=
-      make GROUP="$group"
-      save_test_reports "$group"
+    features)
+      feature_test
+      ;;
+    gpdb)
+      gpdb_test
+      ;;
+    pxf_extension)
+      pxf_extension_test
+      ;;
+    load)
+      bench_prepare_env
+      load_test
+      ;;
+    performance)
+      bench_prepare_env
+      performance_test
       ;;
     proxy)
       export PROTOCOL=
@@ -782,7 +877,7 @@ run_single_group() {
       ;;
     *)
       echo "Unknown test group: $group"
-      echo "Available groups: cli, external-table, server, sanity, smoke, hdfs, hcatalog, hcfs, hive, hbase, profile, jdbc, proxy, unused, s3, features, gpdb"
+      echo "Available groups: cli, external-table, server, sanity, smoke, hdfs, hcatalog, hcfs, hive, hbase, profile, jdbc, proxy, unused, s3, features, gpdb, load, performance, bench, pxf_extension"
       exit 1
       ;;
   esac
@@ -808,6 +903,9 @@ main() {
 
     # Run feature tests (includes features, gpdb)
     feature_test
+
+    # Run bench tests (includes load, performance)
+    bench_test
 
     echo "[run_tests] All test groups completed, generating summary..."
 

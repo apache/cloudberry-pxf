@@ -7,6 +7,10 @@ import org.greenplum.pxf.automation.structures.tables.pxf.ReadableExternalTable;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.URL;
 
 /** Tests how failures are handled **/
 @FailsWithFDW
@@ -28,14 +32,7 @@ public class FailOverTest extends BaseFeature {
     @Override
     protected void afterClass() throws Exception {
         super.afterClass();
-        // We need to restore the service after it has been stopped
-        if (cluster != null) {
-            try {
-                cluster.start(PhdCluster.EnumClusterServices.pxf);
-            } catch (Exception e) {
-                // Ignore if service is already running
-            }
-        }
+        ensurePxfRunning();
     }
 
     /**
@@ -64,5 +61,95 @@ public class FailOverTest extends BaseFeature {
         gpdb.createTableAndVerify(pxfExternalTable);
 
         runSqlTest("features/general/outOfMemory");
+
+        // The test intentionally kills the PXF JVM; restart it for subsequent tests.
+        ensurePxfRunning();
+    }
+
+    private void ensurePxfRunning() throws Exception {
+        Integer port = parsePxfPort();
+        if (cluster == null || port == null) {
+            return;
+        }
+
+        String host = getPxfHttpHost();
+        if (waitForPxfHealthy(host, port, 5_000)) {
+            return;
+        }
+
+        // Wait for the OOM kill hook to fully stop the old process to avoid false positives
+        // from jps/Bootstrap checks while the JVM is shutting down.
+        waitForPortClosed(host, port, 60_000);
+
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            cluster.restart(PhdCluster.EnumClusterServices.pxf);
+            if (waitForPxfHealthy(host, port, 120_000)) {
+                return;
+            }
+        }
+        throw new RuntimeException("Failed to restart PXF after OutOfMemory test");
+    }
+
+    private Integer parsePxfPort() {
+        if (pxfPort == null) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(pxfPort);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private String getPxfHttpHost() {
+        if (pxfHost == null || pxfHost.trim().isEmpty() || "0.0.0.0".equals(pxfHost.trim())) {
+            return "localhost";
+        }
+        return pxfHost.trim();
+    }
+
+    private void waitForPortClosed(String host, int port, long timeoutMs) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            if (!isPortOpen(host, port, 500)) {
+                return;
+            }
+            Thread.sleep(500);
+        }
+    }
+
+    private boolean waitForPxfHealthy(String host, int port, long timeoutMs) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            if (isActuatorHealthy(host, port)) {
+                return true;
+            }
+            Thread.sleep(1000);
+        }
+        return false;
+    }
+
+    private boolean isPortOpen(String host, int port, int timeoutMs) {
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(host, port), timeoutMs);
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private boolean isActuatorHealthy(String host, int port) {
+        try {
+            URL url = new URL(String.format("http://%s:%d/actuator/health", host, port));
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(2000);
+            connection.setReadTimeout(2000);
+            int code = connection.getResponseCode();
+            connection.disconnect();
+            return code >= 200 && code < 300;
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 }

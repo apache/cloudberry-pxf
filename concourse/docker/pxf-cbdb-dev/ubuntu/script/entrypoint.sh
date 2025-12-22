@@ -389,9 +389,14 @@ start_hive_services() {
   export PATH="${JAVA_HOME}/bin:${HIVE_ROOT}/bin:${HADOOP_ROOT}/bin:${PATH}"
   export HIVE_HOME="${HIVE_ROOT}"
   export HADOOP_HOME="${HADOOP_ROOT}"
+  local tez_root="${TEZ_ROOT:-${GPHD_ROOT}/tez}"
   # bump HS2 heap to reduce Tez OOMs during tests
   export HADOOP_HEAPSIZE=${HADOOP_HEAPSIZE:-1024}
   export HADOOP_CLIENT_OPTS="-Xmx${HADOOP_HEAPSIZE}m -Xms512m ${HADOOP_CLIENT_OPTS:-}"
+
+  # ensure Tez libs are available on HDFS for hive.execution.engine=tez
+  "${HADOOP_ROOT}/bin/hadoop" fs -mkdir -p /apps/tez
+  "${HADOOP_ROOT}/bin/hadoop" fs -copyFromLocal -f "${tez_root}"/* /apps/tez
 
   # ensure clean state
   pkill -f HiveServer2 || true
