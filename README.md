@@ -49,9 +49,9 @@ To build PXF, you must have:
 
     Either download and install Cloudberry RPM or build Cloudberry from the source by following instructions in the [Cloudberry](https://github.com/apache/cloudberry).
 
-    Assuming you have installed Cloudberry into `/usr/local/cloudberrydb` directory, run its environment script:
+    Assuming you have installed Cloudberry into `/usr/local/cloudberry-db` directory, run its environment script:
     ```
-    source /usr/local/cloudberrydb/greenplum_path.sh
+    source /usr/local/cloudberry-db/cloudberry-env.sh
     ```
 
 3. JDK 1.8 or JDK 11 to compile/run
@@ -102,11 +102,11 @@ make test
 To install PXF, first make sure that the user has sufficient permissions in the `$GPHOME` and `$PXF_HOME` directories to perform the installation. It's recommended to change ownership to match the installing user. For example, when installing PXF as user `gpadmin` under `/usr/local/cloudberrydb`:
 
 ```bash
-export GPHOME=/usr/local/cloudberrydb
+export GPHOME=/usr/local/cloudberry-db
 export PXF_HOME=/usr/local/pxf
 export PXF_BASE=${HOME}/pxf-base
 chown -R gpadmin:gpadmin "${GPHOME}" "${PXF_HOME}"
-make -C ~/workspace/pxf install
+make -C ~/workspace/cloudberry-db install
 ```
 
 NOTE: if `PXF_BASE` is not set, it will default to `PXF_HOME`, and server configurations, libraries or other configurations, might get deleted after a PXF re-install.
