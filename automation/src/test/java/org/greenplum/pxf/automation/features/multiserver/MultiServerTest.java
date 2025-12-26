@@ -50,9 +50,6 @@ public class MultiServerTest extends BaseFeature {
      */
     @Override
     public void beforeClass() throws Exception {
-        if (ProtocolUtils.getProtocol() == ProtocolEnum.HDFS) {
-            return;
-        }
         // Initialize an additional HDFS system object (optional system object)
         hdfs2 = (Hdfs) systemManager.
                 getSystemObject("/sut", "hdfs2", -1, null, false, null, SutFactory.getInstance().getSutInstance());
@@ -71,6 +68,10 @@ public class MultiServerTest extends BaseFeature {
         }
 
         String hdfsWorkingDirectory = hdfs.getWorkingDirectory();
+        if (hdfsWorkingDirectory == null) {
+            // Fallback to the default automation working directory to avoid NPE when protocol is HDFS
+            hdfsWorkingDirectory = "/tmp/pxf_automation_data";
+        }
         defaultPath = hdfsWorkingDirectory + "/" + fileName;
 
         // Initialize server objects

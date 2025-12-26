@@ -7,4 +7,4 @@
 -- end_matchsubs
 
 INSERT INTO pxf_invalid_encoding_json_write SELECT * from gpdb_primitive_types;
-ERROR:  gpdbwritable formatter can only export UTF8 formatted data. Define the external table with ENCODING UTF8
+ERROR:  pxfwritable_export formatter can only export UTF8 formatted data. Define the external table with ENCODING UTF8

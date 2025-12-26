@@ -166,7 +166,7 @@ public class JdbcHiveTest extends BaseFeature {
     }
 
     protected void createTables(Hive hive, String serverName, String gpdbTypesTableName, String gpdbQueryTableName) throws Exception {
-        String jdbcUrl = HIVE_JDBC_URL_PREFIX + hive.getHost() + ":10000/default;auth=noSasl";
+        String jdbcUrl = HIVE_JDBC_URL_PREFIX + hive.getHost() + ":10000/default";
         String user = null;
 
         // On kerberized cluster, enabled then we need the hive/hiveserver2_hostname principal in the connection string.
@@ -219,7 +219,7 @@ public class JdbcHiveTest extends BaseFeature {
             hiveReadable = TableFactory.getPxfJdbcReadableTable(
                     hiveReadableName, GPDB_WRITE_TYPES_TABLE_FIELDS, targetHiveTable.getFullName(), serverName);
         } else {
-            String jdbcUrl = String.format("%s%s:10000/default;auth=noSasl", HIVE_JDBC_URL_PREFIX, hive.getHost());
+            String jdbcUrl = String.format("%s%s:10000/default", HIVE_JDBC_URL_PREFIX, hive.getHost());
             // create GPDB external table for writing data from GPDB to Hive with JDBC profile
             hiveWritable = TableFactory.getPxfJdbcWritableTable(
                     hiveWritableName, GPDB_WRITE_TYPES_TABLE_FIELDS, targetHiveTable.getFullName(),
