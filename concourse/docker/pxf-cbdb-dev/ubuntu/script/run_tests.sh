@@ -53,6 +53,7 @@ export HDFS_URI=${HDFS_URI:-hdfs://localhost:8020}
 export HADOOP_OPTS="-Dfs.defaultFS=${HDFS_URI} ${HADOOP_OPTS:-}"
 export HADOOP_CLIENT_OPTS="${HADOOP_OPTS}"
 export MAVEN_OPTS="-Dfs.defaultFS=${HDFS_URI} ${MAVEN_OPTS:-}"
+export TEZ_ROOT=${TEZ_ROOT:-${GPHD_ROOT}/tez}
 
 # Force Hive endpoints to localhost unless explicitly overridden (default sut points to cdw)
 export HIVE_HOST=${HIVE_HOST:-localhost}
@@ -156,6 +157,10 @@ ensure_hive_tez_settings() {
   set_xml_property "${hive_site}" "hive.tez.container.size" "2048"
   set_xml_property "${hive_site}" "hive.tez.java.opts" "-Xmx1536m -XX:+UseG1GC"
   set_xml_property "${hive_site}" "tez.am.resource.memory.mb" "1536"
+
+  # Initialize Tez
+  hadoop fs -mkdir -p /apps/tez
+  hadoop fs -copyFromLocal ${TEZ_ROOT}/* /apps/tez
 }
 
 ensure_yarn_vmem_settings() {
@@ -766,6 +771,7 @@ run_single_group() {
       ensure_hadoop_s3a_config
       configure_pxf_s3_server
       configure_pxf_default_hdfs_server
+      ensure_hive_tez_settings
       export PROTOCOL=
       make GROUP="$group"
       save_test_reports "$group"
@@ -776,6 +782,7 @@ run_single_group() {
       save_test_reports "proxy"
       ;;
     sanity|smoke|hdfs|hcatalog|hcfs|profile|jdbc|unused)
+      ensure_hive_tez_settings
       export PROTOCOL=
       make GROUP="$group"
       save_test_reports "$group"
