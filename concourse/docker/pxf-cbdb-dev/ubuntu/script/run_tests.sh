@@ -53,6 +53,7 @@ export HDFS_URI=${HDFS_URI:-hdfs://localhost:8020}
 export HADOOP_OPTS="-Dfs.defaultFS=${HDFS_URI} ${HADOOP_OPTS:-}"
 export HADOOP_CLIENT_OPTS="${HADOOP_OPTS}"
 export MAVEN_OPTS="-Dfs.defaultFS=${HDFS_URI} ${MAVEN_OPTS:-}"
+export TEZ_ROOT=${TEZ_ROOT:-${GPHD_ROOT}/tez}
 
 # Force Hive endpoints to localhost unless explicitly overridden (default sut points to cdw)
 export HIVE_HOST=${HIVE_HOST:-localhost}
@@ -90,6 +91,10 @@ cleanup_hive_state() {
   " >/dev/null 2>&1 || true
   hdfs dfs -rm -r -f /hive/warehouse/hive_small_data >/dev/null 2>&1 || true
   hdfs dfs -rm -r -f /hive/warehouse/hive_small_data_orc >/dev/null 2>&1 || true
+
+  # Initialize Tez
+  hadoop fs -mkdir -p /apps/tez
+  hadoop fs -copyFromLocal ${TEZ_ROOT}/* /apps/tez
 }
 
 cleanup_hbase_state() {
