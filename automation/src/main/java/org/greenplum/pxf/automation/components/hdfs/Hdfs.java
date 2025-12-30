@@ -570,16 +570,64 @@ public class Hdfs extends BaseSystemObject implements IFSFunctionality {
         if (parent != null) {
             fs.mkdirs(parent);
         }
-        FSDataOutputStream out = fs.create(datapath, true,
-                bufferSize, replicationSize, blockSize);
 
-        DataOutputStream dos = out;
-        if (codec != null) {
-            dos = new DataOutputStream(codec.createOutputStream(out));
+        final int maxAttempts = 3;
+        try {
+            for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+                FSDataOutputStream out = null;
+                DataOutputStream dos = null;
+                try {
+                    out = fs.create(datapath, true, bufferSize, replicationSize, blockSize);
+                    dos = out;
+                    if (codec != null) {
+                        dos = new DataOutputStream(codec.createOutputStream(out));
+                    }
+                    writeTableToStream(dos, dataTable, delimiter, encoding, newLine);
+                    return;
+                } catch (Exception e) {
+                    if (attempt >= maxAttempts || !isRetryableWriteException(e)) {
+                        throw e;
+                    }
+
+                    // Best-effort cleanup before retry (handles partially created files)
+                    try {
+                        if (dos != null) {
+                            dos.close();
+                        }
+                    } catch (Exception ignored) {
+                    }
+                    try {
+                        if (out != null) {
+                            out.close();
+                        }
+                    } catch (Exception ignored) {
+                    }
+                    try {
+                        fs.delete(datapath, false);
+                    } catch (Exception ignored) {
+                    }
+
+                    ReportUtils.report(report, getClass(),
+                            String.format("HDFS write failed (attempt %d/%d), retrying: %s", attempt, maxAttempts, e.getMessage()));
+                    Thread.sleep(2000L * attempt);
+                }
+            }
+        } finally {
+            ReportUtils.stopLevel(report);
         }
+    }
 
-        writeTableToStream(dos, dataTable, delimiter, encoding, newLine);
-        ReportUtils.stopLevel(report);
+    private boolean isRetryableWriteException(Exception e) {
+        if (e == null) {
+            return false;
+        }
+        String message = e.getMessage();
+        if (message == null) {
+            return false;
+        }
+        // Common transient failure on single-node HDFS when the only DataNode is briefly unavailable/blacklisted
+        return message.contains("could only be written to 0 of the 1 minReplication nodes")
+                || message.contains("node(s) are excluded in this operation");
     }
 
     public void appendTableToFile(String pathToFile, Table dataTable, String delimiter) throws Exception {
