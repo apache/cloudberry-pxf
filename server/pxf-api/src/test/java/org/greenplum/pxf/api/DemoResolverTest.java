@@ -19,7 +19,6 @@ package org.greenplum.pxf.api;
  * under the License.
  */
 
-
 import org.greenplum.pxf.api.examples.DemoResolver;
 import org.greenplum.pxf.api.examples.DemoTextResolver;
 import org.greenplum.pxf.api.model.RequestContext;
@@ -79,7 +78,7 @@ public class DemoResolverTest {
 
     @Test
     public void testSetEmptyTextData() throws Exception {
-        OneField field = new OneField(VARCHAR.getOID(), new byte[]{});
+        OneField field = new OneField(VARCHAR.getOID(), new byte[] {});
         OneRow output = textResolver.setFields(Collections.singletonList(field));
         assertNull(output);
     }
@@ -97,16 +96,17 @@ public class DemoResolverTest {
     }
 
     @Test
-    public void testSetTextDataManyElements() {
-        assertThrows(Exception.class,
-                () -> textResolver.setFields(Arrays.asList(field, field)));
+    public void testSetTextDataManyElements() throws Exception {
+        OneRow output = textResolver.setFields(Arrays.asList(field, field));
+        assertArrayEquals("value1,value2,value1,value2\n".getBytes(),
+                (byte[]) output.getData());
     }
 
     @Test
     public void testSetFieldsIsUnsupported() {
-      Exception e = assertThrows(UnsupportedOperationException.class,
+        Exception e = assertThrows(UnsupportedOperationException.class,
                 () -> customResolver.setFields(null));
 
-      assertEquals("Demo resolver does not support write operation", e.getMessage());
+        assertEquals("Demo resolver does not support write operation", e.getMessage());
     }
 }

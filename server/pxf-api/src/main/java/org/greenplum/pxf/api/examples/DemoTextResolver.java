@@ -23,11 +23,13 @@ import org.greenplum.pxf.api.OneField;
 import org.greenplum.pxf.api.OneRow;
 import org.greenplum.pxf.api.io.DataType;
 
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Class that defines the serialization / deserialization of one record brought from the external input data.
+ * Class that defines the serialization / deserialization of one record brought
+ * from the external input data.
  * <p>
  * Demo implementation of resolver that returns text format
  */
@@ -57,13 +59,34 @@ public class DemoTextResolver extends DemoResolver {
      */
     @Override
     public OneRow setFields(List<OneField> record) throws Exception {
-        // text row data is passed as a single field
-        if (record == null || record.size() != 1) {
-            throw new Exception("Unexpected record format, expected 1 field, found " +
-                    (record == null ? 0 : record.size()));
+        if (record == null || record.isEmpty()) {
+            throw new Exception("Unexpected record format, no fields provided");
         }
-        byte[] value = (byte[]) record.get(0).val;
-        // empty array means the end of input stream, return null to stop iterations
-        return value.length == 0 ? null : new OneRow(value);
+
+        // Legacy single-field end-of-stream marker (empty byte[]), keep behavior
+        if (record.size() == 1 && record.get(0).val instanceof byte[]) {
+            byte[] value = (byte[]) record.get(0).val;
+            if (value.length == 0) {
+                return null;
+            }
+            // Preserve legacy single-field behavior: return the bytes as-is
+            return new OneRow(value);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < record.size(); i++) {
+            Object val = record.get(i).val;
+            if (val instanceof byte[]) {
+                sb.append(new String((byte[]) val, StandardCharsets.UTF_8));
+            } else if (val != null) {
+                sb.append(val.toString());
+            }
+            if (i < record.size() - 1) {
+                sb.append(',');
+            }
+        }
+        sb.append('\n');
+
+        return new OneRow(sb.toString().getBytes(StandardCharsets.UTF_8));
     }
 }
