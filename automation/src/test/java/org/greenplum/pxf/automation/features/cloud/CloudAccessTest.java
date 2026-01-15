@@ -45,9 +45,6 @@ public class CloudAccessTest extends BaseFeature {
      */
     @Override
     public void beforeClass() throws Exception {
-        if (ProtocolUtils.getProtocol() == ProtocolEnum.HDFS) {
-            return;
-        }
         // Initialize server objects
         String random = UUID.randomUUID().toString();
         s3PathRead  = String.format("gpdb-ud-scratch/tmp/pxf_automation_data_read/%s/" , random);
@@ -64,6 +61,9 @@ public class CloudAccessTest extends BaseFeature {
 
     @Override
     protected void beforeMethod() throws Exception {
+        if (ProtocolUtils.getProtocol() == ProtocolEnum.HDFS) {
+            return;
+        }
         super.beforeMethod();
         prepareData();
     }

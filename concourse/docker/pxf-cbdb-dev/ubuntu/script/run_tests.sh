@@ -549,6 +549,27 @@ feature_test(){
 }
 
 gpdb_test() {
+  export PROTOCOL=HDFS
+  export PXF_HOME=${PXF_HOME:-/usr/local/pxf}
+  export PATH="${PXF_HOME}/bin:${PATH}"
+  ensure_gpupgrade_helpers
+  ensure_testplugin_jar
+
+  # Make sure core services are alive before preparing configs
+  health_check_with_retry || true
+
+  export PGHOST=127.0.0.1
+  export PATH="${GPHOME}/bin:${PATH}"
+  ensure_testuser_pg_hba
+  # Clean stale state from previous runs so gpdb suite starts fresh
+  cleanup_hdfs_test_data
+  hdfs dfs -rm -r -f /tmp/pxf_automation_data >/dev/null 2>&1 || true
+  cleanup_hive_state
+  cleanup_hbase_state
+
+  # Ensure PXF points to local HDFS/Hive/HBase configs
+  configure_pxf_default_hdfs_server
+
   echo "[run_tests] Starting GROUP=gpdb"
   make GROUP="gpdb" || true
   save_test_reports "gpdb"
