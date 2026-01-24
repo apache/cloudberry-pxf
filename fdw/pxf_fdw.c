@@ -19,6 +19,10 @@
 #include "cdb/cdbsreh.h"
 #include "cdb/cdbvars.h"
 #include "commands/copy.h"
+#if (PG_VERSION_NUM >= 140000)
+#include "commands/copyfrom_internal.h"
+#include "commands/copyto_internal.h"
+#endif
 #include "commands/defrem.h"
 #include "commands/explain.h"
 #include "foreign/fdwapi.h"
@@ -101,7 +105,12 @@ static PxfFdwModifyState *InitForeignModify(Relation relation);
 static void FinishForeignModify(PxfFdwModifyState *pxfmstate);
 static void InitCopyState(PxfFdwScanState *pxfsstate);
 static void InitCopyStateForModify(PxfFdwModifyState *pxfmstate);
+#if (PG_VERSION_NUM < 140000)
 static CopyState BeginCopyTo(Relation forrel, List *options);
+#else
+static CopyToState BeginCopyToModify(Relation forrel, List *options);
+static void EndCopyModify(CopyToState cstate);
+#endif
 static void PxfBeginScanErrorCallback(void *arg);
 static void PxfCopyFromErrorCallback(void *arg);
 
@@ -299,7 +308,7 @@ pxfGetForeignPaths(PlannerInfo *root,
 	/*
 	 * Create a ForeignPath node and add it as only possible path.
 	 */
-	add_path(baserel, (Path *) path);
+	add_path(baserel, (Path *) path, root);
 
 	elog(DEBUG5, "pxf_fdw: pxfGetForeignPaths ends on segment: %d", PXF_SEGMENT_ID);
 }
@@ -493,15 +502,8 @@ pxfIterateForeignScan(ForeignScanState *node)
 
 	found = NextCopyFrom(pxfsstate->cstate,
 						 NULL,
-#if PG_VERSION_NUM >= 90600
 						 slot->tts_values,
-						 slot->tts_isnull
-#else
-						 slot_get_values(slot),
-						 slot_get_isnull(slot),
-						 NULL
-#endif
-						 );
+						 slot->tts_isnull);
 
 	if (found)
 	{
@@ -678,7 +680,12 @@ pxfExecForeignInsert(EState *estate,
 		resultRelInfo->ri_FdwState = pxfmstate;
 	}
 
+#if (PG_VERSION_NUM < 140000)
 	CopyState	cstate = pxfmstate->cstate;
+#else
+	CopyToState	cstate = pxfmstate->cstate;
+#endif
+
 #if PG_VERSION_NUM < 90600
 	Relation	relation = resultRelInfo->ri_RelationDesc;
 	TupleDesc	tupDesc = RelationGetDescr(relation);
@@ -754,7 +761,11 @@ FinishForeignModify(PxfFdwModifyState *pxfmstate)
 	if (pxfmstate == NULL)
 		return;
 
+#if PG_VERSION_NUM < 140000
 	EndCopyFrom(pxfmstate->cstate);
+#else
+	EndCopyModify(pxfmstate->cstate);
+#endif
 	pxfmstate->cstate = NULL;
 	PxfBridgeCleanup(pxfmstate);
 
@@ -781,7 +792,11 @@ pxfIsForeignRelUpdatable(Relation rel)
 static void
 InitCopyState(PxfFdwScanState *pxfsstate)
 {
+#if PG_VERSION_NUM < 140000
 	CopyState	cstate;
+#else
+	CopyFromState	cstate;
+#endif
 
 	PxfBridgeImportStart(pxfsstate);
 
@@ -794,6 +809,9 @@ InitCopyState(PxfFdwScanState *pxfsstate)
 						   NULL,
 #endif
 						   pxfsstate->relation,
+#if PG_VERSION_NUM >= 140000
+						   NULL,
+#endif
 						   NULL,
 						   false,	/* is_program */
 						   &PxfBridgeRead,	/* data_source_cb */
@@ -859,7 +877,11 @@ static void
 InitCopyStateForModify(PxfFdwModifyState *pxfmstate)
 {
 	List	   *copy_options;
+#if PG_VERSION_NUM < 140000
 	CopyState	cstate;
+#else
+	CopyToState	cstate;
+#endif
 
 	copy_options = pxfmstate->options->copy_options;
 
@@ -868,7 +890,11 @@ InitCopyStateForModify(PxfFdwModifyState *pxfmstate)
 	/*
 	 * Create CopyState from FDW options.  We always acquire all columns to match the expected ScanTupleSlot signature.
 	 */
+#if PG_VERSION_NUM < 140000
 	cstate = BeginCopyTo(pxfmstate->relation, copy_options);
+#else
+	cstate = BeginCopyToModify(pxfmstate->relation, copy_options);
+#endif
 
 	/* Initialize 'out_functions', like CopyTo() would. */
 
@@ -920,35 +946,80 @@ InitCopyStateForModify(PxfFdwModifyState *pxfmstate)
 /*
  * Set up CopyState for writing to a foreign table.
  */
+#if (PG_VERSION_NUM < 140000)
 static CopyState
 BeginCopyTo(Relation forrel, List *options)
+#else
+static CopyToState
+BeginCopyToModify(Relation forrel, List *options)
+#endif
 {
+#if PG_VERSION_NUM < 140000
 	CopyState	cstate;
+#else
+	CopyToState	cstate;
+#endif
 
 	Assert(forrel->rd_rel->relkind == RELKIND_FOREIGN_TABLE);
 
-	cstate = BeginCopyToForeignTable(forrel, options);
+#if PG_VERSION_NUM <= 90500
+	cstate = BeginCopy(false, forrel, NULL, NULL, NIL, options, NULL);
+#elif PG_VERSION_NUM < 120000
+	cstate = BeginCopy(false, forrel, NULL, NULL, forrel->rd_id, NIL, options, NULL);
+#elif PG_VERSION_NUM < 140000
+	cstate = BeginCopy(NULL, false, forrel, NULL, forrel->rd_id, NIL, options, NULL);
+#else
+	cstate = BeginCopy(NULL, forrel, NULL, forrel->rd_id, NIL, options, NULL);
+#endif
 	cstate->dispatch_mode = COPY_DIRECT;
 
 	/*
 	 * We use COPY_CALLBACK to mean that the each line should be left in
 	 * fe_msgbuf. There is no actual callback!
 	 */
+#if (PG_VERSION_NUM < 140000)
 	cstate->copy_dest = COPY_CALLBACK;
+#else
+	cstate->copy_dest = COPY_CALLBACK;
+#endif
 
 	/*
 	 * Some more initialization, that in the normal COPY TO codepath, is done
 	 * in CopyTo() itself.
 	 */
+#if (PG_VERSION_NUM < 140000)
 	cstate->null_print_client = cstate->null_print; /* default */
 	if (cstate->need_transcoding)
 		cstate->null_print_client = pg_server_to_custom(cstate->null_print,
 														cstate->null_print_len,
 														cstate->file_encoding,
 														cstate->enc_conversion_proc);
+#else
+	cstate->opts.null_print_client = cstate->opts.null_print; /* default */
+	if (cstate->need_transcoding)
+		cstate->opts.null_print_client = pg_server_to_any(cstate->opts.null_print,
+														  cstate->opts.null_print_len,
+														  cstate->opts.file_encoding);
+#endif
 
 	return cstate;
 }
+
+#if (PG_VERSION_NUM >= 140000)
+/*
+ * Clean up storage and release resources for COPY TO.
+ */
+static void
+EndCopyModify(CopyToState cstate)
+{
+	/* No COPY TO related resources except memory. */
+	Assert(!cstate->is_program);
+	Assert(cstate->filename == NULL);
+
+	MemoryContextDelete(cstate->copycontext);
+	pfree(cstate);
+}
+#endif
 
 /*
  * PXF specific error context callback for "begin foreign scan" operation.
@@ -985,13 +1056,21 @@ void
 PxfCopyFromErrorCallback(void *arg)
 {
     PxfFdwScanState *pxfsstate = (PxfFdwScanState *) arg;
-    CopyState	cstate = pxfsstate->cstate;
+#if (PG_VERSION_NUM < 140000)
+	CopyState	cstate = pxfsstate->cstate;
+#else
+	CopyFromState	cstate = pxfsstate->cstate;
+#endif
     char		curlineno_str[32];
 
     snprintf(curlineno_str, sizeof(curlineno_str), UINT64_FORMAT,
              cstate->cur_lineno);
 
+#if (PG_VERSION_NUM < 140000)
     if (cstate->binary)
+#else
+    if (cstate->opts.binary)
+#endif
     {
         /* can't usefully display the data */
         if (cstate->cur_attname)
@@ -1051,8 +1130,12 @@ PxfCopyFromErrorCallback(void *arg)
              * it, and at present there's no way to regurgitate it without
              * conversion. So we have to punt and just report the line number.
              */
+#if (PG_VERSION_NUM < 140000)
             else if (cstate->line_buf_valid &&
                 (cstate->line_buf_converted || !cstate->need_transcoding))
+#else
+            else if (cstate->line_buf_valid && !cstate->need_transcoding)
+#endif
             {
                 char	   *lineval;
 

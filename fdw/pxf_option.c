@@ -379,10 +379,10 @@ ValidateCopyOptions(List *options_list, Oid catalog)
 	/*
 	 * Apply the core COPY code's validation logic for more checks.
 	 */
-#if PG_VERSION_NUM >= 90600
+#if (PG_VERSION_NUM < 140000)
 	ProcessCopyOptions(NULL, NULL, true, copy_options);
 #else
-	ProcessCopyOptions(NULL, true, copy_options, 0, true);
+	ProcessCopyOptions(NULL, NULL, true, copy_options, InvalidOid);
 #endif
 
 	PG_RETURN_VOID();
@@ -491,7 +491,7 @@ PxfGetOptions(Oid foreigntableid)
 	/*
 	 * The source/target encoding is the same for TEXT/CSV wire format
 	 */
-	opt->data_encoding = encoding;
+	opt->data_encoding = encoding ? pstrdup(encoding) : NULL;
 	opt->database_encoding = GetDatabaseEncodingName();
 
 	/* The profile corresponds to protocol[:format] */
