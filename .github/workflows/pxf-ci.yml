@@ -103,6 +103,7 @@ jobs:
         test_group:
           - cli
           - external-table
+          - fdw
           - server
           - sanity
           - smoke
