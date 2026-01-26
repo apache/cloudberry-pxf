@@ -119,6 +119,7 @@ jobs:
           - s3
           - features
           - gpdb
+          - gpdb_fdw
           - load
           - pxf_extension
     steps:

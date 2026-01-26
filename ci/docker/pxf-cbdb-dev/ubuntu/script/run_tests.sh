@@ -549,6 +549,7 @@ feature_test(){
 }
 
 gpdb_test() {
+  local use_fdw="$1"
   export PROTOCOL=HDFS
   export PXF_HOME=${PXF_HOME:-/usr/local/pxf}
   export PATH="${PXF_HOME}/bin:${PATH}"
@@ -570,10 +571,20 @@ gpdb_test() {
   # Ensure PXF points to local HDFS/Hive/HBase configs
   configure_pxf_default_hdfs_server
 
-  echo "[run_tests] Starting GROUP=gpdb"
-  make GROUP="gpdb" || true
-  save_test_reports "gpdb"
-  echo "[run_tests] GROUP=gpdb finished"
+  local extra_args=""
+  if [[ "$use_fdw" == "true" ]]; then
+    extra_args="USE_FDW=true"
+  else
+    extra_args="USE_FDW=false"
+  fi
+  echo "[run_tests] Starting GROUP=gpdb $extra_args"
+  make GROUP="gpdb" $extra_args || true
+  if [[ "$use_fdw" == "true" ]]; then
+      save_test_reports "gpdb_fdw"
+  else
+      save_test_reports "gpdb"
+  fi
+  echo "[run_tests] GROUP=gpdb $extra_args finished"
 }
 
 pxf_extension_test(){
@@ -709,7 +720,7 @@ generate_test_summary() {
 
     local group=$(basename "$group_dir")
     # Skip if it's not a test group directory
-    [[ "$group" =~ ^(smoke|hcatalog|hcfs|hdfs|hive|gpdb|sanity|hbase|profile|jdbc|proxy|unused|s3|features|load|performance|pxfExtensionVersion2|pxfExtensionVersion2_1|pxfFdwExtensionVersion1|pxfFdwExtensionVersion2|fdw)$ ]] || continue
+    [[ "$group" =~ ^(smoke|hcatalog|hcfs|hdfs|hive|gpdb|sanity|hbase|profile|jdbc|proxy|unused|s3|features|load|performance|pxfExtensionVersion2|pxfExtensionVersion2_1|pxfFdwExtensionVersion1|pxfFdwExtensionVersion2|fdw|gpdb_fdw)$ ]] || continue
 
     echo "Processing $group test reports from $group_dir"
 
@@ -845,6 +856,9 @@ run_single_group() {
       cd "${REPO_ROOT}/fdw"
       make test
       ;;
+    gpdb_fdw)
+      gpdb_test "true"
+      ;;
     server)
       cd "${REPO_ROOT}/server"
       ./gradlew test
@@ -877,7 +891,7 @@ run_single_group() {
       feature_test
       ;;
     gpdb)
-      gpdb_test
+      gpdb_test "false"
       ;;
     pxf_extension)
       pxf_extension_test
@@ -902,7 +916,7 @@ run_single_group() {
       ;;
     *)
       echo "Unknown test group: $group"
-      echo "Available groups: cli, external-table, fdw, server, sanity, smoke, hdfs, hcatalog, hcfs, hive, hbase, profile, jdbc, proxy, unused, s3, features, gpdb, load, performance, bench, pxf_extension"
+      echo "Available groups: cli, external-table, fdw, server, sanity, smoke, hdfs, hcatalog, hcfs, hive, hbase, profile, jdbc, proxy, unused, s3, features, gpdb, gpdb_fdw, load, performance, bench, pxf_extension"
       exit 1
       ;;
   esac
