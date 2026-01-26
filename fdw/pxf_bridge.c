@@ -27,11 +27,7 @@
 /* helper function declarations */
 static void BuildUriForRead(PxfFdwScanState *pxfsstate);
 static void BuildUriForWrite(PxfFdwModifyState *pxfmstate);
-#if PG_VERSION_NUM >= 90600
 static size_t FillBuffer(PxfFdwScanState *pxfsstate, char *start, int minlen, int maxlen);
-#else
-static size_t FillBuffer(PxfFdwScanState *pxfsstate, char *start, size_t size);
-#endif
 
 /*
  * Clean up churl related data structures from the PXF FDW modify state.
@@ -102,20 +98,12 @@ PxfBridgeExportStart(PxfFdwModifyState *pxfmstate)
  * Reads data from the PXF server into the given buffer of a given size
  */
 int
-#if PG_VERSION_NUM >= 90600
 PxfBridgeRead(void *outbuf, int minlen, int maxlen, void *extra)
-#else
-PxfBridgeRead(void *outbuf, int datasize, void *extra)
-#endif
 {
 	size_t		n = 0;
 	PxfFdwScanState *pxfsstate = (PxfFdwScanState *) extra;
 
-#if PG_VERSION_NUM >= 90600
 	n = FillBuffer(pxfsstate, outbuf, minlen, maxlen);
-#else
-	n = FillBuffer(pxfsstate, outbuf, datasize);
-#endif
 
 	if (n == 0)
 	{
@@ -176,28 +164,16 @@ BuildUriForWrite(PxfFdwModifyState *pxfmstate)
  * Read data from churl until the buffer is full or there is no more data to be read
  */
 static size_t
-#if PG_VERSION_NUM >= 90600
 FillBuffer(PxfFdwScanState *pxfsstate, char *start, int minlen, int maxlen)
-#else
-FillBuffer(PxfFdwScanState *pxfsstate, char *start, size_t size)
-#endif
 {
 	size_t		n = 0;
 	char	   *ptr = start;
-#if PG_VERSION_NUM >= 90600
 	char	   *minend = ptr + minlen;
 	char	   *maxend = ptr + maxlen;
 
 	while (ptr < minend)
 	{
 		n = churl_read(pxfsstate->churl_handle, ptr, maxend - ptr);
-#else
-	char	   *end = ptr + size;
-
-	while (ptr < end)
-	{
-		n = churl_read(pxfsstate->churl_handle, ptr, end - ptr);
-#endif
 		if (n == 0)
 			break;
 

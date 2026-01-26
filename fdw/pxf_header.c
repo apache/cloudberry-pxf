@@ -20,13 +20,8 @@
 #include "pxf_filter.h"
 #include "pxf_header.h"
 
-#if PG_VERSION_NUM >= 90600
 #include "access/external.h"
 #include "access/url.h"
-#else
-#include "access/fileam.h"
-#include "catalog/pg_exttable.h"
-#endif
 #include "cdb/cdbvars.h"
 #include "commands/defrem.h"
 #include "catalog/pg_namespace.h"

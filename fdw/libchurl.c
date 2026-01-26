@@ -16,22 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#if PG_VERSION_NUM >= 90600
 #include "postgres.h"
-#endif
-
 #include "libchurl.h"
-#if PG_VERSION_NUM >= 90600
 #include "lib/stringinfo.h"
-#endif
 #include "miscadmin.h"
 #include "utils/builtins.h"
 #include "utils/fmgroids.h"
 #include "utils/guc.h"
 #include "common/jsonapi.h"
-#if PG_VERSION_NUM >= 140000
 #include "mb/pg_wchar.h"
-#endif
 
 /* include libcurl without typecheck.
  * This allows wrapping curl_easy_setopt to be wrapped
@@ -100,15 +93,6 @@ typedef struct churl_settings
 {
 	struct curl_slist *headers;
 } churl_settings;
-
-/* the null action object used for pure validation */
-#if PG_VERSION_NUM < 140000
-static JsonSemAction nullSemAction =
-{
-	NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL
-};
-#endif
 
 churl_context *churl_new_context(void);
 static void		create_curl_handle(churl_context *context);
@@ -869,13 +853,8 @@ fill_internal_buffer(churl_context *context, int want)
 
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-#if PG_VERSION_NUM >= 90600
 			elog(ERROR, "internal error: select failed on curl_multi_fdset (maxfd %d) (%d - %m)",
 				 maxfd, save_errno);
-#else
-			elog(ERROR, "internal error: select failed on curl_multi_fdset (maxfd %d) (%d - %s)",
-				 maxfd, save_errno, strerror(errno));
-#endif
 		}
 		multi_perform(context);
 	}
@@ -1061,13 +1040,8 @@ IsValidJson(text *json)
 	PG_TRY();
 	{
 		/* validate it */
-#if PG_VERSION_NUM < 140000
-		lex = makeJsonLexContext(json, false);
-		pg_parse_json(lex, &nullSemAction);
-#else
 		lex = makeJsonLexContextCstringLen(text_to_cstring(json), VARSIZE_ANY_EXHDR(json), GetDatabaseEncoding(), false);
 		pg_parse_json(lex, &nullSemAction);
-#endif
 	}
 	PG_CATCH();
 	{

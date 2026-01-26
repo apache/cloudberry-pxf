@@ -379,11 +379,7 @@ ValidateCopyOptions(List *options_list, Oid catalog)
 	/*
 	 * Apply the core COPY code's validation logic for more checks.
 	 */
-#if (PG_VERSION_NUM < 140000)
-	ProcessCopyOptions(NULL, NULL, true, copy_options);
-#else
 	ProcessCopyOptions(NULL, NULL, true, copy_options, InvalidOid);
-#endif
 
 	PG_RETURN_VOID();
 }
@@ -506,11 +502,7 @@ PxfGetOptions(Oid foreigntableid)
 		/* default wire_format is CSV */
 		wireFormat = (Node *)makeString(FDW_OPTION_WIRE_FORMAT_CSV);
 
-#if PG_VERSION_NUM >= 90600
 	copy_options = lappend(copy_options, makeDefElem(FDW_COPY_OPTION_FORMAT, wireFormat, -1));
-#else
-	copy_options = lappend(copy_options, makeDefElem(FDW_COPY_OPTION_FORMAT, wireFormat));
-#endif
 
 	opt->copy_options = copy_options;
 	opt->options = other_options;
