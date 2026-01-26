@@ -844,6 +844,7 @@ run_single_group() {
     fdw)
       cd "${REPO_ROOT}/fdw"
       make test
+      ;;
     server)
       cd "${REPO_ROOT}/server"
       ./gradlew test
