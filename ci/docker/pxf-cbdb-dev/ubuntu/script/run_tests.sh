@@ -709,7 +709,7 @@ generate_test_summary() {
 
     local group=$(basename "$group_dir")
     # Skip if it's not a test group directory
-    [[ "$group" =~ ^(smoke|hcatalog|hcfs|hdfs|hive|gpdb|sanity|hbase|profile|jdbc|proxy|unused|s3|features|load|performance|pxfExtensionVersion2|pxfExtensionVersion2_1|pxfFdwExtensionVersion1|pxfFdwExtensionVersion2)$ ]] || continue
+    [[ "$group" =~ ^(smoke|hcatalog|hcfs|hdfs|hive|gpdb|sanity|hbase|profile|jdbc|proxy|unused|s3|features|load|performance|pxfExtensionVersion2|pxfExtensionVersion2_1|pxfFdwExtensionVersion1|pxfFdwExtensionVersion2|fdw)$ ]] || continue
 
     echo "Processing $group test reports from $group_dir"
 
@@ -841,6 +841,9 @@ run_single_group() {
       cd "${REPO_ROOT}/external-table"
       make installcheck
       ;;
+    fdw)
+      cd "${REPO_ROOT}/fdw"
+      make test
     server)
       cd "${REPO_ROOT}/server"
       ./gradlew test
@@ -898,7 +901,7 @@ run_single_group() {
       ;;
     *)
       echo "Unknown test group: $group"
-      echo "Available groups: cli, external-table, server, sanity, smoke, hdfs, hcatalog, hcfs, hive, hbase, profile, jdbc, proxy, unused, s3, features, gpdb, load, performance, bench, pxf_extension"
+      echo "Available groups: cli, external-table, fdw, server, sanity, smoke, hdfs, hcatalog, hcfs, hive, hbase, profile, jdbc, proxy, unused, s3, features, gpdb, load, performance, bench, pxf_extension"
       exit 1
       ;;
   esac
