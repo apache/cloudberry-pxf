@@ -100,7 +100,7 @@ cd ~/workspace/cloudberry
             --enable-orafce \
             --enable-orca \
             --disable-pax \
-            --enable-pxf \
+            --disable-pxf \
             --enable-tap-tests \
             --with-gssapi \
             --with-ldap \

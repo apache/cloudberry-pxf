@@ -6,9 +6,6 @@ export PXF_MODULES
 PXF_VERSION ?= $(shell cat version)
 export PXF_VERSION
 
-FDW_SUPPORT = $(shell $(PG_CONFIG) --version | egrep "PostgreSQL 1[2-5]")
-FDW_SUPPORT =
-
 SOURCE_EXTENSION_DIR = external-table
 TARGET_EXTENSION_DIR = gpextable
 
@@ -29,9 +26,7 @@ external-table cli server:
 	make -C $@
 
 fdw:
-ifneq ($(FDW_SUPPORT),)
 	make -C fdw
-endif
 
 cli:
 	make -C cli
@@ -44,9 +39,7 @@ clean:
 	make -C $(SOURCE_EXTENSION_DIR) clean-all
 	make -C cli clean
 	make -C server clean
-ifneq ($(FDW_SUPPORT),)
 	make -C fdw clean
-endif
 
 test:
 ifeq ($(SKIP_FDW_BUILD_REASON),)
@@ -64,9 +57,7 @@ install:
 	make -C $(SOURCE_EXTENSION_DIR) install
 	make -C cli install
 	make -C server install
-ifneq ($(FDW_SUPPORT),)
 	make -C fdw install
-endif
 
 install-server:
 	make -C server install-server
