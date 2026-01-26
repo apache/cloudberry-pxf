@@ -1,6 +1,7 @@
 <!--Thank you for contributing! -->
+
 <!--In case of an existing issue or discussions, please reference it-->
-fix #ISSUE_Number
+closes: #ISSUE_Number
 <!--Remove this section if no corresponding issue.-->
 
 ---
@@ -13,8 +14,8 @@ fix #ISSUE_Number
 
 Here are some reminders before you submit your pull request:
 
-* Make sure that your Pull Request has a clear title and commit message. You can take the [Git commit template](https://github.com/cloudberrydb/cloudberrydb/blob/main/.gitmessage) as a reference.
-* Sign the Contributor License Agreement as prompted for your first-time contribution (*One-time setup*).
-* Learn the [code contribution](https://cloudberrydb.org/contribute/code) and [doc contribution](https://cloudberrydb.org/contribute/doc) guides for better collaboration.
-* List your communications in the [GitHub Issues](https://github.com/cloudberrydb/cloudberrydb-site/issues) or [Discussions](https://github.com/orgs/cloudberrydb/discussions) (if has or needed).
-* Feel free to ask for the cloudberrydb team to help review and approve.
+* Make sure that your Pull Request has a clear title and commit message. You can take the [Git commit template](https://github.com/apache/cloudberry/blob/main/.gitmessage) as a reference.
+* Learn the [code contribution](https://cloudberry.apache.org/contribute/code) and [doc contribution](https://cloudberry.apache.org/contribute/doc) guides for better collaboration.
+* Make sure that CICD workflow is successful.
+* List your communications in the [GitHub Issues](https://github.com/apache/cloudberry-pxf/issues) or [Discussions](https://github.com/apache/cloudberry/discussions) (if has or needed).
+* Feel free to ask for the [cloudberry committers](https://github.com/orgs/apache/teams/cloudberry-committers) or other people to help review and approve.

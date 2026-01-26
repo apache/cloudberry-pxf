@@ -1,10 +1,10 @@
-Cloudberry Database community welcomes contributions from anyone, new and
+Apache Cloudberry community welcomes contributions from anyone, new and
 experienced! We appreciate your interest in contributing. This guide will help
 you get started with the contribution.
 
 ## Code of Conduct
 
-Everyone who participates in Cloudberry Database, either as a user or a
+Everyone who participates in Apache Cloudberry, either as a user or a
 contributor, is obliged to follow our community [Code of
 Conduct](./CODE_OF_CONDUCT.md). Every violation against it will be reviewed
 and investigated and will result in a response that is deemed necessary and
@@ -25,13 +25,13 @@ Some behaviors that contribute to creating a positive environment include:
 2. Clone down the repo to your local system.
 
 ```
-git clone https://github.com/your-user-name/pxf.git
+git clone https://github.com/your-user-name/cloudberry-pxf.git
 ```
 
 3. Add the upstream repo. (You only have to do this once, not every time.)
 
 ```
-git remote add upstream https://github.com/cloudberrydb/pxf.git
+git remote add upstream https://github.com/apache/cloudberry-pxf.git
 ```
 
 4. Create a new branch to hold your work.
