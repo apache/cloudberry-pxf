@@ -21,7 +21,7 @@ This project is forked from [greenplum/pxf](https://github.com/greenplum-db/pxf-
 * `server/` : Contains the server side code of PXF along with the PXF Service and all the Plugins
 * `cli/` : Contains command line interface code for PXF
 * `automation/` : Contains the automation and integration tests for PXF against the various datasources
-* `singlecluster/` : Hadoop testing environment to exercise the pxf automation tests
+* `ci/` : Contains CI/CD environment and scripts (including singlecluster Hadoop environment)
 * `regression/` : Contains the end-to-end (integration) tests for PXF against the various datasources, utilizing the PostgreSQL testing framework `pg_regress`
 * `downloads/` : An empty directory that serves as a staging location for Cloudberry RPMs for the development Docker image
 
@@ -355,8 +355,7 @@ docker run --rm -it \
   -e REALM=AMBARI.APACHE.ORG \
   gcr.io/$PROJECT_ID/gpdb-pxf-dev/gpdb6-centos7-test-pxf-hdp2 /bin/bash
 
-# Inside the container run the following command:
-pxf_src/concourse/scripts/test_pxf_secure.bash
+# Inside the container, you can use the scripts in ci/docker/pxf-cbdb-dev/ubuntu/script to set up and run tests.
 
 echo "+----------------------------------------------+"
 echo "| Kerberos admin principal: admin/admin@$REALM |"

@@ -16,29 +16,29 @@ Before running the automation tests, ensure you have:
 
 2. Stop and remove any existing containers and volumes:
    ```bash
-   docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v
+   docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v
    ```
 
 3. Build the Docker images:
    ```bash
-   docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml build
+   docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml build
    ```
 
 4. Start the containers in detached mode:
    ```bash
-   docker compose -f concourse/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml up -d
+   docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml up -d
    ```
 
 5. Run the entrypoint script to set up the environment:
    ```bash
    docker exec pxf-cbdb-dev bash -lc \
-      "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/entrypoint.sh"
+      "cd /home/gpadmin/workspace/cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu && ./script/entrypoint.sh"
    ```
 
 6. Execute the test suite:
    ```bash
    docker exec pxf-cbdb-dev bash -lc \
-      "cd /home/gpadmin/workspace/cloudberry-pxf/concourse/docker/pxf-cbdb-dev/ubuntu && ./script/run_tests.sh"
+      "cd /home/gpadmin/workspace/cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu && ./script/run_tests.sh"
    ```
    You can run tests multiple times in one container.
 

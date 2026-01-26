@@ -19,14 +19,11 @@ You use bookbinder from within a project called a **book**. The book includes a 
 
 PXF provides a preconfigured **book** in the `docs/book` directory of this repo.  You can use this configuration to build HTML for the PXF docs on your local system.
 
-<a name="building_docker"></a>
-## Building the Documentation Using Docker
+### Building the Documentation Using Docker
 
-1. Navigate to the `concourse/docker/docs` directory of this repo.
+1. You can use the Docker environment in `ci/docker/pxf-cbdb-dev/ubuntu` which contains the necessary tools for development.
 
-2. Follow the instructions in the README.md file.
-
-3. A local version of the documentation should be available for viewing at [http://localhost:9292](http://localhost:9292)
+2. A local version of the documentation should be available for viewing at [http://localhost:9292](http://localhost:9292)
 
 
 <a name="moreinfo"></a>  
