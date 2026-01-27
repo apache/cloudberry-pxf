@@ -508,7 +508,7 @@ ensure_testplugin_jar() {
   if [ ! -f "${PXF_BASE}/lib/pxf-automation-test.jar" ]; then
     pushd "${REPO_ROOT}/automation" >/dev/null
     mvn -q -DskipTests test-compile
-    jar cf "${PXF_BASE}/lib/pxf-automation-test.jar" -C target/classes org/greenplum/pxf/automation/testplugin
+    jar cf "${PXF_BASE}/lib/pxf-automation-test.jar" -C target/classes org/apache/cloudberry/pxf/automation/testplugin
     popd >/dev/null
     JAVA_HOME="${JAVA_BUILD}" "${PXF_HOME}/bin/pxf" restart >/dev/null || true
   fi
