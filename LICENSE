@@ -202,9 +202,25 @@
 
 =======================================================================
 
-This product contains additional works that are distributed under
-Apache License, Version 2.0 (ALv2).
+This product is derived from software originally developed by:
 
-    Apache Tomcat 7.0.96
+   Greenplum Platform Extension Framework
+   Copyright 2018-Present VMware, Inc. or its affiliates. All Rights Reserved.
+
+   This product is licensed to you under the Apache 2.0 license (the "License").
+   You may not use this product except in compliance with the Apache 2.0 License.
+
+   This product may include a number of subcomponents with separate copyright 
+   notices and license terms. Your use of these subcomponents is subject to the 
+   terms and conditions of the subcomponent's license, as noted in the LICENSE file.
+
+=======================================================================
+
+This product bundles Gradle Wrapper, which is licensed under
+the Apache License, Version 2.0.
+
+   Copyright © Gradle, Inc.
+
+   server/gradle/wrapper/gradle-wrapper.jar
 
 =======================================================================
