@@ -6,6 +6,9 @@ export PXF_MODULES
 PXF_VERSION ?= $(shell cat version)
 export PXF_VERSION
 
+export SKIP_EXTERNAL_TABLE_BUILD_REASON
+export SKIP_FDW_BUILD_REASON
+
 SOURCE_EXTENSION_DIR = external-table
 TARGET_EXTENSION_DIR = gpextable
 
@@ -21,18 +24,24 @@ all: extensions cli server
 
 extensions: external-table fdw
 
-external-table cli server:
+external-table:
+ifeq ($(SKIP_EXTERNAL_TABLE_BUILD_REASON),)
 	@echo "===> Compiling [$@] module <==="
 	make -C $@
+else
+	@echo "Skipping building external-table extension because $(SKIP_EXTERNAL_TABLE_BUILD_REASON)"
+endif
 
-fdw:
+ifeq ($(SKIP_FDW_BUILD_REASON),)
+	@echo "===> Compiling [$@] module <==="
 	make -C fdw
+else
+	@echo "Skipping building FDW extension because $(SKIP_FDW_BUILD_REASON)"
+endif
 
-cli:
-	make -C cli
-
-server:
-	make -C server
+cli server:
+	@echo "===> Compiling [$@] module <==="
+	make -C $@
 
 clean:
 	rm -rf build
@@ -54,16 +63,30 @@ it:
 	make -C automation TEST=$(TEST)
 
 install:
-	make -C $(SOURCE_EXTENSION_DIR) install
-	make -C cli install
-	make -C server install
-	make -C fdw install
+ifneq ($(SKIP_EXTERNAL_TABLE_BUILD_REASON),)
+	@echo "Skipping installing FDW extension because $(SKIP_EXTERNAL_TABLE_BUILD_REASON)"
+	$(eval PXF_MODULES := $(filter-out external-table,$(PXF_MODULES)))
+endif
+ifneq ($(SKIP_FDW_BUILD_REASON),)
+	@echo "Skipping installing FDW extension because $(SKIP_FDW_BUILD_REASON)"
+	$(eval PXF_MODULES := $(filter-out fdw,$(PXF_MODULES)))
+endif
+	set -e ;\
+	for module in $${PXF_MODULES[@]}; do \
+		echo "===> Installing [$${module}] module <===" ;\
+		make -C $${module} install ;\
+	done ;\
+	echo "===> PXF installation is complete <==="
 
 install-server:
 	make -C server install-server
 
 stage:
 	rm -rf build/stage
+ifneq ($(SKIP_EXTERNAL_TABLE_PACKAGE_REASON),)
+	@echo "Skipping staging FDW extension because $(SKIP_EXTERNAL_TABLE_PACKAGE_REASON)"
+	$(eval PXF_MODULES := $(filter-out external-table,$(PXF_MODULES)))
+endif
 ifneq ($(SKIP_FDW_PACKAGE_REASON),)
 	@echo "Skipping staging FDW extension because $(SKIP_FDW_PACKAGE_REASON)"
 	$(eval PXF_MODULES := $(filter-out fdw,$(PXF_MODULES)))
