@@ -62,6 +62,9 @@ github:
       # squash or rebase must be allowed in the repo for this setting to be set to true.
       required_linear_history: true
 
+      # Enforce linear commit history
+      required_linear_history: true
+
       required_signatures: false
 
       # requires all conversations to be resolved before merging is possible
