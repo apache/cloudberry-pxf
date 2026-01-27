@@ -16,7 +16,7 @@ import java.net.URL;
 @FailsWithFDW
 public class FailOverTest extends BaseFeature {
 
-    String testPackageLocation = "/org/greenplum/pxf/automation/testplugin/";
+    String testPackageLocation = "/org/apache/cloudberry/pxf/automation/testplugin/";
     String testPackage = "org.apache.cloudberry.pxf.automation.testplugin.";
 
     @Override

@@ -84,7 +84,7 @@ public class HBaseTest extends BaseFeature {
         // if hbase authorization is not enabled then grant will not be performed
         hbase.grantGlobalForUser("pxf");
 
-        String testPackageLocation = "/org/greenplum/pxf/automation/testplugin/";
+        String testPackageLocation = "/org/apache/cloudberry/pxf/automation/testplugin/";
         String newPath = "/tmp/publicstage/pxf";
 
         // copy additional plugins classes to cluster nodes, used for filter pushdown cases

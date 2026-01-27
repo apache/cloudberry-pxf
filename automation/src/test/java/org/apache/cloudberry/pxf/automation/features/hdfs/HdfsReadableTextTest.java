@@ -53,7 +53,7 @@ public class HdfsReadableTextTest extends BaseFeature {
     // path for storing data on HDFS
     String hdfsFilePath = "";
 
-    String testPackageLocation = "/org/greenplum/pxf/automation/testplugin/";
+    String testPackageLocation = "/org/apache/cloudberry/pxf/automation/testplugin/";
     String testPackage = "org.apache.cloudberry.pxf.automation.testplugin.";
 
     String throwOn10000Accessor = "ThrowOn10000Accessor";

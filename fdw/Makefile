@@ -22,8 +22,8 @@ stage: pxf_fdw.so
 	install -c -m 755 pxf_fdw.so build/stage/fdw/pxf_fdw.so
 	install -c -m 644 pxf_fdw.control build/stage/fdw/
 	install -c -m 644 $(DATA) build/stage/fdw/
-	@echo "gpdb.version=$(GP_VERSION)" > build/stage/fdw/metadata
-	@echo "gpdb.major-version=$(GP_MAJORVERSION)" >> build/stage/fdw/metadata
+	@echo "cloudberry.version=$(GP_VERSION)" > build/stage/fdw/metadata
+	@echo "cloudberry.major-version=$(GP_MAJORVERSION)" >> build/stage/fdw/metadata
 
 .PHONY: clean-all
 clean-all: clean

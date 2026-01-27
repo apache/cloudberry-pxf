@@ -56,7 +56,7 @@ EOF
 metadata_file="${PXF_HOME}/gpextable/metadata"
 pxf_gpdb_major_version=""
 if [[ -f "${metadata_file}" ]]; then
-    pxf_gpdb_major_version="$(awk 'BEGIN { FS = \"=\" } /gpdb.major-version/{ print $2 }' \"${metadata_file}\")"
+    pxf_gpdb_major_version="$(awk 'BEGIN { FS = \"=\" } /cloudberry.major-version/{ print $2 }' \"${metadata_file}\")"
 else
     echo "WARNING: metadata file '${metadata_file}' not found; skipping PXF/GPDB compatibility check" >>"${log_file}"
 fi

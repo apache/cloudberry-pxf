@@ -240,9 +240,9 @@ ifneq ("$(TEST)", "")
 	@find src/ -name "$(TEST).java" -exec grep "@Test" -A 1 {} \; | grep "public" | awk '{print "* ", $$3}'
 else
 	@echo "***** Smoke tests: *****"
-	@ls src/test/java/org/greenplum/pxf/automation/smoke/*Test.java | sed 's/.*\///g' | sed 's/\.java//g' | awk '{print "* ", $$1}'
+	@ls src/test/java/org/apache/cloudberry/pxf/automation/smoke/*Test.java | sed 's/.*\///g' | sed 's/\.java//g' | awk '{print "* ", $$1}'
 	@echo "***** Feature tests: *****"
-	@ls src/test/java/org/greenplum/pxf/automation/features/*/*Test.java | sed 's/.*\///g' | sed 's/\.java//g' | awk '{print "* ", $$1}'
+	@ls src/test/java/org/apache/cloudberry/pxf/automation/features/*/*Test.java | sed 's/.*\///g' | sed 's/\.java//g' | awk '{print "* ", $$1}'
 endif
 
 .PHONY: pxf_regress

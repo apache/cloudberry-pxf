@@ -11,7 +11,7 @@ PG_CPPFLAGS     := -DPXF_API_VERSION=\"$(PXF_API_VERSION)\"
 PG_CONFIG ?= pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 ifndef PGXS
-	$(error Make sure the Greenplum installation binaries are in your PATH. i.e. export PATH=<path to your Greenplum installation>/bin:$$PATH)
+	$(error Make sure the Cloudberry installation binaries are in your PATH. i.e. export PATH=<path to your Cloudberry installation>/bin:$$PATH)
 endif
 include $(PGXS)
 
@@ -21,8 +21,8 @@ stage: pxf.so
 	install -c -m 755 pxf.so build/stage/gpextable/pxf.so
 	install -c -m 644 pxf.control build/stage/gpextable/
 	install -c -m 644 $(DATA) build/stage/gpextable/
-	@echo "gpdb.version=$(GP_VERSION)" > build/stage/gpextable/metadata
-	@echo "gpdb.major-version=$(GP_MAJORVERSION)" >> build/stage/gpextable/metadata
+	@echo "cloudberry.version=$(CLB_VERSION)" > build/stage/gpextable/metadata
+	@echo "cloudberry.major-version=$(CLB_MAJORVERSION)" >> build/stage/gpextable/metadata
 
 .PHONY: clean-all
 clean-all: clean

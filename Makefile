@@ -184,9 +184,9 @@ help:
 	@echo
 	@echo 'Possible targets'
 	@echo	'  - all - build extensions, cli, and server modules'
-	@echo	'  - extensions - build Greenplum external table and foreign data wrapper extensions'
-	@echo	'  - external-table - build Greenplum external table extension'
-	@echo	'  - fdw - build Greenplum foreign data wrapper extension'
+	@echo	'  - extensions - build Cloudberry external table and foreign data wrapper extensions'
+	@echo	'  - external-table - build Cloudberry external table extension'
+	@echo	'  - fdw - build Cloudberry foreign data wrapper extension'
 	@echo	'  - cli - install Go CLI dependencies and build Go CLI'
 	@echo	'  - server - install server dependencies and build server module'
 	@echo	'  - clean - clean up external-table, fdw, CLI and server binaries'

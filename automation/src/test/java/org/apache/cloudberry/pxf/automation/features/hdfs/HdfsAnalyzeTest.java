@@ -52,12 +52,12 @@ public class HdfsAnalyzeTest extends BaseFeature {
 
     private final String SUFFIX_CLASS = ".class";
 
-    String testPackageLocation = "/org/greenplum/pxf/automation/testplugin/";
+    String testPackageLocation = "/org/apache/cloudberry/pxf/automation/testplugin/";
     String testPackage = "org.apache.cloudberry.pxf.automation.testplugin.";
 
     String throwOn10000Resolver = "ThrowOn10000Resolver";
 
-    String schemaPackageLocation = "/org/greenplum/pxf/automation/dataschema/";
+    String schemaPackageLocation = "/org/apache/cloudberry/pxf/automation/dataschema/";
     String schemaPackage = "org.apache.cloudberry.pxf.automation.dataschema.";
 
     String customSchemaFileName = "CustomWritable";
