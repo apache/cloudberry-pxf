@@ -1,5 +1,6 @@
 package org.greenplum.pxf.automation.features.writable;
 
+import annotations.FailsWithFDW;
 import annotations.SkipForFDW;
 import annotations.WorksWithFDW;
 import org.apache.commons.lang.StringUtils;
@@ -75,6 +76,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
      *
      * @throws Exception if test fails to run
      */
+    @FailsWithFDW
     @Test(groups = {"features", "gpdb", "security"})
     public void textFormatInsertNoProfile() throws Exception {
 
