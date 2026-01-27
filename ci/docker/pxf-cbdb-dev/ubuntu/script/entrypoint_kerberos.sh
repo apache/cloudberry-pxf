@@ -407,7 +407,7 @@ def add_block(tag, text_map):
     for k,v in text_map.items():
         c = ET.SubElement(el, k); c.text = v
 add_block("hdfsIpa", {
-    "class":"org.greenplum.pxf.automation.components.hdfs.Hdfs",
+    "class":"org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs",
     "host":host, "port":"8020",
     "workingDirectory":"pxf_automation_data/__UUID__",
     "hadoopRoot":f"{'/home/gpadmin/pxf-base'}/servers/hdfs-ipa",
@@ -417,7 +417,7 @@ add_block("hdfsIpa", {
     "testKerberosKeytab":f"/etc/security/keytabs/hdfs/{host}.headless.keytab"
 })
 add_block("hiveIpa", {
-    "class":"org.greenplum.pxf.automation.components.hive.Hive",
+    "class":"org.apache.cloudberry.pxf.automation.components.hive.Hive",
     "host":host, "port":"10000",
     "kerberosPrincipal":f"hive/{host}@{realm}",
     "saslQop":"auth"

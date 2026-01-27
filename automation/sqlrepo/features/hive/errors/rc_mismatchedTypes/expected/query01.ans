@@ -18,6 +18,6 @@
 --
 -- end_matchsubs
 SELECT * from gpdb_hive_types ORDER BY t1;
-ERROR:  PXF server error : org.greenplum.pxf.api.error.UnsupportedTypeException: Invalid definition for column sml: expected GPDB type SMALLINT, actual GPDB type INTEGER
+ERROR:  PXF server error : org.apache.cloudberry.pxf.api.error.UnsupportedTypeException: Invalid definition for column sml: expected GPDB type SMALLINT, actual GPDB type INTEGER
 HINT:  Check the PXF logs located in the '/home/gpadmin/pxf-base/logs' directory on host '0.0.0.0' or 'set client_min_messages=LOG' for additional details.
-CONTEXT:  External table gpdb_hive_types, line 1 of pxf://hive_types_rc?FRAGMENTER=org.greenplum.pxf.plugins.hive.HiveInputFormatFragmenter&ACCESSOR=org.greenplum.pxf.plugins.hive.HiveRCFileAccessor&RESOLVER=org.greenplum.pxf.plugins.hive.HiveColumnarSerdeResolver: ""
+CONTEXT:  External table gpdb_hive_types, line 1 of pxf://hive_types_rc?FRAGMENTER=org.apache.cloudberry.pxf.plugins.hive.HiveInputFormatFragmenter&ACCESSOR=org.apache.cloudberry.pxf.plugins.hive.HiveRCFileAccessor&RESOLVER=org.apache.cloudberry.pxf.plugins.hive.HiveColumnarSerdeResolver: ""

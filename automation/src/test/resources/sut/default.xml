@@ -1,6 +1,6 @@
 <sut>
     <cluster>
-        <class>org.greenplum.pxf.automation.components.cluster.SingleCluster</class>
+        <class>org.apache.cloudberry.pxf.automation.components.cluster.SingleCluster</class>
         <host>localhost</host>
         <phdRoot>/home/gpadmin/workspace/singlecluster</phdRoot>
         <pxfHome>/usr/local/pxf</pxfHome>
@@ -8,7 +8,7 @@
     </cluster>
 
     <gpdb>
-        <class>org.greenplum.pxf.automation.components.gpdb.Gpdb</class>
+        <class>org.apache.cloudberry.pxf.automation.components.gpdb.Gpdb</class>
         <host>localhost</host>
         <masterHost>localhost</masterHost>
         <port>7000</port>
@@ -16,7 +16,7 @@
     </gpdb>
 
     <gpdb2>
-        <class>org.greenplum.pxf.automation.components.gpdb.Gpdb</class>
+        <class>org.apache.cloudberry.pxf.automation.components.gpdb.Gpdb</class>
         <host>localhost</host>
         <masterHost>localhost</masterHost>
         <port>7000</port>
@@ -27,7 +27,7 @@
     </gpdb2>
 
     <hdfs>
-        <class>org.greenplum.pxf.automation.components.hdfs.Hdfs</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs</class>
         <host>localhost</host>
         <port>8020</port>
         <workingDirectory>tmp/pxf_automation_data</workingDirectory>
@@ -35,59 +35,59 @@
     </hdfs>
 
     <file>
-        <class>org.greenplum.pxf.automation.components.hdfs.Hdfs</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs</class>
         <workingDirectory>${base.path}/tmp/pxf_automation_data/__UUID__</workingDirectory>
         <hadoopRoot>${pxf.base}/servers/file</hadoopRoot>
         <scheme>file</scheme>
     </file>
 
     <s3>
-        <class>org.greenplum.pxf.automation.components.hdfs.Hdfs</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs</class>
         <workingDirectory>gpdb-ud-scratch/tmp/pxf_automation_data/__UUID__</workingDirectory>
         <hadoopRoot>${pxf.base}/servers/s3</hadoopRoot>
         <scheme>s3a</scheme>
     </s3>
 
     <abfss>
-        <class>org.greenplum.pxf.automation.components.hdfs.Hdfs</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs</class>
         <workingDirectory>pxf-container@pxfdevgen2.dfs.core.windows.net/tmp/pxf_automation_data/__UUID__</workingDirectory>
         <hadoopRoot>${pxf.base}/servers/abfss</hadoopRoot>
         <scheme>abfss</scheme>
     </abfss>
 
     <gs>
-        <class>org.greenplum.pxf.automation.components.hdfs.Hdfs</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs</class>
         <workingDirectory>data-gpdb-ud-tpch/tmp/pxf_automation_data/__UUID__</workingDirectory>
         <hadoopRoot>${pxf.base}/servers/gs</hadoopRoot>
         <scheme>gs</scheme>
     </gs>
 
     <wasbs>
-        <class>org.greenplum.pxf.automation.components.hdfs.Hdfs</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs</class>
         <workingDirectory>pxf-container@pxfdev.blob.core.windows.net/tmp/pxf_automation_data/__UUID__</workingDirectory>
         <hadoopRoot>${pxf.base}/servers/wasbs</hadoopRoot>
         <scheme>wasbs</scheme>
     </wasbs>
 
     <hbase>
-        <class>org.greenplum.pxf.automation.components.hbase.HBase</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hbase.HBase</class>
         <host>localhost</host>
     </hbase>
 
     <hive>
-        <class>org.greenplum.pxf.automation.components.hive.Hive</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hive.Hive</class>
         <host>localhost</host>
         <port>10000</port>
     </hive>
 
     <regress>
-        <class>org.greenplum.pxf.automation.components.regress.Regress</class>
+        <class>org.apache.cloudberry.pxf.automation.components.regress.Regress</class>
         <regressTestFolder>sqlrepo</regressTestFolder>
         <dbName>pxfautomation</dbName>
     </regress>
 
     <pxf>
-        <class>org.greenplum.pxf.automation.components.pxf.Pxf</class>
+        <class>org.apache.cloudberry.pxf.automation.components.pxf.Pxf</class>
         <host>localhost</host>
         <port>5888</port>
     </pxf>

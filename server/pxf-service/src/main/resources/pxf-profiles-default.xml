@@ -31,9 +31,9 @@ under the License.
         <name>jdbc</name>
         <description>A profile for reading and writing data via JDBC</description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.jdbc.JdbcPartitionFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.jdbc.JdbcAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.jdbc.JdbcResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.jdbc.JdbcPartitionFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.jdbc.JdbcAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.jdbc.JdbcResolver</resolver>
         </plugins>
         <optionMappings>
             <mapping option="jdbc_driver" property="jdbc.driver"/>
@@ -54,9 +54,9 @@ under the License.
             engine
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hbase.HBaseDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hbase.HBaseAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hbase.HBaseResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hbase.HBaseDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hbase.HBaseAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hbase.HBaseResolver</resolver>
         </plugins>
     </profile>
 
@@ -69,11 +69,11 @@ under the License.
             format and uses an optimized profile (hive:rc, hive:text, hive:orc) if applicable.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hive.HiveDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hive.HiveAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hive.HiveResolver</resolver>
-            <metadata>org.greenplum.pxf.plugins.hive.HiveMetadataFetcher</metadata>
-            <outputFormat>org.greenplum.pxf.api.io.GPDBWritable</outputFormat>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hive.HiveDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hive.HiveAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hive.HiveResolver</resolver>
+            <metadata>org.apache.cloudberry.pxf.plugins.hive.HiveMetadataFetcher</metadata>
+            <outputFormat>org.apache.cloudberry.pxf.api.io.GPDBWritable</outputFormat>
         </plugins>
         <optionMappings>
             <mapping option="ppd" property="pxf.ppd.hive"/>
@@ -89,11 +89,11 @@ under the License.
             optimized for TEXT output format.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hive.HiveRCFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hive.HiveColumnarSerdeResolver</resolver>
-            <metadata>org.greenplum.pxf.plugins.hive.HiveMetadataFetcher</metadata>
-            <outputFormat>org.greenplum.pxf.api.io.Text</outputFormat>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hive.HiveRCFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hive.HiveColumnarSerdeResolver</resolver>
+            <metadata>org.apache.cloudberry.pxf.plugins.hive.HiveMetadataFetcher</metadata>
+            <outputFormat>org.apache.cloudberry.pxf.api.io.Text</outputFormat>
         </plugins>
         <optionMappings>
             <mapping option="ppd" property="pxf.ppd.hive"/>
@@ -108,11 +108,11 @@ under the License.
             optimized for TEXT output format.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hive.HiveRCFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hive.HiveColumnarSerdeResolver</resolver>
-            <metadata>org.greenplum.pxf.plugins.hive.HiveMetadataFetcher</metadata>
-            <outputFormat>org.greenplum.pxf.api.io.Text</outputFormat>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hive.HiveRCFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hive.HiveColumnarSerdeResolver</resolver>
+            <metadata>org.apache.cloudberry.pxf.plugins.hive.HiveMetadataFetcher</metadata>
+            <outputFormat>org.apache.cloudberry.pxf.api.io.Text</outputFormat>
         </plugins>
         <optionMappings>
             <mapping option="ppd" property="pxf.ppd.hive"/>
@@ -127,11 +127,11 @@ under the License.
             Primary optimized for TEXT output format.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hive.HiveLineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hive.HiveStringPassResolver</resolver>
-            <metadata>org.greenplum.pxf.plugins.hive.HiveMetadataFetcher</metadata>
-            <outputFormat>org.greenplum.pxf.api.io.Text</outputFormat>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hive.HiveLineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hive.HiveStringPassResolver</resolver>
+            <metadata>org.apache.cloudberry.pxf.plugins.hive.HiveMetadataFetcher</metadata>
+            <outputFormat>org.apache.cloudberry.pxf.api.io.Text</outputFormat>
         </plugins>
     </profile>
     <profile>
@@ -142,11 +142,11 @@ under the License.
             Primary optimized for TEXT output format.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hive.HiveLineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hive.HiveStringPassResolver</resolver>
-            <metadata>org.greenplum.pxf.plugins.hive.HiveMetadataFetcher</metadata>
-            <outputFormat>org.greenplum.pxf.api.io.Text</outputFormat>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hive.HiveLineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hive.HiveStringPassResolver</resolver>
+            <metadata>org.apache.cloudberry.pxf.plugins.hive.HiveMetadataFetcher</metadata>
+            <outputFormat>org.apache.cloudberry.pxf.api.io.Text</outputFormat>
         </plugins>
     </profile>
     <!-- this profile is obsolete in favor of hive:orc -->
@@ -158,11 +158,11 @@ under the License.
             specified in FORMAT header parameter.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hive.HiveORCAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hive.HiveORCSerdeResolver</resolver>
-            <metadata>org.greenplum.pxf.plugins.hive.HiveMetadataFetcher</metadata>
-            <outputFormat>org.greenplum.pxf.api.io.GPDBWritable</outputFormat>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hive.HiveORCAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hive.HiveORCSerdeResolver</resolver>
+            <metadata>org.apache.cloudberry.pxf.plugins.hive.HiveMetadataFetcher</metadata>
+            <outputFormat>org.apache.cloudberry.pxf.api.io.GPDBWritable</outputFormat>
         </plugins>
         <optionMappings>
             <mapping option="ppd" property="pxf.ppd.hive"/>
@@ -176,13 +176,13 @@ under the License.
             specified in FORMAT header parameter.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hive.HiveORCAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hive.HiveORCSerdeResolver</resolver>
-            <metadata>org.greenplum.pxf.plugins.hive.HiveMetadataFetcher</metadata>
-            <outputFormat>org.greenplum.pxf.api.io.GPDBWritable</outputFormat>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hive.HiveORCAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hive.HiveORCSerdeResolver</resolver>
+            <metadata>org.apache.cloudberry.pxf.plugins.hive.HiveMetadataFetcher</metadata>
+            <outputFormat>org.apache.cloudberry.pxf.api.io.GPDBWritable</outputFormat>
         </plugins>
-        <handler>org.greenplum.pxf.plugins.hive.HiveProtocolHandler</handler>
+        <handler>org.apache.cloudberry.pxf.plugins.hive.HiveProtocolHandler</handler>
         <optionMappings>
             <mapping option="ppd" property="pxf.ppd.hive"/>
         </optionMappings>
@@ -194,11 +194,11 @@ under the License.
             instead of one row at a time, leading to faster reading and resolution phases.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hive.HiveORCVectorizedAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hive.HiveORCVectorizedResolver</resolver>
-            <metadata>org.greenplum.pxf.plugins.hive.HiveMetadataFetcher</metadata>
-            <outputFormat>org.greenplum.pxf.api.io.GPDBWritable</outputFormat>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hive.HiveORCVectorizedAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hive.HiveORCVectorizedResolver</resolver>
+            <metadata>org.apache.cloudberry.pxf.plugins.hive.HiveMetadataFetcher</metadata>
+            <outputFormat>org.apache.cloudberry.pxf.api.io.GPDBWritable</outputFormat>
         </plugins>
     </profile>
 
@@ -210,9 +210,9 @@ under the License.
             from plain text files on HDFS.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
     <!-- this profile is obsolete in favor of hdfs:text:multi -->
@@ -223,9 +223,9 @@ under the License.
             parallel) and slower than HdfsTextSimple.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -234,9 +234,9 @@ under the License.
             from plain text, tab-delimited, files on HDFS.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -245,9 +245,9 @@ under the License.
             from plain text CSV files on HDFS.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -257,9 +257,9 @@ under the License.
             parallel) and slower than HdfsTextSimple.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -268,9 +268,9 @@ under the License.
             from plain text files on HDFS.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -279,12 +279,12 @@ under the License.
             from plain text, tab-delimited, files on S3
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>s3a</protocol>
-        <handler>org.greenplum.pxf.plugins.s3.S3ProtocolHandler</handler>
+        <handler>org.apache.cloudberry.pxf.plugins.s3.S3ProtocolHandler</handler>
         <optionMappings>
             <mapping option="accesskey" property="fs.s3a.access.key"/>
             <mapping option="secretkey" property="fs.s3a.secret.key"/>
@@ -296,12 +296,12 @@ under the License.
             from plain text CSV files on S3
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>s3a</protocol>
-        <handler>org.greenplum.pxf.plugins.s3.S3ProtocolHandler</handler>
+        <handler>org.apache.cloudberry.pxf.plugins.s3.S3ProtocolHandler</handler>
         <optionMappings>
             <mapping option="accesskey" property="fs.s3a.access.key"/>
             <mapping option="secretkey" property="fs.s3a.secret.key"/>
@@ -314,9 +314,9 @@ under the License.
             parallel) and slower than HdfsTextSimple.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>s3a</protocol>
         <optionMappings>
@@ -330,12 +330,12 @@ under the License.
             from plain text files on S3.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>s3a</protocol>
-        <handler>org.greenplum.pxf.plugins.s3.S3ProtocolHandler</handler>
+        <handler>org.apache.cloudberry.pxf.plugins.s3.S3ProtocolHandler</handler>
         <optionMappings>
             <mapping option="accesskey" property="fs.s3a.access.key"/>
             <mapping option="secretkey" property="fs.s3a.secret.key"/>
@@ -347,9 +347,9 @@ under the License.
             from plain text, tab-delimited, files on Azure Data Lake
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>abfss</protocol>
     </profile>
@@ -359,9 +359,9 @@ under the License.
             from plain text CSV files on Azure Data Lake
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>abfss</protocol>
     </profile>
@@ -372,9 +372,9 @@ under the License.
             parallel) and slower than HdfsTextSimple.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>abfss</protocol>
     </profile>
@@ -384,9 +384,9 @@ under the License.
             from plain text files on Azure Data Lake
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>abfss</protocol>
     </profile>
@@ -396,9 +396,9 @@ under the License.
             from plain text, tab-delimited, files on Azure Blob Storage
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>wasbs</protocol>
     </profile>
@@ -408,9 +408,9 @@ under the License.
             from plain text CSV files on Azure Blob Storage
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>wasbs</protocol>
     </profile>
@@ -421,9 +421,9 @@ under the License.
             splittable (non parallel) and slower than HdfsTextSimple.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>wasbs</protocol>
     </profile>
@@ -433,9 +433,9 @@ under the License.
             from plain text files on Azure Blob Storage
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>wasbs</protocol>
     </profile>
@@ -445,9 +445,9 @@ under the License.
             from plain text, tab-delimited, files on Google Cloud Storage
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>gs</protocol>
     </profile>
@@ -457,9 +457,9 @@ under the License.
             from plain text CSV files on Google Cloud Storage
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>gs</protocol>
     </profile>
@@ -470,9 +470,9 @@ under the License.
             parallel) and slower than HdfsTextSimple.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>gs</protocol>
     </profile>
@@ -482,9 +482,9 @@ under the License.
             from plain text files on Google Cloud Storage
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
         <protocol>gs</protocol>
     </profile>
@@ -494,9 +494,9 @@ under the License.
             from plain text, tab-delimited files on network mounted filesystems.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -505,9 +505,9 @@ under the License.
             from plain text CSV files on network mounted filesystems.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -517,9 +517,9 @@ under the License.
             is not splittable (non-parallel) and slower than HdfsTextSimple.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsFileFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.QuotedLineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -528,9 +528,9 @@ under the License.
             from plain text files on network mounted filesystems.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
 
@@ -540,30 +540,30 @@ under the License.
         <name>parquet</name>
         <description>A profile for reading and writing Parquet data from HDFS</description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.ParquetResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.ParquetResolver</resolver>
         </plugins>
     </profile>
     <profile>
         <name>hdfs:parquet</name>
         <description>A profile for reading and writing Parquet data from HDFS</description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.ParquetResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.ParquetResolver</resolver>
         </plugins>
     </profile>
     <profile>
         <name>s3:parquet</name>
         <description>A profile for reading and writing Parquet data from S3</description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.ParquetResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.ParquetResolver</resolver>
         </plugins>
         <protocol>s3a</protocol>
-        <handler>org.greenplum.pxf.plugins.s3.S3ProtocolHandler</handler>
+        <handler>org.apache.cloudberry.pxf.plugins.s3.S3ProtocolHandler</handler>
         <optionMappings>
             <mapping option="accesskey" property="fs.s3a.access.key"/>
             <mapping option="secretkey" property="fs.s3a.secret.key"/>
@@ -574,9 +574,9 @@ under the License.
         <description>A profile for reading and writing Parquet data from Azure Data Lake
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.ParquetResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.ParquetResolver</resolver>
         </plugins>
         <protocol>abfss</protocol>
     </profile>
@@ -585,9 +585,9 @@ under the License.
         <description>A profile for reading and writing Parquet data from Azure Blob Storage
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.ParquetResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.ParquetResolver</resolver>
         </plugins>
         <protocol>wasbs</protocol>
     </profile>
@@ -596,9 +596,9 @@ under the License.
         <description>A profile for reading and writing Parquet data from Google Cloud Storage
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.ParquetResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.ParquetResolver</resolver>
         </plugins>
         <protocol>gs</protocol>
     </profile>
@@ -607,9 +607,9 @@ under the License.
         <description>A profile for reading and writing Parquet files on network mounted filesystems.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.ParquetResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.ParquetResolver</resolver>
         </plugins>
     </profile>
 
@@ -618,21 +618,21 @@ under the License.
         <name>hdfs:orc</name>
         <description>A profile for reading ORC data from HDFS</description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.orc.ORCVectorizedAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.orc.ORCVectorizedResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.orc.ORCVectorizedAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.orc.ORCVectorizedResolver</resolver>
         </plugins>
     </profile>
     <profile>
         <name>s3:orc</name>
         <description>A profile for reading ORC data from S3</description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.orc.ORCVectorizedAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.orc.ORCVectorizedResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.orc.ORCVectorizedAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.orc.ORCVectorizedResolver</resolver>
         </plugins>
         <protocol>s3a</protocol>
-        <handler>org.greenplum.pxf.plugins.s3.S3ProtocolHandler</handler>
+        <handler>org.apache.cloudberry.pxf.plugins.s3.S3ProtocolHandler</handler>
         <optionMappings>
             <mapping option="accesskey" property="fs.s3a.access.key"/>
             <mapping option="secretkey" property="fs.s3a.secret.key"/>
@@ -643,9 +643,9 @@ under the License.
         <description>A profile for reading ORC data from Azure Data Lake
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.orc.ORCVectorizedAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.orc.ORCVectorizedResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.orc.ORCVectorizedAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.orc.ORCVectorizedResolver</resolver>
         </plugins>
         <protocol>abfss</protocol>
     </profile>
@@ -654,9 +654,9 @@ under the License.
         <description>A profile for reading ORC data from Google Cloud Storage
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.orc.ORCVectorizedAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.orc.ORCVectorizedResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.orc.ORCVectorizedAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.orc.ORCVectorizedResolver</resolver>
         </plugins>
         <protocol>gs</protocol>
     </profile>
@@ -665,9 +665,9 @@ under the License.
         <description>A profile for reading ORC data from Azure Blob Storage
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.orc.ORCVectorizedAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.orc.ORCVectorizedResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.orc.ORCVectorizedAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.orc.ORCVectorizedResolver</resolver>
         </plugins>
         <protocol>wasbs</protocol>
     </profile>
@@ -676,9 +676,9 @@ under the License.
         <description>A profile for reading ORC data from network mounted files.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.orc.ORCVectorizedAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.orc.ORCVectorizedResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.orc.ORCVectorizedAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.orc.ORCVectorizedResolver</resolver>
         </plugins>
     </profile>
 
@@ -690,9 +690,9 @@ under the License.
             fileName.avro)
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.AvroFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.AvroResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.AvroFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.AvroResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -701,9 +701,9 @@ under the License.
             fileName.avro)
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.AvroFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.AvroResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.AvroFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.AvroResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -712,9 +712,9 @@ under the License.
             fileName.avro)
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.AvroFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.AvroResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.AvroFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.AvroResolver</resolver>
         </plugins>
         <protocol>s3a</protocol>
         <optionMappings>
@@ -728,9 +728,9 @@ under the License.
             fileName.avro)
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.AvroFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.AvroResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.AvroFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.AvroResolver</resolver>
         </plugins>
         <protocol>abfss</protocol>
     </profile>
@@ -740,9 +740,9 @@ under the License.
             fileName.avro) on network mounted filesystems.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.AvroFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.AvroResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.AvroFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.AvroResolver</resolver>
         </plugins>
         <protocol>wasbs</protocol>
     </profile>
@@ -752,9 +752,9 @@ under the License.
             fileName.avro)
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.AvroFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.AvroResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.AvroFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.AvroResolver</resolver>
         </plugins>
         <protocol>gs</protocol>
     </profile>
@@ -764,9 +764,9 @@ under the License.
             fileName.avro) on network mounted filesystems.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.AvroFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.AvroResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.AvroFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.AvroResolver</resolver>
         </plugins>
     </profile>
 
@@ -781,11 +781,11 @@ under the License.
             to determine the encapsulating json object to return
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.json.JsonAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.json.JsonResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.json.JsonAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.json.JsonResolver</resolver>
         </plugins>
-        <handler>org.greenplum.pxf.plugins.json.JsonProtocolHandler</handler>
+        <handler>org.apache.cloudberry.pxf.plugins.json.JsonProtocolHandler</handler>
     </profile>
     <profile>
         <name>hdfs:json</name>
@@ -796,11 +796,11 @@ under the License.
             to determine the encapsulating json object to return
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.json.JsonAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.json.JsonResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.json.JsonAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.json.JsonResolver</resolver>
         </plugins>
-        <handler>org.greenplum.pxf.plugins.json.JsonProtocolHandler</handler>
+        <handler>org.apache.cloudberry.pxf.plugins.json.JsonProtocolHandler</handler>
     </profile>
     <profile>
         <name>s3:json</name>
@@ -811,12 +811,12 @@ under the License.
             to determine the encapsulating json object to return
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.json.JsonAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.json.JsonResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.json.JsonAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.json.JsonResolver</resolver>
         </plugins>
         <protocol>s3a</protocol>
-        <handler>org.greenplum.pxf.plugins.s3.S3ProtocolHandler</handler>
+        <handler>org.apache.cloudberry.pxf.plugins.s3.S3ProtocolHandler</handler>
         <optionMappings>
             <mapping option="accesskey" property="fs.s3a.access.key"/>
             <mapping option="secretkey" property="fs.s3a.secret.key"/>
@@ -831,11 +831,11 @@ under the License.
             to determine the encapsulating json object to return
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.json.JsonAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.json.JsonResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.json.JsonAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.json.JsonResolver</resolver>
         </plugins>
-        <handler>org.greenplum.pxf.plugins.json.JsonProtocolHandler</handler>
+        <handler>org.apache.cloudberry.pxf.plugins.json.JsonProtocolHandler</handler>
         <protocol>adl</protocol>
     </profile>
     <profile>
@@ -847,11 +847,11 @@ under the License.
             to determine the encapsulating json object to return
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.json.JsonAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.json.JsonResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.json.JsonAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.json.JsonResolver</resolver>
         </plugins>
-        <handler>org.greenplum.pxf.plugins.json.JsonProtocolHandler</handler>
+        <handler>org.apache.cloudberry.pxf.plugins.json.JsonProtocolHandler</handler>
         <protocol>wasbs</protocol>
     </profile>
     <profile>
@@ -863,11 +863,11 @@ under the License.
             to determine the encapsulating json object to return
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.json.JsonAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.json.JsonResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.json.JsonAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.json.JsonResolver</resolver>
         </plugins>
-        <handler>org.greenplum.pxf.plugins.json.JsonProtocolHandler</handler>
+        <handler>org.apache.cloudberry.pxf.plugins.json.JsonProtocolHandler</handler>
         <protocol>gs</protocol>
     </profile>
     <profile>
@@ -879,11 +879,11 @@ under the License.
             to determine the encapsulating json object to return
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.json.JsonAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.json.JsonResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.json.JsonAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.json.JsonResolver</resolver>
         </plugins>
-        <handler>org.greenplum.pxf.plugins.json.JsonProtocolHandler</handler>
+        <handler>org.apache.cloudberry.pxf.plugins.json.JsonProtocolHandler</handler>
     </profile>
 
     <!-- ==================== SEQUENCE FILE PROFILES ==================== -->
@@ -894,9 +894,9 @@ under the License.
             Profile for accessing Sequence files serialized with a custom Writable class
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.WritableResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.WritableResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -905,9 +905,9 @@ under the License.
             Profile for accessing Sequence files serialized with a custom Writable class
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -916,9 +916,9 @@ under the License.
             Profile for accessing Sequence files serialized with a custom Writable class
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.WritableResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.WritableResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -927,9 +927,9 @@ under the License.
             Profile for accessing Sequence files serialized with a custom Writable class
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.WritableResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.WritableResolver</resolver>
         </plugins>
         <protocol>s3a</protocol>
         <optionMappings>
@@ -943,9 +943,9 @@ under the License.
             Profile for accessing Sequence files serialized with a custom Writable class
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.WritableResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.WritableResolver</resolver>
         </plugins>
         <protocol>abfss</protocol>
     </profile>
@@ -955,9 +955,9 @@ under the License.
             Profile for accessing Sequence files serialized with a custom Writable class
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.WritableResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.WritableResolver</resolver>
         </plugins>
         <protocol>wasbs</protocol>
     </profile>
@@ -967,9 +967,9 @@ under the License.
             Profile for accessing Sequence files serialized with a custom Writable class
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.WritableResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.WritableResolver</resolver>
         </plugins>
         <protocol>gs</protocol>
     </profile>
@@ -981,9 +981,9 @@ under the License.
             Read an Avro format stored in sequence file, with separated schema file
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.AvroResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.AvroResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -992,9 +992,9 @@ under the License.
             Read an Avro format stored in sequence file, with separated schema file from S3
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.AvroResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.AvroResolver</resolver>
         </plugins>
         <protocol>s3a</protocol>
         <optionMappings>
@@ -1009,9 +1009,9 @@ under the License.
             Lake
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.AvroResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.AvroResolver</resolver>
         </plugins>
         <protocol>abfss</protocol>
     </profile>
@@ -1022,9 +1022,9 @@ under the License.
             Storage
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.AvroResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.AvroResolver</resolver>
         </plugins>
         <protocol>wasbs</protocol>
     </profile>
@@ -1035,9 +1035,9 @@ under the License.
             Cloud Storage
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.AvroResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.SequenceFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.AvroResolver</resolver>
         </plugins>
         <protocol>gs</protocol>
     </profile>
@@ -1050,9 +1050,9 @@ under the License.
             clause) that was serialized by the PXF extension.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.diagnostic.FilterVerifyFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.diagnostic.UserDataVerifyAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.diagnostic.FilterVerifyFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.diagnostic.UserDataVerifyAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
     <profile>
@@ -1061,9 +1061,9 @@ under the License.
             The system:sample produces a set of sample data for each segment with configurable number of rows.
         </description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.diagnostic.EachSegmentDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.diagnostic.SampleDataAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.diagnostic.EachSegmentDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.diagnostic.SampleDataAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
 

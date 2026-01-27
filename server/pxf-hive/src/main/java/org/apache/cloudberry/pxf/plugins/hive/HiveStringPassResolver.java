@@ -1,0 +1,78 @@
+package org.apache.cloudberry.pxf.plugins.hive;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+
+import org.apache.cloudberry.pxf.api.OneField;
+import org.apache.cloudberry.pxf.api.OneRow;
+import org.apache.cloudberry.pxf.api.model.OutputFormat;
+import org.apache.cloudberry.pxf.api.model.RequestContext;
+
+import java.util.Collections;
+import java.util.List;
+
+import static org.apache.cloudberry.pxf.api.io.DataType.VARCHAR;
+
+/**
+ * Specialized HiveResolver for a Hive table stored as Text files.
+ * Use together with HiveInputFormatFragmenter/HiveLineBreakAccessor.
+ */
+public class HiveStringPassResolver extends HiveResolver {
+    private StringBuilder parts;
+
+    @Override
+    void parseUserData(RequestContext context) {
+        super.parseUserData(context);
+        parseDelimiterChar(context);
+        parts = new StringBuilder();
+    }
+
+    @Override
+    void initSerde() throws Exception {
+        if (context.getOutputFormat() == OutputFormat.GPDBWritable) {
+            super.initSerde();
+        }
+    }
+
+    @Override
+    void initPartitionFields() {
+        if (context.getOutputFormat() == OutputFormat.TEXT) {
+            initTextPartitionFields(parts);
+        } else {
+            super.initPartitionFields();
+        }
+    }
+
+    /**
+     * getFields returns a singleton list of OneField item.
+     * OneField item contains two fields: an integer representing the VARCHAR type and a Java
+     * Object representing the field value.
+     */
+    @Override
+    public List<OneField> getFields(OneRow onerow) throws Exception {
+        if (context.getOutputFormat() == OutputFormat.TEXT) {
+            String line = (onerow.getData()).toString();
+            /* We follow Hive convention. Partition fields are always added at the end of the record */
+            return Collections.singletonList(new OneField(VARCHAR.getOID(), line + parts));
+        } else {
+            return super.getFields(onerow);
+        }
+    }
+}

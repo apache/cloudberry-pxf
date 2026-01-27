@@ -24,7 +24,7 @@
         <AppenderRef ref="RollingFile"/>
     </Root>
 
-    <Logger name="org.greenplum.pxf" level="${env:PXF_LOG_LEVEL:-${spring:pxf.log.level}}"/>
+    <Logger name="org.apache.cloudberry.pxf" level="${env:PXF_LOG_LEVEL:-${spring:pxf.log.level}}"/>
 
     <!-- The levels below are tuned to provide minimal output, change to INFO or DEBUG to troubleshoot -->
     <Logger name="com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemBase" level="warn"/>

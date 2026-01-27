@@ -1,14 +1,14 @@
 <sut>
     <cluster>
         <class>
-            org.greenplum.pxf.automation.components.cluster.MultiNodeCluster
+            org.apache.cloudberry.pxf.automation.components.cluster.MultiNodeCluster
         </class>
         <host>localhost</host>
         <phdRoot>/usr/local/greenplum-db-devel</phdRoot>
         <hiveBaseHdfsDirectory>/hive/warehouse/</hiveBaseHdfsDirectory>
         <nodes index="0">
             <class>
-                org.greenplum.pxf.automation.components.cluster.installer.nodes.CoordinatorNode
+                org.apache.cloudberry.pxf.automation.components.cluster.installer.nodes.CoordinatorNode
             </class>
             <host>cdw</host>
             <userName>gpadmin</userName>
@@ -17,7 +17,7 @@
         </nodes>
         <nodes index="1">
             <class>
-                org.greenplum.pxf.automation.components.cluster.installer.nodes.SegmentNode
+                org.apache.cloudberry.pxf.automation.components.cluster.installer.nodes.SegmentNode
             </class>
             <host>sdw1</host>
             <userName>gpadmin</userName>
@@ -26,7 +26,7 @@
         </nodes>
         <nodes index="2">
             <class>
-                org.greenplum.pxf.automation.components.cluster.installer.nodes.SegmentNode
+                org.apache.cloudberry.pxf.automation.components.cluster.installer.nodes.SegmentNode
             </class>
             <host>sdw2</host>
             <userName>gpadmin</userName>
@@ -36,7 +36,7 @@
     </cluster>
 
     <gpdb>
-        <class>org.greenplum.pxf.automation.components.gpdb.Gpdb</class>
+        <class>org.apache.cloudberry.pxf.automation.components.gpdb.Gpdb</class>
         <host>localhost</host>
         <masterHost>cdw</masterHost>
         <userName>gpadmin</userName>
@@ -44,7 +44,7 @@
     </gpdb>
 
     <gpdb2>
-        <class>org.greenplum.pxf.automation.components.gpdb.Gpdb</class>
+        <class>org.apache.cloudberry.pxf.automation.components.gpdb.Gpdb</class>
         <host>localhost</host>
         <masterHost>cdw</masterHost>
         <userName>gpadmin</userName>
@@ -55,28 +55,28 @@
     </gpdb2>
 
     <hdfs>
-        <class>org.greenplum.pxf.automation.components.hdfs.Hdfs</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs</class>
         <host>hadoop</host>
         <port>8020</port>
         <workingDirectory>tmp/pxf_automation_data/__UUID__</workingDirectory>
         <haNameservice></haNameservice>
     </hdfs>
     <hdfs2>
-        <class>org.greenplum.pxf.automation.components.hdfs.Hdfs</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs</class>
         <host>second-hadoop</host>
         <port>8020</port>
         <workingDirectory>tmp/pxf_automation_data</workingDirectory>
         <haNameservice></haNameservice>
     </hdfs2>
     <hdfsNonSecure>
-        <class>org.greenplum.pxf.automation.components.hdfs.Hdfs</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs</class>
         <host>non-secure-hadoop</host>
         <port>8020</port>
         <workingDirectory>tmp/pxf_automation_data</workingDirectory>
         <haNameservice></haNameservice>
     </hdfsNonSecure>
     <hdfsIpa>
-        <class>org.greenplum.pxf.automation.components.hdfs.Hdfs</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs</class>
         <host>ipa-hadoop</host>
         <port>8020</port>
         <workingDirectory>tmp/pxf_automation_data/__UUID__</workingDirectory>
@@ -84,41 +84,41 @@
         <useDatanodeHostname>true</useDatanodeHostname>
     </hdfsIpa>
     <hbase>
-        <class>org.greenplum.pxf.automation.components.hbase.HBase</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hbase.HBase</class>
         <host>hadoop</host>
         <userName>gpadmin</userName>
         <hbaseRoot>/etc/hbase</hbaseRoot>
     </hbase>
     <hive>
-        <class>org.greenplum.pxf.automation.components.hive.Hive</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hive.Hive</class>
         <host>hadoop</host>
         <port>10000</port>
         <userName>gpadmin</userName>
     </hive>
     <hive2>
-        <class>org.greenplum.pxf.automation.components.hive.Hive</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hive.Hive</class>
         <host>second-hadoop</host>
         <port>10000</port>
     </hive2>
     <hiveNonSecure>
-        <class>org.greenplum.pxf.automation.components.hive.Hive</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hive.Hive</class>
         <host>non-secure-hadoop</host>
         <port>10000</port>
     </hiveNonSecure>
     <hiveIpa>
-        <class>org.greenplum.pxf.automation.components.hive.Hive</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hive.Hive</class>
         <host>hive-ipa-host</host>
         <port>10000</port>
         <kerberosPrincipal>hive/hive-ipa-host@IPA-REALM</kerberosPrincipal>
         <saslQop>auth-conf</saslQop>
     </hiveIpa>
     <regress>
-        <class>org.greenplum.pxf.automation.components.regress.Regress</class>
+        <class>org.apache.cloudberry.pxf.automation.components.regress.Regress</class>
         <regressTestFolder>sqlrepo</regressTestFolder>
         <dbName>pxfautomation</dbName>
     </regress>
     <pxf>
-        <class>org.greenplum.pxf.automation.components.pxf.Pxf</class>
+        <class>org.apache.cloudberry.pxf.automation.components.pxf.Pxf</class>
         <host>localhost</host>
         <port>5888</port>
     </pxf>

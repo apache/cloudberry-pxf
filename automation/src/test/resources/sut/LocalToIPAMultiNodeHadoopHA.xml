@@ -15,20 +15,20 @@ make TEST=HdfsHAFailoverTest
 -->
 <sut>
     <cluster>
-        <class>org.greenplum.pxf.automation.components.cluster.SingleCluster</class>
+        <class>org.apache.cloudberry.pxf.automation.components.cluster.SingleCluster</class>
         <host>localhost</host>
         <hiveBaseHdfsDirectory>/user/hive/warehouse</hiveBaseHdfsDirectory>
     </cluster>
 
     <gpdb>
-        <class>org.greenplum.pxf.automation.components.gpdb.Gpdb</class>
+        <class>org.apache.cloudberry.pxf.automation.components.gpdb.Gpdb</class>
         <host>localhost</host>
         <masterHost>localhost</masterHost>
         <db>pxfautomation</db>
     </gpdb>
 
     <gpdb2>
-        <class>org.greenplum.pxf.automation.components.gpdb.Gpdb</class>
+        <class>org.apache.cloudberry.pxf.automation.components.gpdb.Gpdb</class>
         <host>localhost</host>
         <masterHost>localhost</masterHost>
         <db>pxfautomation_encoding</db>
@@ -38,14 +38,14 @@ make TEST=HdfsHAFailoverTest
     </gpdb2>
 
     <hdfs>
-        <class>org.greenplum.pxf.automation.components.hdfs.Hdfs</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs</class>
         <host>localhost</host>
         <port>8020</port>
         <workingDirectory>tmp/pxf_automation_data/__UUID__</workingDirectory>
         <haNameservice></haNameservice>
     </hdfs>
     <hdfsIpa>
-        <class>org.greenplum.pxf.automation.components.hdfs.Hdfs</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs</class>
         <host>ccp-${user}-nn01</host>
         <port>8020</port>
         <workingDirectory>tmp/pxf_automation_data/__UUID__</workingDirectory>
@@ -59,12 +59,12 @@ make TEST=HdfsHAFailoverTest
     </hdfsIpa>
 
     <hive>
-        <class>org.greenplum.pxf.automation.components.hive.Hive</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hive.Hive</class>
         <host>localhost</host>
         <port>10000</port>
     </hive>
     <hiveIpa>
-        <class>org.greenplum.pxf.automation.components.hive.Hive</class>
+        <class>org.apache.cloudberry.pxf.automation.components.hive.Hive</class>
         <host>ccp-${user}-nn02.c.data-gpdb-ud-ipa.internal</host>
         <port>10000</port>
         <kerberosPrincipal>hive/HOSTNAME@C.DATA-GPDB-UD-IPA.INTERNAL</kerberosPrincipal>
@@ -72,13 +72,13 @@ make TEST=HdfsHAFailoverTest
     </hiveIpa>
 
     <regress>
-        <class>org.greenplum.pxf.automation.components.regress.Regress</class>
+        <class>org.apache.cloudberry.pxf.automation.components.regress.Regress</class>
         <regressTestFolder>sqlrepo</regressTestFolder>
         <dbName>pxfautomation</dbName>
     </regress>
 
     <pxf>
-        <class>org.greenplum.pxf.automation.components.pxf.Pxf</class>
+        <class>org.apache.cloudberry.pxf.automation.components.pxf.Pxf</class>
         <host>localhost</host>
         <port>5888</port>
     </pxf>

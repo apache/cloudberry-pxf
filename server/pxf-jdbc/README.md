@@ -47,9 +47,9 @@ The **`<pxf_parameters>`** are:
 {
 PROFILE=JDBC
 |
-FRAGMENTER=org.greenplum.pxf.plugins.jdbc.JdbcPartitionFragmenter
-&ACCESSOR=org.greenplum.pxf.plugins.jdbc.JdbcAccessor
-&RESOLVER=org.greenplum.pxf.plugins.jdbc.JdbcResolver
+FRAGMENTER=org.apache.cloudberry.pxf.plugins.jdbc.JdbcPartitionFragmenter
+&ACCESSOR=org.apache.cloudberry.pxf.plugins.jdbc.JdbcAccessor
+&RESOLVER=org.apache.cloudberry.pxf.plugins.jdbc.JdbcResolver
 }
 ```
 

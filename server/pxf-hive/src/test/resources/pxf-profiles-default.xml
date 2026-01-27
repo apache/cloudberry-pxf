@@ -28,11 +28,11 @@ under the License.
     <profile>
         <name>HiveText</name>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hive.HiveLineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hive.HiveStringPassResolver</resolver>
-            <metadata>org.greenplum.pxf.plugins.hive.HiveMetadataFetcher</metadata>
-            <outputFormat>org.greenplum.pxf.api.io.Text</outputFormat>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hive.HiveInputFormatFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hive.HiveLineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hive.HiveStringPassResolver</resolver>
+            <metadata>org.apache.cloudberry.pxf.plugins.hive.HiveMetadataFetcher</metadata>
+            <outputFormat>org.apache.cloudberry.pxf.api.io.Text</outputFormat>
         </plugins>
     </profile>
 </profiles>

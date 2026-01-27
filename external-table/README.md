@@ -49,9 +49,9 @@ The Demo profile demonstrates how GPDB using its segments can access static data
 ```
 # CREATE EXTERNAL TABLE pxf_read_test (a TEXT, b TEXT, c TEXT) \
 LOCATION ('pxf://localhost:5888/tmp/dummy1' \
-'?FRAGMENTER=org.greenplum.pxf.api.examples.DemoFragmenter' \
-'&ACCESSOR=org.greenplum.pxf.api.examples.DemoAccessor' \
-'&RESOLVER=org.greenplum.pxf.api.examples.DemoTextResolver') \
+'?FRAGMENTER=org.apache.cloudberry.pxf.api.examples.DemoFragmenter' \
+'&ACCESSOR=org.apache.cloudberry.pxf.api.examples.DemoAccessor' \
+'&RESOLVER=org.apache.cloudberry.pxf.api.examples.DemoTextResolver') \
 FORMAT 'TEXT' (DELIMITER ',');
 ```
 

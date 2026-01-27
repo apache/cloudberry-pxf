@@ -80,7 +80,7 @@ bootJar {
 }
 
 springBoot {
-    mainClass = "org.greenplum.pxf.service.PxfServiceApplication"
+    mainClass = "org.apache.cloudberry.pxf.service.PxfServiceApplication"
     buildInfo {
         properties {
             additional = [

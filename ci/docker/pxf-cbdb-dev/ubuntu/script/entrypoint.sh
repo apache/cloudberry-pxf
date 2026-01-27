@@ -256,18 +256,18 @@ XML
         <name>pxf:parquet</name>
         <description>Profile for reading and writing Parquet files</description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.ParquetResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.ParquetResolver</resolver>
         </plugins>
     </profile>
     <profile>
         <name>test:text</name>
         <description>Test profile for text files</description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
 </profiles>
@@ -280,18 +280,18 @@ EOF
         <name>pxf:parquet</name>
         <description>Profile for reading and writing Parquet files</description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.ParquetResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.ParquetFileAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.ParquetResolver</resolver>
         </plugins>
     </profile>
     <profile>
         <name>test:text</name>
         <description>Test profile for text files</description>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
 </profiles>

@@ -3,7 +3,7 @@ package listeners;
 import annotations.FailsWithFDW;
 import annotations.SkipForFDW;
 import annotations.WorksWithFDW;
-import org.greenplum.pxf.automation.utils.system.FDWUtils;
+import org.apache.cloudberry.pxf.automation.utils.system.FDWUtils;
 import org.testng.IInvokedMethod;
 import org.testng.IInvokedMethodListener;
 import org.testng.ITestResult;

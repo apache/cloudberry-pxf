@@ -1,0 +1,94 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.cloudberry.pxf.service.bridge;
+
+import org.apache.commons.collections.map.LRUMap;
+import org.apache.cloudberry.pxf.api.OneRow;
+import org.apache.cloudberry.pxf.api.StatsAccessor;
+import org.apache.cloudberry.pxf.api.io.Writable;
+import org.apache.cloudberry.pxf.api.model.RequestContext;
+import org.apache.cloudberry.pxf.service.utilities.BasePluginFactory;
+import org.apache.cloudberry.pxf.service.utilities.GSSFailureHandler;
+
+import java.util.LinkedList;
+
+/**
+ * Bridge class optimized for aggregate queries.
+ */
+public class AggBridge extends ReadBridge implements Bridge {
+
+    /* Avoid resolving rows with the same key twice */
+    private LRUMap outputCache;
+
+    public AggBridge(BasePluginFactory pluginFactory, RequestContext context, GSSFailureHandler failureHandler) {
+        super(pluginFactory, context, failureHandler);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean beginIteration() throws Exception {
+        // TODO: enhance with failureHandler, for now this bridge is not actually used
+        /* Initialize LRU cache with 100 items*/
+        outputCache = new LRUMap();
+        boolean openForReadStatus = accessor.openForRead();
+        ((StatsAccessor) accessor).retrieveStats();
+        return openForReadStatus;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public Writable getNext() throws Exception {
+        Writable output = null;
+        LinkedList<Writable> cachedOutput;
+        OneRow onerow;
+
+        if (!outputQueue.isEmpty()) {
+            return outputQueue.pop();
+        }
+
+        try {
+            while (outputQueue.isEmpty()) {
+                onerow = ((StatsAccessor) accessor).emitAggObject();
+                if (onerow == null) {
+                    break;
+                }
+                cachedOutput = (LinkedList<Writable>) outputCache.get(onerow.getKey());
+                if (cachedOutput == null) {
+                    cachedOutput = outputBuilder.makeOutput(resolver.getFields(onerow));
+                    outputCache.put(onerow.getKey(), cachedOutput);
+                }
+                outputQueue.addAll(cachedOutput);
+                if (!outputQueue.isEmpty()) {
+                    output = outputQueue.pop();
+                    break;
+                }
+            }
+        } catch (Exception ex) {
+            LOG.error("Error occurred when reading next object from aggregate bridge: {}", ex.getMessage());
+            throw ex;
+        }
+        return output;
+    }
+}

@@ -105,13 +105,13 @@ After you install the new version of PXF, perform the following procedure:
     1. Change the following line:
 
         ``` pre
-        <Logger name="org.greenplum.pxf" level="${env:PXF_LOG_LEVEL:-${sys:PXF_LOG_LEVEL:-info}}"/>
+        <Logger name="org.apache.cloudberry.pxf" level="${env:PXF_LOG_LEVEL:-${sys:PXF_LOG_LEVEL:-info}}"/>
         ```
 
         to:
 
         ``` pre
-        <Logger name="org.greenplum.pxf" level="${env:PXF_LOG_LEVEL:-${spring:pxf.log.level}}"/>
+        <Logger name="org.apache.cloudberry.pxf" level="${env:PXF_LOG_LEVEL:-${spring:pxf.log.level}}"/>
         ```
 
 1. **If you are upgrading <i>from</i> PXF version 6.5.x or earlier <i>to</i> PXF version 6.6.0 or later**, and you want to change the value of the new `pxf.parquet.write.decimal.overflow` property from the default of `round`, add the following to the `pxf-site.xml` file for your PXF server:

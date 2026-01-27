@@ -4,7 +4,7 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.greenplum.pxf.automation</groupId>
+    <groupId>org.apache.cloudberry.pxf.automation</groupId>
     <artifactId>pxf-automation</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
@@ -86,7 +86,7 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>org.greenplum</groupId>
+            <groupId>org.apache.cloudberry</groupId>
             <artifactId>pxf-api</artifactId>
             <scope>system</scope>
             <systemPath>${pxf.lib}/pxf-api.jar</systemPath>
@@ -94,7 +94,7 @@
         </dependency>
 
         <dependency>
-            <groupId>org.greenplum</groupId>
+            <groupId>org.apache.cloudberry</groupId>
             <artifactId>pxf-hbase</artifactId>
             <scope>system</scope>
             <systemPath>${pxf.lib}/pxf-hbase.jar</systemPath>
@@ -102,7 +102,7 @@
         </dependency>
 
         <dependency>
-            <groupId>org.greenplum</groupId>
+            <groupId>org.apache.cloudberry</groupId>
             <artifactId>pxf-hdfs</artifactId>
             <scope>system</scope>
             <systemPath>${pxf.lib}/pxf-hdfs.jar</systemPath>
@@ -110,7 +110,7 @@
         </dependency>
 
         <dependency>
-            <groupId>org.greenplum</groupId>
+            <groupId>org.apache.cloudberry</groupId>
             <artifactId>pxf-hive</artifactId>
             <scope>system</scope>
             <systemPath>${pxf.lib}/pxf-hive.jar</systemPath>
@@ -120,7 +120,7 @@
         <!-- Introduced for MapR dependencies that need to be classloaded
              before hadoop-common and hadoop-auth. -->
         <dependency>
-            <groupId>org.greenplum</groupId>
+            <groupId>org.apache.cloudberry</groupId>
             <artifactId>pxf-extras</artifactId>
             <scope>system</scope>
             <systemPath>${pxf.lib}/pxf-extras.jar</systemPath>

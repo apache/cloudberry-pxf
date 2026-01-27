@@ -4,8 +4,8 @@
         <name>hdfs:text</name>
         <description/>
         <plugins>
-            <accessor>org.greenplum.pxf.plugins.hdfs.LineBreakAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hdfs.StringPassResolver</resolver>
+            <accessor>org.apache.cloudberry.pxf.plugins.hdfs.LineBreakAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hdfs.StringPassResolver</resolver>
         </plugins>
     </profile>
 </profiles>

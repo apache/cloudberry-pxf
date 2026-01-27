@@ -61,7 +61,7 @@ configure(javaProjects) {
     apply plugin: 'io.spring.dependency-management'
     apply plugin: "io.franzbecker.gradle-lombok"
 
-    group = 'org.greenplum.pxf'
+    group = 'org.apache.cloudberry.pxf'
     version = "${version}"
 
     sourceCompatibility = JavaVersion.VERSION_1_8

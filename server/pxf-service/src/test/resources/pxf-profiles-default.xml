@@ -28,11 +28,11 @@ under the License.
     <profile>
         <name>Hive</name>
         <plugins>
-            <fragmenter>org.greenplum.pxf.plugins.hive.HiveDataFragmenter</fragmenter>
-            <accessor>org.greenplum.pxf.plugins.hive.HiveAccessor</accessor>
-            <resolver>org.greenplum.pxf.plugins.hive.HiveResolver</resolver>
-            <metadata>org.greenplum.pxf.plugins.hive.HiveMetadataFetcher</metadata>
-            <outputFormat>org.greenplum.pxf.api.io.GPDBWritable</outputFormat>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.hive.HiveDataFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.hive.HiveAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.hive.HiveResolver</resolver>
+            <metadata>org.apache.cloudberry.pxf.plugins.hive.HiveMetadataFetcher</metadata>
+            <outputFormat>org.apache.cloudberry.pxf.api.io.GPDBWritable</outputFormat>
         </plugins>
         <protocol>hive</protocol>
         <optionMappings>
