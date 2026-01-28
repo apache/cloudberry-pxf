@@ -184,7 +184,7 @@ test_churl_init_download(void **state)
 static void
 write_callback_wrapper(void *ptr)
 {
-	churl_context *user_context = (churl_context *) ptr;
+	churl_context * user_context = (churl_context *) ptr;
 	write_callback(read_string, sizeof(char), strlen(read_string) + 1, user_context);
 }
 
