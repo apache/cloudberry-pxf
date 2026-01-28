@@ -133,56 +133,6 @@ test__supported_operator_type_op_expr(void **state)
 	}
 }
 
-#if PG_VERSION_NUM < 90400
-void
-test__supported_operator_type_scalar_array_op_expr(void **state)
-{
-	Oid operator_oids[15][2] = {
-			{Int2EqualOperator, PXFOP_IN},
-			{Int4EqualOperator, PXFOP_IN},
-			{Int8EqualOperator, PXFOP_IN},
-			{TextEqualOperator, PXFOP_IN},
-			{Int24EqualOperator, PXFOP_IN},
-			{Int42EqualOperator, PXFOP_IN},
-			{Int84EqualOperator, PXFOP_IN},
-			{Int48EqualOperator, PXFOP_IN},
-			{Int28EqualOperator, PXFOP_IN},
-			{Int82EqualOperator, PXFOP_IN},
-			{DateEqualOperator, PXFOP_IN},
-			{Float8EqualOperator, PXFOP_IN},
-			{1120 , PXFOP_IN},
-			{BPCharEqualOperator, PXFOP_IN},
-			{BooleanEqualOperator, PXFOP_IN},
-	};
-
-	PxfFilterDesc *filter = (PxfFilterDesc*) palloc0(sizeof(PxfFilterDesc));
-
-	int array_size = sizeof(operator_oids) / sizeof(operator_oids[0]);
-	bool result = false;
-	int i = 0;
-
-	/* supported types */
-	for (; i < array_size-1; ++i)
-	{
-		result = supported_operator_type_scalar_array_op_expr(operator_oids[i][0], filter, true);
-		assert_true(result);
-		assert_true(operator_oids[i][1] == filter->op);
-	}
-
-	/* unsupported type */
-	result = supported_operator_type_op_expr(InvalidOid, filter);
-	assert_false(result);
-
-	/* go over pxf_supported_opr_scalar_array_op_expr array */
-	int nargs = sizeof(pxf_supported_opr_scalar_array_op_expr) / sizeof(dbop_pxfop_array_map);
-	assert_int_equal(nargs, 15);
-	for (i = 0; i < nargs; ++i)
-	{
-		assert_true(supported_operator_type_scalar_array_op_expr(pxf_supported_opr_op_expr[i].dbop, filter, pxf_supported_opr_scalar_array_op_expr[i].useOr));
-		assert_true(pxf_supported_opr_scalar_array_op_expr[i].pxfop == filter->op);
-	}
-}
-#endif
 
 /*
  * const_value must be palloc'ed, it will be freed by scalar_const_to_str
@@ -560,11 +510,7 @@ build_null_expression_item(int attnum, Oid attrtype, NullTestType nullType)
 {
 	ExpressionItem *expressionItem = (ExpressionItem*) palloc0(sizeof(ExpressionItem));
 	Var *vararg = build_var(attrtype, attnum);
-#if PG_VERSION_NUM >= 90400
 	NullTest *operationExpression = build_null_expr((Expr *) vararg, nullType);
-#else
-	OpExpr *operationExpression = build_null_expr(vararg, nullType);
-#endif
 
 	expressionItem->node = (Node *) operationExpression;
 	expressionItem->processed = false;
@@ -622,11 +568,7 @@ build_nested_func_expr_operand(List *columnsOids, List *attrsIndices)
 	Var *var = NULL;
 	List* args = NIL;
 	forboth(columnOidLc, columnsOids, attrIndexLc, attrsIndices) {
-#if PG_VERSION_NUM >= 90400
 		var = build_var(lfirst_oid(columnOidLc), lfirst_int(attrIndexLc));
-#else
-		var = build_var(lfirst(columnOidLc), lfirst(attrIndexLc));
-#endif
 		args = lappend(args, var);
 	}
 	FuncExpr* operandImplicitCast = build_func_expr_operand(args, COERCE_IMPLICIT_CAST);
@@ -964,13 +906,8 @@ test__extractPxfAttributes_supported_function_one_arg(void **state) {
 	int argumentColumnIndex = 6; // index starts from 0
 	bool qualsAreSupported;
 	qualsAreSupported = true;
-#if PG_VERSION_NUM >= 90400
 	List* columnsOids = list_make1_oid(DATEOID);
 	List* attrsIndices = list_make1_int(argumentColumnIndex);
-#else
-	List* columnsOids = list_make1(DATEOID);
-	List* attrsIndices = list_make1(argumentColumnIndex);
-#endif
 
 	// Create operands FuncExpr, Const
 	FuncExpr* leftop = build_nested_func_expr_operand(columnsOids, attrsIndices);

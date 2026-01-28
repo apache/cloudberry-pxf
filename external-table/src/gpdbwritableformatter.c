@@ -46,9 +46,7 @@
 #include "utils/lsyscache.h"
 
 #include <unistd.h>
-#if PG_VERSION_NUM >= 120000
 #include "access/external.h"
-#endif
 
 PG_FUNCTION_INFO_V1(gpdbwritableformatter_export);
 PG_FUNCTION_INFO_V1(gpdbwritableformatter_import);
@@ -106,7 +104,6 @@ typedef struct
 /* Bit flag */
 #define GPDBWRITABLE_BITFLAG_ISNULL 1	/* Column is null */
 
-#if PG_VERSION_NUM >= 90400
 /*
  * appendStringInfoFill
  *
@@ -128,7 +125,6 @@ appendStringInfoFill(StringInfo str, int occurrences, char ch)
 	str->len += occurrences;
 	str->data[str->len] = '\0';
 }
-#endif
 
 #ifndef unlikely
 #if __GNUC__ > 3
@@ -148,11 +144,6 @@ appendStringInfoFill(StringInfo str, int occurrences, char ch)
 		} \
 	} while (0)
 
-#if PG_VERSION_NUM < 90400
-// Copied from tupdesc.h (6.x), since this is not present in GPDB 5
-/* Accessor for the i'th attribute of tupdesc. */
-#define TupleDescAttr(tupdesc, i) ((tupdesc)->attrs[(i)])
-#endif
 
 /*
  * Write a int4 to the buffer
@@ -512,27 +503,20 @@ gpdbwritableformatter_export(PG_FUNCTION_ARGS)
 	 */
 	if (myData == NULL)
 	{
-        // In GP7 FORMATTER_GET_EXTENCODING(fcinfo) gets the database encoding which may not match the table encoding
-        // and thus results in exception here. So getting the table encoding from the ExtTableEntry
-#if PG_VERSION_NUM < 120000
-        if (FORMATTER_GET_EXTENCODING(fcinfo) != PG_UTF8)
-        {
-                 ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
-                            errmsg(FORMATTER_ENCODING_ERR_MSG, "export")));
-        }
-#else
+        // FORMATTER_GET_EXTENCODING(fcinfo) may return database encoding; use table encoding instead.
         Relation rel = FORMATTER_GET_RELATION(fcinfo);
-        if(rel == NULL) {
+        if (rel == NULL)
+        {
             ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
                             errmsg(FORMATTER_ENCODING_ERR_MSG, "export")));
         }
 
         ExtTableEntry *exttbl = GetExtTableEntry(rel->rd_id);
-        if (exttbl->encoding != PG_UTF8) {
+        if (exttbl->encoding != PG_UTF8)
+        {
             ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
-                    errmsg(FORMATTER_ENCODING_ERR_MSG, "export")));
+                            errmsg(FORMATTER_ENCODING_ERR_MSG, "export")));
         }
-#endif
 
 		myData = palloc(sizeof(format_t));
 		myData->values = palloc(sizeof(Datum) * ncolumns);
@@ -785,27 +769,20 @@ gpdbwritableformatter_import(PG_FUNCTION_ARGS)
 	 */
 	if (myData == NULL)
 	{
-        // In GP7 FORMATTER_GET_EXTENCODING(fcinfo) gets the database encoding which may not match the table encoding
-        // and thus results in exception here. So getting the table encoding from the ExtTableEntry
-#if PG_VERSION_NUM < 120000
-            if (FORMATTER_GET_EXTENCODING(fcinfo) != PG_UTF8)
-            {
-                     ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
-                                errmsg(FORMATTER_ENCODING_ERR_MSG, "import")));
-            }
-#else
-            Relation rel = FORMATTER_GET_RELATION(fcinfo);
-            if(rel == NULL) {
-                ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
-                                    errmsg(FORMATTER_ENCODING_ERR_MSG, "import")));
-            }
+        // FORMATTER_GET_EXTENCODING(fcinfo) may return database encoding; use table encoding instead.
+        Relation rel = FORMATTER_GET_RELATION(fcinfo);
+        if (rel == NULL)
+        {
+            ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
+                            errmsg(FORMATTER_ENCODING_ERR_MSG, "import")));
+        }
 
-            ExtTableEntry *exttbl = GetExtTableEntry(rel->rd_id);
-            if (exttbl->encoding != PG_UTF8) {
-                ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
-                        errmsg(FORMATTER_ENCODING_ERR_MSG, "import")));
-            }
-#endif
+        ExtTableEntry *exttbl = GetExtTableEntry(rel->rd_id);
+        if (exttbl->encoding != PG_UTF8)
+        {
+            ereport(ERROR, (errcode(ERRCODE_EXTERNAL_ROUTINE_EXCEPTION),
+                            errmsg(FORMATTER_ENCODING_ERR_MSG, "import")));
+        }
 
 		myData = palloc(sizeof(format_t));
 		myData->values = palloc(sizeof(Datum) * ncolumns);
@@ -1045,11 +1022,7 @@ static inline Form_pg_attribute
 getAttributeFromTupleDesc(TupleDesc tupdesc, int index)
 {
     Form_pg_attribute attr;
-    #if PG_VERSION_NUM >= 120000
-         attr = &tupdesc->attrs[index];
-    #else
-         attr = tupdesc->attrs[index];
-    #endif
+    attr = &tupdesc->attrs[index];
 
     return attr;
 

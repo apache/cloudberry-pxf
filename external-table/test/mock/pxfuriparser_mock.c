@@ -36,12 +36,3 @@ GPHDUri_verify_core_options_exist(GPHDUri *uri, List *coreoptions)
 	mock();
 }
 
-#if PG_VERSION_NUM < 90400
-void
-GPHDUri_verify_cluster_exists(GPHDUri *uri, char* cluster)
-{
-	check_expected(uri);
-	check_expected(cluster);
-	mock();
-}
-#endif

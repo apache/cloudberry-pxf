@@ -8,12 +8,6 @@ Datum pxfdelimited_import(PG_FUNCTION_ARGS);
 
 #define is_even(cnt) (cnt % 2 == 0)
 
-#if PG_VERSION_NUM < 90400
-// Copied from tupdesc.h (6.x), since this is not present in GPDB 5
-/* Accessor for the i'th attribute of tupdesc. */
-#define TupleDescAttr(tupdesc, i) ((tupdesc)->attrs[(i)])
-#endif
-
 /**
  * Helper function to count the number of occurrences of a given character (from right to left) given a pointer to the current location in the string
  * and a pointer to the beginning of the string

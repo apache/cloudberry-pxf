@@ -24,10 +24,8 @@
 #include "nodes/pg_list.h"
 #include "fmgr.h"
 #include "utils/builtins.h"
-#if PG_VERSION_NUM >= 120000
 #include "lib/stringinfo.h"
 #include "nodes/value.h"
-#endif
 
 /*
  * Path constants for accessing PXF.

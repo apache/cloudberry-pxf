@@ -20,14 +20,9 @@
 #include "pxffilters.h"
 #include "pxfheaders.h"
 #include "commands/defrem.h"
-#if PG_VERSION_NUM >= 120000
 #include "access/external.h"
 #include "extension/gp_exttable_fdw/extaccess.h"
 #include "executor/execExpr.h"
-#else
-#include "access/fileam.h"
-#include "catalog/pg_exttable.h"
-#endif
 #include "utils/timestamp.h"
 #include "nodes/makefuncs.h"
 #include "cdb/cdbvars.h"
@@ -40,11 +35,7 @@ static char *get_format_name(ExtTableEntry *exttbl);
 static char *getFormatterString(ExtTableEntry *exttbl);
 static bool isFormatterPxfDelimited(ExtTableEntry *exttbl);
 static bool isFormatterPxfWritable(ExtTableEntry *exttbl);
-#if PG_VERSION_NUM >= 120000
 static void add_projection_desc_httpheader_pg12(CHURL_HEADERS headers, ProjectionInfo *projInfo, List *qualsAttributes, Relation rel);
-#else
-static void add_projection_desc_httpheader_pg94(CHURL_HEADERS headers, ProjectionInfo *projInfo, List *qualsAttributes, Relation rel);
-#endif
 
 static bool add_attnums_from_targetList(Node *node, List *attnums);
 static void add_projection_index_header(CHURL_HEADERS pVoid, StringInfoData data, int attno, char number[32]);
@@ -54,21 +45,6 @@ static List *getTargetList(ProjectionInfo *projInfo);
 static bool needToIterateTargetList(List *targetList, int *varNumbers);
 static Node *getTargetListEntryExpression(ListCell *lc1);
 static int  getNumSimpleVars(ProjectionInfo *projInfo);
-
-#if PG_VERSION_NUM < 90400
-/*
- * this function is copied from Greenplum 6 (6X_STABLE branch) code
- * it is defined here for compilation with Greenplum 5 only
- * for compilation with Greenplum 6 it is defined in included fileam.h
- * in Greenplum 7 we do not need to define and call it as all options (copy or custom)
- * are added to ExtTableEntry.options list by external.c::GetExtFromForeignTableOptions()
- */
-static List *parseCopyFormatString(Relation rel, char *fmtstr, char fmttype);
-
-// Copied this Macro from tupdesc.h (6.x), since this is not present in GPDB 5
-/* Accessor for the i'th attribute of tupdesc. */
-#define TupleDescAttr(tupdesc, i) ((tupdesc)->attrs[(i)])
-#endif
 
 /*
  * Add key/value pairs to connection header.
@@ -119,11 +95,7 @@ build_http_headers(PxfInputData *input)
     /* Parse fmtOptString here */
     if (fmttype_is_text(exttbl->fmtcode) || fmttype_is_csv(exttbl->fmtcode))
     {
-#if PG_VERSION_NUM >= 120000
       copyFmtOpts = exttbl->options;
-#else
-      copyFmtOpts = parseCopyFormatString(rel, exttbl->fmtopts, exttbl->fmtcode);
-#endif
     }
 
 		/* pass external table's encoding to copy's options */
@@ -161,11 +133,7 @@ build_http_headers(PxfInputData *input)
 		if (qualsAreSupported &&
 			(qualsAttributes != NIL || list_length(input->quals) == 0))
 		{
-			#if PG_VERSION_NUM >= 120000
-				add_projection_desc_httpheader_pg12(headers, proj_info, qualsAttributes, rel);
-			#else
-				add_projection_desc_httpheader_pg94(headers, proj_info, qualsAttributes, rel);
-			#endif
+			add_projection_desc_httpheader_pg12(headers, proj_info, qualsAttributes, rel);
 		}
 		else
 		{
@@ -281,11 +249,7 @@ add_tuple_desc_httpheader(CHURL_HEADERS headers, Relation rel)
 	/* Iterate attributes */
 	for (i = 0, attrIx = 0; i < tuple->natts; ++i)
 	{
-		#if PG_VERSION_NUM >= 120000
-			FormData_pg_attribute *attribute = &tuple->attrs[i];
-		#else
-			FormData_pg_attribute *attribute = tuple->attrs[i];
-		#endif
+		FormData_pg_attribute *attribute = &tuple->attrs[i];
 
 		/* Ignore dropped attributes. */
 		if (attribute->attisdropped)
@@ -410,11 +374,7 @@ add_tuple_desc_httpheader(CHURL_HEADERS headers, Relation rel)
  */
 static inline int*
 getVarNumbers(ProjectionInfo *projInfo) {
-#if PG_VERSION_NUM >= 120000
 	return NULL; // does not exist in projInfo in GP7
-#else
-	return projInfo->pi_varNumbers;
-#endif
 }
 
 /*
@@ -423,11 +383,7 @@ getVarNumbers(ProjectionInfo *projInfo) {
 static inline List*
 getTargetList(ProjectionInfo *projInfo)
 {
-#if PG_VERSION_NUM >= 120000
 	return (List *) projInfo->pi_state.expr;
-#else
-	return projInfo->pi_targetlist;
-#endif
 }
 
 /*
@@ -436,20 +392,12 @@ getTargetList(ProjectionInfo *projInfo)
 static inline bool
 needToIterateTargetList(List *targetList, int *varNumbers)
 {
-#if PG_VERSION_NUM >= 90400
 	/*
 	 * In GP6 non-simple Vars are added to the targetlist of ProjectionInfo while
 	 * simple Vars are pre-computed and their attnos are placed into varNumbers array
 	 * In GP7 everything is in targetList
 	 */
 	return (targetList != NULL);
-#else
-	/*
-	 * In GP5 if targetList contains ONLY simple Vars their attrnos will be populated into varNumbers array
-	 * otherwise the varNumbers array will be NULL, and we will need to iterate over the targetList
-	 */
-	return (varNumbers == NULL);
-#endif
 }
 
 /*
@@ -458,13 +406,8 @@ needToIterateTargetList(List *targetList, int *varNumbers)
 static inline
 Node *getTargetListEntryExpression(ListCell *lc1)
 {
-#if PG_VERSION_NUM >= 120000
 	ExprState *gstate = (ExprState *) lfirst(lc1);
 	return (Node *) gstate;
-#else
-	GenericExprState *gstate = (GenericExprState *) lfirst(lc1);
-	return (Node *) gstate->arg->expr;
-#endif
 };
 
 /*
@@ -473,21 +416,8 @@ Node *getTargetListEntryExpression(ListCell *lc1)
 static inline
 int getNumSimpleVars(ProjectionInfo *projInfo)
 {
-	int numSimpleVars = 0;
-#if PG_VERSION_NUM < 90400
-	// in GP5 if varNumbers is not NULL, it means the attrnos have been pre-computed in varNumbers
-	// and targetList consists only of simpleVars, so we can use its length
-	if (projInfo->pi_varNumbers)
-	{
-		numSimpleVars = list_length(projInfo->pi_targetlist);
-	}
-#elif PG_VERSION_NUM < 120000
-	// in GP6 we can get this value from projInfo
-	numSimpleVars = projInfo->pi_numSimpleVars;
-#else
 	// in GP7 there is no precomputation, the numSimpleVars stays at 0
-#endif
-	return numSimpleVars;
+	return 0;
 };
 
 /*
@@ -505,136 +435,6 @@ int getNumSimpleVars(ProjectionInfo *projInfo)
  * col2 was dropped, the indices for col3 and col4 get shifted by -1.
  */
 
-#if PG_VERSION_NUM < 120000
-static void
-add_projection_desc_httpheader_pg94(CHURL_HEADERS headers,
-                 ProjectionInfo *projInfo,
-                 List *qualsAttributes,
-                 Relation rel)
-{
-	int			   i;
-	int			   dropped_count;
-	int			   number;
-#if PG_VERSION_NUM < 90400
-	int			   numSimpleVars;
-#endif
-	char			long_number[sizeof(int32) * 8];
-	int				*varNumbers = projInfo->pi_varNumbers;
-	Bitmapset		*attrs_used;
-	StringInfoData	formatter;
-	TupleDesc		tupdesc;
-
-	initStringInfo(&formatter);
-	attrs_used = NULL;
-	number = 0;
-
-#if PG_VERSION_NUM >= 90400
-	/*
-	 * Non-simpleVars are added to the targetlist
-	 * we use expression_tree_walker to access attrno information
-	 * we do it through a helper function add_attnums_from_targetList
-	 */
-	if (projInfo->pi_targetlist)
-	{
-#else
-	numSimpleVars = 0;
-
-	if (!varNumbers)
-	{
-		/*
-		 * When there are not just simple Vars we need to
-		 * walk the tree to get attnums
-		 */
-#endif
-		List     *l = lappend_int(NIL, 0);
-		ListCell *lc1;
-
-		foreach(lc1, projInfo->pi_targetlist)
-		{
-			GenericExprState *gstate = (GenericExprState *) lfirst(lc1);
-			add_attnums_from_targetList((Node *) gstate->arg->expr, l);
-		}
-
-		foreach(lc1, l)
-		{
-			int attno = lfirst_int(lc1);
-			if (attno > InvalidAttrNumber)
-			{
-				attrs_used =
-					bms_add_member(attrs_used,
-									attno - FirstLowInvalidHeapAttributeNumber);
-			}
-		}
-
-		list_free(l);
-	}
-#if PG_VERSION_NUM < 90400
-	else
-	{
-		numSimpleVars = list_length(projInfo->pi_targetlist);
-	}
-#endif
-
-
-#if PG_VERSION_NUM >= 90400
-	for (i = 0; i < projInfo->pi_numSimpleVars; i++)
-#else
-	for (i = 0; varNumbers && i < numSimpleVars; i++)
-#endif
-	{
-		attrs_used =
-			bms_add_member(attrs_used,
-						 varNumbers[i] - FirstLowInvalidHeapAttributeNumber);
-	}
-
-	ListCell *attribute = NULL;
-
-	/*
-	 * AttrNumbers coming from quals
-	 */
-	foreach(attribute, qualsAttributes)
-	{
-		AttrNumber attrNumber = (AttrNumber) lfirst_int(attribute);
-		attrs_used =
-			bms_add_member(attrs_used,
-						 attrNumber + 1 - FirstLowInvalidHeapAttributeNumber);
-	}
-
-	tupdesc = RelationGetDescr(rel);
-	dropped_count = 0;
-
-	for (i = 1; i <= tupdesc->natts; i++)
-	{
-		/* Ignore dropped attributes. */
-		if (tupdesc->attrs[i - 1]->attisdropped)
-		{
-			/* keep a counter of the number of dropped attributes */
-			dropped_count++;
-			continue;
-		}
-
-		if (bms_is_member(i - FirstLowInvalidHeapAttributeNumber, attrs_used))
-		{
-			/* Shift the column index by the running dropped_count */
-			add_projection_index_header(headers, formatter,
-										i - 1 - dropped_count, long_number);
-			number++;
-		}
-	}
-
-	if (number != 0)
-	{
-		/* Convert the number of projection columns to a string */
-		pg_ltoa(number, long_number);
-		churl_headers_append(headers, "X-GP-ATTRS-PROJ", long_number);
-	}
-
-	list_free(qualsAttributes);
-	pfree(formatter.data);
-	bms_free(attrs_used);
-}
-#endif
-
 /*
  * Report projection description to the remote component, the indices of
  * dropped columns do not get reported, as if they never existed, and
@@ -650,7 +450,6 @@ add_projection_desc_httpheader_pg94(CHURL_HEADERS headers,
  * col2 was dropped, the indices for col3 and col4 get shifted by -1.
  */
 
-#if PG_VERSION_NUM >= 120000
 static void
 set_var_number(int **varNumbers, int *varNumberSize, int value, int offset)
 {
@@ -679,9 +478,8 @@ add_projection_desc_httpheader_pg12(CHURL_HEADERS headers,
   int        number;
   int        numTargetList;
   char      long_number[sizeof(int32) * 8];
-    // In versions < 120000, projInfo->pi_varNumbers contains atttribute numbers of SimpleVars
-    // Since,this pi_varNumbers doesn't exist in PG12 and above, we can add the attribute numbers by
-    // iterating on the Simple vars.
+    // projInfo->pi_varNumbers doesn't exist in PG14+, so collect attribute numbers
+    // by iterating on the simple vars.
   
   int       varNumbersSize = 0;
   int       *varNumbers = NULL;
@@ -802,7 +600,6 @@ add_projection_desc_httpheader_pg12(CHURL_HEADERS headers,
   pfree(formatter.data);
   bms_free(attrs_used);
 }
-#endif
 
 
 /*
@@ -886,7 +683,6 @@ getFormatterString(ExtTableEntry *exttbl)
 {
 	char *formatterNameSearchString = NULL;
 
-#if PG_VERSION_NUM >= 120000
 	// for GP7 the custom formatter name is among all other options of the corresponding foreign table
 	ListCell   *option;
 	foreach (option, exttbl->options) {
@@ -896,11 +692,6 @@ getFormatterString(ExtTableEntry *exttbl)
 			break;
 		}
 	}
-#else
-	// for GP5 and GP6, we only have a serialized string of formatter options,
-	// parsing it requires porting a lot of code from GP6 so return the entire serialized string
-	formatterNameSearchString = exttbl->fmtopts;
-#endif
 
 	return formatterNameSearchString;
 }
@@ -966,11 +757,7 @@ add_attnums_from_targetList(Node *node, List *attnums)
 	 */
 	if (IsA(node, Aggref))
 		return false;
-#if PG_VERSION_NUM >= 90400
 	if (IsA(node, WindowFunc))
-#else
-	if (IsA(node, WindowRef))
-#endif
 		return false;
 	return expression_tree_walker(node,
 								  add_attnums_from_targetList,
@@ -985,226 +772,8 @@ add_attnums_from_targetList(Node *node, List *attnums)
  */
 static List *
 appendCopyEncodingOptionToList(List *copyFmtOpts, int encoding) {
-	return lappend(copyFmtOpts, makeDefElem("encoding", (Node *) makeString((char *) pg_encoding_to_char(encoding))
-#if PG_VERSION_NUM >= 120000 // GP7 requires an extra parameter for makeDefElem()
-					, -1
-#endif
-					));
+	return lappend(copyFmtOpts,
+				   makeDefElem("encoding",
+							   (Node *) makeString((char *) pg_encoding_to_char(encoding)),
+							   -1));
 }
-
-#if PG_VERSION_NUM < 90400
-/*
- * This function is copied from fileam.c in the 6X_STABLE branch.
- * In version 6, this function is no longer required to be copied.
- */
-static List *
-parseCopyFormatString(Relation rel, char *fmtstr, char fmttype)
-{
-	char	   *token;
-	const char *whitespace = " \t\n\r";
-	char		nonstd_backslash = 0;
-	int			encoding = GetDatabaseEncoding();
-	List	   *l = NIL;
-
-	token = strtokx2(fmtstr, whitespace, NULL, NULL,
-	                 0, false, true, encoding);
-
-	while (token)
-	{
-		bool		fetch_next;
-		DefElem	   *item = NULL;
-
-		fetch_next = true;
-
-		if (pg_strcasecmp(token, "header") == 0)
-		{
-			item = makeDefElem("header", (Node *)makeInteger(TRUE));
-		}
-		else if (pg_strcasecmp(token, "delimiter") == 0)
-		{
-			token = strtokx2(NULL, whitespace, NULL, "'",
-			                 nonstd_backslash, true, true, encoding);
-			if (!token)
-				goto error;
-
-			item = makeDefElem("delimiter", (Node *)makeString(pstrdup(token)));
-		}
-		else if (pg_strcasecmp(token, "null") == 0)
-		{
-			token = strtokx2(NULL, whitespace, NULL, "'",
-			                 nonstd_backslash, true, true, encoding);
-			if (!token)
-				goto error;
-
-			item = makeDefElem("null", (Node *)makeString(pstrdup(token)));
-		}
-		else if (pg_strcasecmp(token, "quote") == 0)
-		{
-			token = strtokx2(NULL, whitespace, NULL, "'",
-			                 nonstd_backslash, true, true, encoding);
-			if (!token)
-				goto error;
-
-			item = makeDefElem("quote", (Node *)makeString(pstrdup(token)));
-		}
-		else if (pg_strcasecmp(token, "escape") == 0)
-		{
-			token = strtokx2(NULL, whitespace, NULL, "'",
-			                 nonstd_backslash, true, true, encoding);
-			if (!token)
-				goto error;
-
-			item = makeDefElem("escape", (Node *)makeString(pstrdup(token)));
-		}
-		else if (pg_strcasecmp(token, "force") == 0)
-		{
-			List	   *cols = NIL;
-
-			token = strtokx2(NULL, whitespace, ",", "\"",
-			                 0, false, false, encoding);
-			if (pg_strcasecmp(token, "not") == 0)
-			{
-				token = strtokx2(NULL, whitespace, ",", "\"",
-				                 0, false, false, encoding);
-				if (pg_strcasecmp(token, "null") != 0)
-					goto error;
-				/* handle column list */
-				fetch_next = false;
-				for (;;)
-				{
-					token = strtokx2(NULL, whitespace, ",", "\"",
-					                 0, false, false, encoding);
-					if (!token || strchr(",", token[0]))
-						goto error;
-
-					cols = lappend(cols, makeString(pstrdup(token)));
-
-					/* consume the comma if any */
-					token = strtokx2(NULL, whitespace, ",", "\"",
-					                 0, false, false, encoding);
-					if (!token || token[0] != ',')
-						break;
-				}
-
-				item = makeDefElem("force_not_null", (Node *)cols);
-			}
-			else if (pg_strcasecmp(token, "quote") == 0)
-			{
-				fetch_next = false;
-				for (;;)
-				{
-					token = strtokx2(NULL, whitespace, ",", "\"",
-					                 0, false, false, encoding);
-					if (!token || strchr(",", token[0]))
-						goto error;
-
-					/*
-					 * For a '*' token the format option is force_quote_all
-					 * and we need to recreate the column list for the entire
-					 * relation.
-					 */
-					if (strcmp(token, "*") == 0)
-					{
-						int			i;
-						TupleDesc	tupdesc = RelationGetDescr(rel);
-
-						for (i = 0; i < tupdesc->natts; i++)
-						{
-							Form_pg_attribute att = tupdesc->attrs[i];
-
-							if (att->attisdropped)
-								continue;
-
-							cols = lappend(cols, makeString(NameStr(att->attname)));
-						}
-
-						/* consume the comma if any */
-						token = strtokx2(NULL, whitespace, ",", "\"",
-						                 0, false, false, encoding);
-						break;
-					}
-
-					cols = lappend(cols, makeString(pstrdup(token)));
-
-					/* consume the comma if any */
-					token = strtokx2(NULL, whitespace, ",", "\"",
-					                 0, false, false, encoding);
-					if (!token || token[0] != ',')
-						break;
-				}
-
-				item = makeDefElem("force_quote", (Node *)cols);
-			}
-			else
-				goto error;
-		}
-		else if (pg_strcasecmp(token, "fill") == 0)
-		{
-			token = strtokx2(NULL, whitespace, ",", "\"",
-			                 0, false, false, encoding);
-			if (pg_strcasecmp(token, "missing") != 0)
-				goto error;
-
-			token = strtokx2(NULL, whitespace, ",", "\"",
-			                 0, false, false, encoding);
-			if (pg_strcasecmp(token, "fields") != 0)
-				goto error;
-
-			item = makeDefElem("fill_missing_fields", (Node *)makeInteger(TRUE));
-		}
-		else if (pg_strcasecmp(token, "newline") == 0)
-		{
-			token = strtokx2(NULL, whitespace, NULL, "'",
-			                 nonstd_backslash, true, true, encoding);
-			if (!token)
-				goto error;
-
-			item = makeDefElem("newline", (Node *)makeString(pstrdup(token)));
-		}
-		else
-			goto error;
-
-		if (item)
-			l = lappend(l, item);
-
-		if (fetch_next)
-			token = strtokx2(NULL, whitespace, NULL, NULL,
-			                 0, false, false, encoding);
-	}
-
-	if (fmttype_is_text(fmttype))
-	{
-		/* TEXT is the default */
-	}
-	else if (fmttype_is_csv(fmttype))
-	{
-		/* Add FORMAT 'CSV' option to the beginning of the list */
-		l = lcons(makeDefElem("format", (Node *) makeString("csv")), l);
-	}
-	else
-		elog(ERROR, "unrecognized format type '%c'", fmttype);
-
-	return l;
-
-	error:
-	if (token)
-		ereport(ERROR,
-		        (errcode(ERRCODE_INTERNAL_ERROR),
-			        errmsg("external table internal parse error at \"%s\"",
-			               token)));
-	else
-		ereport(ERROR,
-		        (errcode(ERRCODE_INTERNAL_ERROR),
-			        errmsg("external table internal parse error at end of line")));
-}
-
-/*
- * This function is copied from fileam.c in the 6X_STABLE branch.
- * In version 6, this function is no longer required to be copied.
- */
-static List *
-appendCopyEncodingOption(List *copyFmtOpts, int encoding)
-{
-	return lappend(copyFmtOpts, makeDefElem("encoding", (Node *)makeString((char *)pg_encoding_to_char(encoding))));
-}
-#endif
