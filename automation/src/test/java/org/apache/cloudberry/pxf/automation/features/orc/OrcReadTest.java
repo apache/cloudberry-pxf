@@ -157,29 +157,11 @@ public class OrcReadTest extends BaseFeature {
         runSqlTest("features/orc/read/multidim_list_types");
     }
 
-    /*
-     * FDW fails for the data that contain a NUL-byte (i.e. '\/u000'"). This behaviour is different from external-table but same as GPDB Heap
-     * FDW Failure: invalid byte sequence for encoding "UTF8": 0x00
-     *
-     * GPDB also throws the same error when copying the data containing a NUL-byte
-     *
-     * postgres=# copy test from '/Users/pandeyhi/Documents/bad_data.txt' ;
-     * ERROR:  invalid byte sequence for encoding "UTF8": 0x00
-     * TODO Do we need to do some changes to make sure the external-table behaves the same way as GPDB/FDW?
-     *
-     */
-    @FailsWithFDW
     @Test(groups = {"features", "gpdb", "security", "hcfs"})
     public void orcReadStringsContainingNullByte() throws Exception {
         prepareReadableExternalTable("pxf_orc_null_in_string", ORC_NULL_IN_STRING_COLUMNS, hdfsPath + ORC_NULL_IN_STRING);
         runSqlTest("features/orc/read/null_in_string");
     }
-
-    // @Test(groups = {"features", "gpdb", "security", "hcfs"})
-    // public void orcReadStringsContainingNullByte() throws Exception {
-    //     prepareReadableExternalTable("pxf_orc_null_in_string", ORC_NULL_IN_STRING_COLUMNS, hdfsPath + ORC_NULL_IN_STRING);
-    //     runTincTest("pxf.features.orc.read.null_in_string.runTest");
-    // }
 
     private void prepareReadableExternalTable(String name, String[] fields, String path) throws Exception {
         prepareReadableExternalTable(name, fields, path, false);
