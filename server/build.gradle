@@ -258,6 +258,7 @@ configure(javaProjects) {
                 "-Xlint:empty", "-Xlint:finally", "-Xlint:overrides", "-Xlint:path", "-Xlint:-processing", "-Xlint:static",
                 "-Xlint:try", "-Xlint:fallthrough", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
         ]
+        options.compilerArgs += JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17) ?  ["-Xlint:-removal"] : []
     }
 
     compileTestJava {
@@ -266,6 +267,7 @@ configure(javaProjects) {
                 "-Xlint:empty", "-Xlint:finally", "-Xlint:overrides", "-Xlint:path", "-Xlint:-processing", "-Xlint:static",
                 "-Xlint:try", "-Xlint:fallthrough", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
         ]
+        options.compilerArgs += JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17) ?  ["-Xlint:-removal"] : []
     }
 
     configurations {
