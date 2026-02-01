@@ -76,5 +76,11 @@ dependencies {
 }
 
 test {
+    if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
+        jvmArgs = [
+            // JEP486 removes reflective access to `java.net.URI` private fields
+            '--add-opens=java.base/java.net=ALL-UNNAMED',
+        ]
+    }
     useJUnitPlatform()
 }
