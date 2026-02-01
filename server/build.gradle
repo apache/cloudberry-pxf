@@ -26,7 +26,7 @@ buildscript {
 plugins {
     id "io.freefair.lombok" version "6.6.3"
     id "org.springframework.boot" version "${springBootVersion}" apply false
-    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.15.RELEASE'
 }
 
 // override Spring Framework version to pick the Spring MVC 5.3.33 with the async race condition fix
