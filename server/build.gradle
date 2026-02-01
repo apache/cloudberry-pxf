@@ -24,7 +24,7 @@ buildscript {
 }
 
 plugins {
-    id "io.franzbecker.gradle-lombok" version "3.3.0"
+    id "io.freefair.lombok" version "6.6.3"
     id "org.springframework.boot" version "${springBootVersion}" apply false
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 }
@@ -59,7 +59,7 @@ idea {
 configure(javaProjects) {
     apply plugin: 'java'
     apply plugin: 'io.spring.dependency-management'
-    apply plugin: "io.franzbecker.gradle-lombok"
+    apply plugin: "io.freefair.lombok"
 
     group = 'org.apache.cloudberry.pxf'
     version = "${version}"
