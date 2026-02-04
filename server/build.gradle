@@ -164,7 +164,7 @@ configure(javaProjects) {
             }
 
             // Parquet dependencies
-            dependency("org.apache.parquet:parquet-format:2.7.0")
+            dependency("org.apache.parquet:parquet-format:2.11.0")
             dependencySet(group:"org.apache.parquet", version:"${parquetVersion}") {
                 entry("parquet-column")
                 entry("parquet-common")
@@ -173,6 +173,7 @@ configure(javaProjects) {
                 entry("parquet-hadoop")
                 entry("parquet-jackson")
                 entry("parquet-pig")
+                entry("parquet-format-structures")
             }
 
             // Thrift dependencies

@@ -38,6 +38,7 @@ dependencies {
     implementation("org.apache.hadoop:hadoop-hdfs")                  { transitive = false }
     implementation("org.apache.hadoop:hadoop-hdfs-client")           { transitive = false }
     implementation("org.apache.parquet:parquet-format")              { transitive = false }
+    implementation("org.apache.parquet:parquet-format-structures")   { transitive = false }
     implementation("org.apache.parquet:parquet-column")              { transitive = false }
     implementation("org.apache.parquet:parquet-common")              { transitive = false }
     implementation("org.apache.parquet:parquet-encoding")            { transitive = false }
