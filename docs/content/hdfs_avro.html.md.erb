@@ -24,7 +24,7 @@ under the License.
 
 Use the PXF HDFS Connector to read and write Avro-format data. This section describes how to use PXF to read and write Avro data in HDFS, including how to create, query, and insert into an external table that references an Avro file in the HDFS data store.
 
-PXF supports reading or writing Avro files compressed with these codecs: `bzip2`, `xz`, `snappy`, and `deflate`.
+PXF supports reading or writing Avro files compressed with these codecs: `bzip2`, `xz`, `snappy`, `zstandard` and `deflate`.
 
 ## <a id="prereq"></a>Prerequisites
 
@@ -150,10 +150,9 @@ The specific keywords and values used in the Greenplum Database [CREATE EXTERNAL
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. PXF uses the `default` server if not specified. |
 | \<custom&#8209;option\>  | \<custom-option\>s are discussed below.|
 | FORMAT 'CUSTOM' | Use `FORMAT` '`CUSTOM`' with `(FORMATTER='pxfwritable_export')` (write) or `(FORMATTER='pxfwritable_import')` (read). |
-| DISTRIBUTED BY | If you want to load data from an existing Greenplum Database table into the writable external table, consider specifying the same distribution policy or `<column_name>` on both tables. Doing so will avoid extra motion of data between segments on the load operation. |
+| DISTRIBUTED BY | If you want to load data from an existing Greenplum Database table into the writable external table, consider specifying the same distribution policy or `<column_name>` on both tables. Doing so will avoid extra motion of data between segments on the load operation. Use the `EXPLAIN` command to analyze the query execution plan and verify that the distribution policy minimizes data movement between segments. |
 
 <a id="customopts"></a>
-
 
 For complex types, the PXF `hdfs:avro` profile inserts default delimiters between collection items and values before display. You can use non-default delimiter characters by identifying values for specific `hdfs:avro` custom options in the `CREATE EXTERNAL TABLE` command. 
 
@@ -171,8 +170,40 @@ The PXF `hdfs:avro` profile supports encoding- and compression-related write opt
 
 | Write Option  | Value Description |
 |-------|-------------------------------------|
-| COMPRESSION_CODEC    | The compression codec alias. Supported compression codecs for writing Avro data include: `bzip2`, `xz`, `snappy`, `deflate`, and `uncompressed` . If this option is not provided, PXF compresses the data using `deflate` compression. |
-| CODEC_LEVEL    | The compression level (applicable to the `deflate` and `xz` codecs only). This level controls the trade-off between speed and compression. Valid values are 1 (fastest) to 9 (most compressed). The default compression level is 6. |
+| COMPRESSION_CODEC    | The compression codec alias. Supported compression codecs for writing Avro data include: `bzip2`, `xz`, `snappy`, `deflate`, `zstandard` and `uncompressed` . If this option is not provided, PXF compresses the data using `deflate` compression. |
+| CODEC_LEVEL    | The compression level (applicable to the `deflate`, `zstandard` and `xz` codecs only). This level controls the trade-off between speed and compression. Valid values are 1 (fastest) to 9 (most compressed). The default compression level is 6. |
+
+## <a id="profile_cfdw"></a>Creating the Foreign Table
+
+Use one of the following foreign data wrappers with `format 'avro'`.
+
+| Object Store  | Foreign Data Wrapper |
+|-------|-------------------------------------|
+| Azure Blob Storage   | wasbs_pxf_fdw |
+| Azure Data Lake Storage Gen2    | abfss_pxf_fdw |
+| Google Cloud Storage    | gs_pxf_fdw |
+| MinIO    | s3_pxf_fdw |
+| S3    | s3_pxf_fdw |
+
+The following syntax creates a Greenplum Database foreign table that references an Avro-format file:
+
+``` sql
+CREATE SERVER <foreign_server> FOREIGN DATA WRAPPER <store>_pxf_fdw;
+CREATE USER MAPPING FOR <user_name> SERVER <foreign_server>;
+
+CREATE FOREIGN TABLE [ IF NOT EXISTS ] <table_name>
+    ( <column_name> <data_type> [, ...] | LIKE <other_table> )
+  SERVER <foreign_server>
+  OPTIONS ( resource '<path-to-file>', format 'avro' [, <custom-option> '<value>'[...]]);
+```
+
+| Keyword  | Value |
+|-------|-------------------------------------|
+| \<foreign_server\>    | The named server configuration that PXF uses to access the data. You can override credentials in `CREATE SERVER` statement as described in [Overriding the S3 Server Configuration for External Tables](access_s3.html#s3_override_fdw) |
+| resource \<path&#8209;to&#8209;file\>    | The path to the directory or file in the object store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](cfg_server.html#pxf-fs-basepath) property setting, PXF considers \<path&#8209;to&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
+| format 'avro'  | File format specification. |
+| \<custom&#8209;option\>=\<value\> | Avro-specific custom options are described [above](hdfs_avro.html#customopts). |
+
 
 ## <a id="avro_example"></a>Example: Reading Avro Data
 

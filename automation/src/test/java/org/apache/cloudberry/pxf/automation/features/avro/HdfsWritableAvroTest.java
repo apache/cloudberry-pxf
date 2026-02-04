@@ -315,6 +315,31 @@ public class HdfsWritableAvroTest extends BaseWritableFeature {
         runSqlTest("features/hdfs/writable/avro/null_values");
     }
 
+    /**
+     * Write simple Avro file with all supported compressions.
+     *
+     * @throws Exception
+     */
+    @Test(groups = {"features", "gpdb", "hcfs", "security"})
+    public void avroCodecs() throws Exception {
+        String[] codecs = {"snappy", "deflate", "bzip2", "zstandard", "xz"};
+        for (String codec : codecs) {
+            tableNamePrefix = "writable_avro_codec";
+            fullTestPath = hdfsWritePath + "avro_" + codec + "_codecs";
+            prepareWritableExternalTable(tableNamePrefix, AVRO_PRIMITIVE_WRITABLE_TABLE_COLS, fullTestPath);
+            writableExTable.setUserParameters(new String[]{"COMPRESSION_CODEC=" + codec});
+            gpdb.createTableAndVerify(writableExTable);
+
+            prepareReadableExternalTable(tableNamePrefix, AVRO_PRIMITIVE_READABLE_TABLE_COLS, fullTestPath);
+            gpdb.createTableAndVerify(readableExTable);
+
+            attemptInsert(() -> insertPrimitives(writableExTable), fullTestPath, NUM_RETRIES);
+
+            // check using GPDB readable external table that what went into HCFS is correct
+            runSqlTest("features/hdfs/writable/avro/codec");
+        }
+    }
+
     @Override
     protected void afterMethod() throws Exception {
         if (ProtocolUtils.getPxfTestKeepData().equals("true")) {

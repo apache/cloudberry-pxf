@@ -188,10 +188,12 @@ configure(javaProjects) {
             }
 
             // Avro dependencies
-            dependencySet(group:"org.apache.avro", version:"1.10.2") {
+            dependencySet(group:"org.apache.avro", version:"1.11.5") {
                 entry("avro")
                 entry("avro-mapred")
             }
+            // Zstd support for Avro
+            dependency("com.github.luben:zstd-jni:1.5.7-6")
 
             // Jackson 1.x dependencies
             dependencySet(group:"org.codehaus.jackson", version:"1.9.13") {

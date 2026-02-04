@@ -66,7 +66,7 @@ The specific keywords and values used in the Greenplum Database [CREATE EXTERNAL
 
 If you are accessing an S3 object store:
 
-- You can provide S3 credentials via custom options in the `CREATE EXTERNAL TABLE` command as described in [Overriding the S3 Server Configuration with DDL](access_s3.html#s3_override).
+- You can provide S3 credentials via custom options in the `CREATE EXTERNAL TABLE` command as described in [Overriding the S3 Server Configuration for External Tables](access_s3.html#s3_override_ext).
 
 - If you are reading CSV-format data from S3, you can direct PXF to use the S3 Select Amazon service to retrieve the data. Refer to [Using the Amazon S3 Select Service](access_s3.html#s3_select) for more information about the PXF custom option used for this purpose.
 
@@ -175,7 +175,7 @@ The specific keywords and values used in the [CREATE EXTERNAL TABLE](https://doc
 
 **Note**: PXF does not support the `(HEADER)` formatter option in the `CREATE EXTERNAL TABLE` command. If your text file includes header line(s), use `SKIP_HEADER_COUNT` to specify the number of lines that PXF should skip at the beginning of the first split of each file.
 
-If you are accessing an S3 object store, you can provide S3 credentials via custom options in the `CREATE EXTERNAL TABLE` command as described in [Overriding the S3 Server Configuration with DDL](access_s3.html#s3_override).
+If you are accessing an S3 object store, you can provide S3 credentials via custom options in the `CREATE EXTERNAL TABLE` command as described in [Overriding the S3 Server Configuration for External Tables](access_s3.html#s3_override_ext).
 
 ### <a id="profile_textmulti_query"></a>Example: Reading Multi-Line Text Data from S3
 
@@ -283,7 +283,7 @@ Writable external tables that you create using an `<objstore>:text|csv` profile 
 |-------|-------------------------------------|
 | COMPRESSION_CODEC    | The compression codec alias. Supported compression codecs for writing text data include: `default`, `bzip2`, `gzip`, and `uncompressed`. If this option is not provided, Greenplum Database performs no data compression. |
 
-If you are accessing an S3 object store, you can provide S3 credentials via custom options in the `CREATE EXTERNAL TABLE` command as described in [Overriding the S3 Server Configuration with DDL](access_s3.html#s3_override).
+If you are accessing an S3 object store, you can provide S3 credentials via custom options in the `CREATE EXTERNAL TABLE` command as described in [Overriding the S3 Server Configuration for External Tables](access_s3.html#s3_override_ext).
 
 ### <a id="write_s3textsimple_example"></a>Example: Writing Text Data to S3
 

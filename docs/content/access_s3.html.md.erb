@@ -7,7 +7,7 @@ PXF is installed with a connector to the AWS S3 object store. PXF supports the f
 - Overriding the S3 credentials specified in the server configuration by providing them in the `CREATE EXTERNAL TABLE` command DDL.
 - Using the Amazon S3 Select service to read certain CSV and Parquet data from S3.
 
-## <a id="s3_override"></a>Overriding the S3 Server Configuration with DDL
+## <a id="s3_override_ext"></a>Overriding the S3 Server Configuration For External Tables
 
 If you are accessing an S3-compatible object store, you can override the credentials in an S3 server configuration by directly specifying the S3 access ID and secret key via these custom options in the `CREATE EXTERNAL TABLE` `LOCATION` clause:
 
@@ -27,6 +27,36 @@ PXF does not support overriding Azure, Google Cloud Storage, and MinIO server cr
 
 Refer to [Configuration Property Precedence](cfg_server.html#override) for detailed information about the precedence rules that PXF uses to obtain configuration property settings for a Greenplum Database user.
 
+## <a id="s3_override_fdw"></a>Overriding the S3 Server Configuration For Foreign Tables
+
+PXF supports accessing S3 data using the Foreign Data Wrapper (FDW) framework, which provides an alternative to the External Table Framework. To access S3 using Foreign Data Wrappers, you must first create a server that defines the S3 connection parameters.
+
+The following command creates a server named `s3srvcfg` that uses the `s3_pxf_fdw` foreign data wrapper. It will use credentials from PXF server configuration.
+
+<pre>CREATE SERVER s3srvcfg FOREIGN DATA WRAPPER s3_pxf_fdw;</pre>
+
+However, you can override the custom options by using the `OPTIONS` clause in the `CREATE SERVER` command. The following command creates a server named `s3srvcfg` that uses the `s3_pxf_fdw` foreign data wrapper and specifies the S3 access credentials:
+
+<pre>CREATE SERVER s3srvcfg FOREIGN DATA WRAPPER s3_pxf_fdw
+  OPTIONS (accesskey 'YOURKEY', secretkey 'YOURSECRET');</pre>
+
+Replace `YOURKEY` with your AWS S3 access key ID and `YOURSECRET` with your AWS S3 secret access key.
+
+
+Following options are supported:
+| Option | Description |
+|-------|-------------------------------------|
+| accesskey    | The AWS S3 account access key ID. |
+| secretkey    | The secret key associated with the AWS S3 access key ID. |
+
+<div class="note warning"><b>Warning:</b> Credentials that you provide in this manner are visible as part of the external table definition. Do not use this method of passing credentials in a production environment.</div>
+
+PXF does not support overriding Azure, Google Cloud Storage, and MinIO server credentials in this manner at this time.
+
+Refer to [Configuration Property Precedence](cfg_server.html#override) for detailed information about the precedence rules that PXF uses to obtain configuration property settings for a Greenplum Database user.
+
+
+<div class="note warning"><b>Warning:</b> Credentials that you provide in the server configuration or user mapping are stored in the Greenplum Database system catalogs. Ensure that you follow your organization's security policies for managing database credentials.</div>
 
 ## <a id="s3_select"></a>Using the Amazon S3 Select Service
 

@@ -451,7 +451,7 @@ public class HdfsReadableAvroTest extends BaseFeature {
     }
 
     /**
-     * Read simple Avro file with Snappy and deflate compressions.
+     * Read simple Avro file with all supported compressions.
      *
      * @throws Exception
      */
@@ -460,7 +460,7 @@ public class HdfsReadableAvroTest extends BaseFeature {
         String schemaName = resourcePath + avroInSequenceArraysSchemaFile;
         Table dataTable = new Table("dataTable", null);
 
-        String[] codecs = {"snappy", "deflate"};
+        String[] codecs = {"snappy", "deflate", "bzip2", "zstandard", "xz"};
         for (String codec : codecs) {
             String fileName = hdfsPath + codec + SUFFIX_AVRO;
 
