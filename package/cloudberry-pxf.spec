@@ -10,9 +10,9 @@ Name:      cloudberry-pxf
 Version:   %{pxf_version}
 Release:   %{pxf_release}%{?dist}
 
-Summary:   Cloudberry PXF (Platform Extension Framework) for advanced data access
+Summary:   Apache Cloudberry PXF (Platform Extension Framework) for advanced data access
 License:   %{license}
-URL:       https://cloudberrydb.org
+URL:       https://cloudberry.apache.org
 Vendor:    %{vendor}
 Group:     Applications/Databases
 
@@ -23,7 +23,7 @@ Prefix:   /usr/local/%{name}-%{version}
 
 Requires: bash
 
-# Require Cloudberry Database - .so file makes sense only when
+# Require Apache Cloudberry - .so file makes sense only when
 # installing on Cloudberry node, so inherit Cloudberry's dependencies
 # implicitly
 
@@ -34,11 +34,11 @@ Suggests: java-1.8.0-openjdk
 Suggests: java-11-openjdk
 
 %description
-Cloudberry PXF (Platform Extension Framework) is an advanced data
+Apache Cloudberry PXF (Platform Extension Framework) is an advanced data
 access framework that provides connectivity to a wide range of data
 sources. It enables high-speed, parallel data access across
 distributed systems, making it an essential component for performing
-advanced analytics with the Cloudberry Database. PXF seamlessly
+advanced analytics with the Apache Cloudberry. PXF seamlessly
 integrates and efficiently queries external data sources, including,
 but not limited to:
 
@@ -65,8 +65,8 @@ data environments and file formats. The examples provided above
 represent only a subset of the broad range of sources and formats
 supported by PXF.
 
-For more information, visit the official Cloudberry Database website
-at https://cloudberrydb.org.
+For more information, visit the official Apache Cloudberry website
+at https://cloudberry.apache.org.
 
 %prep
 # If the pxf_version macro is not defined, it gets interpreted as a literal string, need %% to escape it

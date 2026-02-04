@@ -13,7 +13,7 @@ SOURCE_EXTENSION_DIR = external-table
 TARGET_EXTENSION_DIR = gpextable
 
 LICENSE ?= ASL 2.0
-VENDOR  ?= Cloudberry Open Source
+VENDOR  ?= Apache Cloudberry (Incubating)
 RELEASE ?= 1
 
 default: all
