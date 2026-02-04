@@ -51,7 +51,8 @@ To build PXF, you must have:
 
     Assuming you have installed Cloudberry into `/usr/local/cloudberrydb` directory, run its environment script:
     ```
-    source /usr/local/cloudberrydb/greenplum_path.sh
+    source /usr/local/cloudberrydb/greenplum_path.sh # For Cloudberry 2.0
+    source /usr/local/cloudberrydb/cloudberry-env.sh # For Cloudberry 2.1+
     ```
 
 3. JDK 1.8 or JDK 11 to compile/run
@@ -171,34 +172,25 @@ cp ${PXF_HOME}/templates/*-site.xml ${PXF_BASE}/servers/default
 > [!Note]
 > Since the docker container will house all Single cluster Hadoop, Cloudberry and PXF, we recommend that you have at least 4 cpus and 6GB memory allocated to Docker. These settings are available under docker preferences.
 
-The quick and easy is to download the Cloudberry RPM from GitHub and move it into the `/downloads` folder. Then run `./dev/start.bash` to get a docker image with a running Cloudberry, Hadoop cluster and an installed PXF.
+We provide a Docker-based development environment that includes Cloudberry, Hadoop, and PXF. See [automation/README.Docker.md](automation/README.Docker.md) for detailed instructions.
 
-#### Setup Cloudberry in the Docker image
-
-Configure, build and install Cloudberry. This will be needed only when you use the container for the first time with Cloudberry source.
+**Quick Start:**
 
 ```bash
-~/workspace/pxf/dev/build_gpdb.bash
-sudo mkdir /usr/local/cloudberry-db-devel
-sudo chown gpadmin:gpadmin /usr/local/cloudberry-db-devel
-~/workspace/pxf/dev/install_gpdb.bash
-```
+# Build and start the development container
+docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml build
+docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml up -d
 
-For subsequent minor changes to Cloudberry source you can simply do the following:
-```bash
-~/workspace/pxf/dev/install_gpdb.bash
-```
+# Enter the container and run setup
+docker exec -it pxf-cbdb-dev bash -c \
+   "cd /home/gpadmin/workspace/cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu && ./script/entrypoint.sh"
 
-Run all the instructions below and run GROUP=smoke (in one script):
-```bash
-~/workspace/pxf/dev/smoke_shortcut.sh
-```
+# Run tests
+docker exec -it pxf-cbdb-dev bash -c \
+   "cd /home/gpadmin/workspace/cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu && ./script/run_tests.sh"
 
-Create Cloudberry Cluster
-```bash
-source /usr/local/cloudberrydb-db-devel/greenplum_path.sh
-make -C ~/workspace/cbdb create-demo-cluster
-source ~/workspace/cbdb/gpAux/gpdemo/gpdemo-env.sh
+# Stop and clean up
+docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v
 ```
 
 #### Setup Hadoop
@@ -206,9 +198,7 @@ Hdfs will be needed to demonstrate functionality. You can choose to start additi
 
 Setup [User Impersonation](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/Superusers.html) prior to starting the hadoop components (this allows the `gpadmin` user to access hadoop data).
 
-```bash
-~/workspace/pxf/dev/configure_singlecluster.bash
-```
+The Docker development environment automatically configures Hadoop. For manual setup, see [automation/README.Docker.md](automation/README.Docker.md).
 
 Setup and start HDFS
 ```bash
@@ -233,13 +223,11 @@ popd
 ```
 
 #### Setup Minio (optional)
-Minio is an S3-API compatible local storage solution. The development docker image comes with Minio software pre-installed. To start the Minio server, run the following script:
-```bash
-source ~/workspace/pxf/dev/start_minio.bash
-```
+Minio is an S3-API compatible local storage solution. The development docker image comes with Minio software pre-installed. MinIO is automatically started by the Docker development environment.
+
 After the server starts, you can access Minio UI at `http://localhost:9000` from the host OS. Use `admin` for the access key and `password` for the secret key when connecting to your local Minio instance.
 
-The script also sets `PROTOCOL=minio` so that the automation framework will use the local Minio server when running S3 automation tests. If later you would like to run Hadoop HDFS tests, unset this variable with `unset PROTOCOL` command.
+To run S3 automation tests, set `PROTOCOL=minio`. If later you would like to run Hadoop HDFS tests, unset this variable with `unset PROTOCOL` command.
 
 #### Setup PXF
 
@@ -323,6 +311,24 @@ no JDK set for Gradle. Just cancel and retry. It goes away the second time.
 - Debug the new configuration in IntelliJ
 - Run a query in CloudberryDB that uses PXF to debug with IntelliJ
 
+### Profiling PXF
+
+#### Visual VM Profiling
+
+To perform memory profiling add the following line to PXF's environment settings (`pxf/conf/pxf-env.sh`) on the machine where we want to debug:
+
+```
+export CATALINA_OPTS="-Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.rmi.port=9090 -Dcom.sun.management.jmxremote.port=9090 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.local.only=false -Djava.rmi.server.hostname=127.0.0.1"
+```
+
+#### JProfiler
+
+To perform memory profiling in JProfiler add the following setting to your `PXF_JVM_OPTS`:
+
+```
+export PXF_JVM_OPTS="-Xmx2g -Xms1g -agentpath:/Applications/JProfiler.app/Contents/Resources/app/bin/macos/libjprofilerti.jnilib=port=8849"
+```
+
 ## To run a Kerberized Hadoop Cluster
 
 ### Requirements
@@ -330,7 +336,7 @@ no JDK set for Gradle. Just cancel and retry. It goes away the second time.
 - Download bin_gpdb (from any of the pipelines)
 - Download pxf_tarball (from any of the pipelines)
 
-These instructions allow you to run a Kerberized cluster
+These instructions allow you to run a Kerberized cluster. See [automation/README.Docker.md](automation/README.Docker.md) for detailed Kerberos setup instructions.
 
 ```bash
 docker run --rm -it \
