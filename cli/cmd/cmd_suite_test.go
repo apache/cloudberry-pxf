@@ -4,8 +4,8 @@ import (
 	"os/user"
 	"testing"
 
-	"github.com/greenplum-db/gp-common-go-libs/operating"
-	"github.com/greenplum-db/gp-common-go-libs/testhelper"
+	"github.com/apache/cloudberry-go-libs/operating"
+	"github.com/apache/cloudberry-go-libs/testhelper"
 	"github.com/onsi/gomega/gbytes"
 
 	. "github.com/onsi/ginkgo/v2"

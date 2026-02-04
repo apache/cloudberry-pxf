@@ -3,7 +3,7 @@ package cmd_test
 import (
 	"pxf-cli/cmd"
 
-	"github.com/greenplum-db/gp-common-go-libs/cluster"
+	"github.com/apache/cloudberry-go-libs/cluster"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

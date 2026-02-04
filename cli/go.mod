@@ -3,7 +3,7 @@ module pxf-cli
 go 1.21.3
 
 require (
-	github.com/greenplum-db/gp-common-go-libs v1.0.16
+	github.com/apache/cloudberry-go-libs v1.0.12-0.20250910014224-fc376e8a1056
 	github.com/onsi/ginkgo/v2 v2.13.0
 	github.com/onsi/gomega v1.28.0
 	github.com/pkg/errors v0.9.1
