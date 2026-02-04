@@ -111,9 +111,7 @@ func GenerateOutput(cmd *command, clusterData *ClusterData) error {
 	}
 	response := ""
 	for _, failedCommand := range clusterData.Output.FailedCommands {
-		if failedCommand == nil {
-			continue
-		}
+
 		host := failedCommand.Host
 		errorMessage := failedCommand.Stderr
 		if len(errorMessage) == 0 {
