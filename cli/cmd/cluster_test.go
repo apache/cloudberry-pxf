@@ -145,11 +145,7 @@ var _ = Describe("GenerateOutput()", func() {
 	BeforeEach(func() {
 		clusterData.Output = &cluster.RemoteOutput{
 			NumErrors: 0,
-			FailedCommands: []*cluster.ShellCommand{
-				nil,
-				nil,
-				nil,
-			},
+			FailedCommands: []cluster.ShellCommand{},
 			Commands: []cluster.ShellCommand{
 				{
 					Host:   "mdw",
@@ -234,8 +230,8 @@ var _ = Describe("GenerateOutput()", func() {
 			}
 			clusterData.Output = &cluster.RemoteOutput{
 				NumErrors: 1,
-				FailedCommands: []*cluster.ShellCommand{
-					&failedCommand,
+				FailedCommands: []cluster.ShellCommand{
+					failedCommand,
 				},
 				Commands: []cluster.ShellCommand{
 					{
@@ -358,8 +354,8 @@ stderr line three`
 			}
 			clusterData.Output = &cluster.RemoteOutput{
 				NumErrors: 1,
-				FailedCommands: []*cluster.ShellCommand{
-					&failedCommand,
+				FailedCommands: []cluster.ShellCommand{
+					failedCommand,
 				},
 				Commands: []cluster.ShellCommand{
 					{
@@ -393,8 +389,8 @@ stderr line three`
 			}
 			clusterData.Output = &cluster.RemoteOutput{
 				NumErrors: 1,
-				FailedCommands: []*cluster.ShellCommand{
-					&failedCommand,
+				FailedCommands: []cluster.ShellCommand{
+					failedCommand,
 				},
 				Commands: []cluster.ShellCommand{
 					{
@@ -422,9 +418,7 @@ stderr line three`
 		BeforeEach(func() {
 			clusterDataWithOneHost.Output = &cluster.RemoteOutput{
 				NumErrors: 0,
-				FailedCommands: []*cluster.ShellCommand{
-					nil,
-				},
+				FailedCommands: []cluster.ShellCommand{},
 				Commands: []cluster.ShellCommand{
 					{
 						Host:   "mdw",
@@ -496,8 +490,8 @@ stderr line three`
 				}
 				clusterDataWithOneHost.Output = &cluster.RemoteOutput{
 					NumErrors: 1,
-					FailedCommands: []*cluster.ShellCommand{
-						&failedCommand,
+					FailedCommands: []cluster.ShellCommand{
+						failedCommand,
 					},
 					Commands: []cluster.ShellCommand{
 						failedCommand,
