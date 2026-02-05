@@ -64,7 +64,7 @@ Use one of the following foreign data wrappers with `format 'orc'`.
 | MinIO    | s3_pxf_fdw |
 | S3    | s3_pxf_fdw |
 
-The following syntax creates a Greenplum Database foreign table that references an Avro-format file:
+The following syntax creates a Apache Cloudberry Database foreign table that references an ORC-format file:
 
 ``` sql
 CREATE SERVER <foreign_server> FOREIGN DATA WRAPPER <store>_pxf_fdw;
@@ -73,15 +73,15 @@ CREATE USER MAPPING FOR <user_name> SERVER <foreign_server>;
 CREATE FOREIGN TABLE [ IF NOT EXISTS ] <table_name>
     ( <column_name> <data_type> [, ...] | LIKE <other_table> )
   SERVER <foreign_server>
-  OPTIONS ( resource '<path-to-file>', format 'orc' [, <custom-option> '<value>'[...]]);
+  OPTIONS ( resource '<path-to-file>', format 'orc' [, <custom-option> '<value>' [, ...] ]);
 ```
 
 | Keyword  | Value |
 |-------|-------------------------------------|
 | \<foreign_server\>    | The named server configuration that PXF uses to access the data. You can override credentials in `CREATE SERVER` statement as described in [Overriding the S3 Server Configuration for Foreign Tables](access_s3.html#s3_override_fdw) |
 | resource \<path&#8209;to&#8209;file\>    | The path to the directory or file in the object store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](cfg_server.html#pxf-fs-basepath) property setting, PXF considers \<path&#8209;to&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
-| format 'orc'  | File format specification. |
-| \<custom&#8209;option\>=\<value\> | Avro-specific custom options are described in the [PXF HDFS ORC documentation](hdfs_orc.html#customopts). |
+| format 'orc'  | The file format; specify `'orc'` for ORC-formatted data. |
+| \<custom&#8209;option\>=\<value\> | ORC-specific custom options are described in the [PXF HDFS ORC documentation](hdfs_orc.html#customopts). |
 
 
 ## <a id="example"></a>Example

@@ -150,9 +150,9 @@ The specific keywords and values used in the Apache Cloudberry Database [CREATE 
 
 ## <a id="profile_cfdw"></a>Creating the Foreign Table
 
-The PXF HDFS `hdfs_pxf_fdw` foreign data wrapper supports reading and writing ORC-formatted HDFS files. When you insert records into a writable external table, the block(s) of data that you insert are written to one file per segment in the directory that you specified.
+The PXF HDFS `hdfs_pxf_fdw` foreign data wrapper supports reading and writing ORC-formatted HDFS files. When you insert records into a foreign table, the block(s) of data that you insert are written to one file per segment in the directory that you specified in the `resource` clause.
 
-Use the following syntax to create a Apache Cloudberry Database external table that references an HDFS file or directory:
+Use the following syntax to create an Apache Cloudberry Database foreign table that references an HDFS file or directory:
 
 ``` sql
 CREATE SERVER <foreign_server> FOREIGN DATA WRAPPER hdfs_pxf_fdw;
@@ -170,7 +170,7 @@ The specific keywords and values used in the Apache Cloudberry Database [CREATE 
 |-------|-------------------------------------|
 | \<foreign_server\>    | The named server configuration that PXF uses to access the data. You can override credentials in `CREATE SERVER` statement as described in [Overriding the S3 Server Configuration for Foreign Tables](access_s3.html#s3_override_fdw) |
 | \<path&#8209;to&#8209;hdfs&#8209;file\>    | The path to the file or directory in the HDFS data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](cfg_server.html#pxf-fs-basepath) property setting, PXF considers \<path&#8209;to&#8209;hdfs&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;hdfs&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
-| format    | File format specification: 'orc' |
+| format    | The file format; specify `'orc'` for ORC-formatted data. |
 | \<custom-option\>    | \<custom-option\>s are described below. |
 
 <a id="customopts"></a>
