@@ -34,7 +34,7 @@ go install github.com/go-delve/delve/cmd/dlv@latest
 
 ```
 config max-string-len 1000
-break vendor/github.com/greenplum-db/gp-common-go-libs/cluster/cluster.go:351
+break vendor/github.com/apache/cloudberry-go-libs/cluster/cluster.go:351
 continue
 print commandList
 ```

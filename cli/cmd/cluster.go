@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/greenplum-db/gp-common-go-libs/cluster"
-	"github.com/greenplum-db/gp-common-go-libs/dbconn"
-	"github.com/greenplum-db/gp-common-go-libs/gplog"
+	"github.com/apache/cloudberry-go-libs/cluster"
+	"github.com/apache/cloudberry-go-libs/dbconn"
+	"github.com/apache/cloudberry-go-libs/gplog"
 	"github.com/spf13/cobra"
 	"github.com/blang/semver"
 )
@@ -111,9 +111,6 @@ func GenerateOutput(cmd *command, clusterData *ClusterData) error {
 	}
 	response := ""
 	for _, failedCommand := range clusterData.Output.FailedCommands {
-		if failedCommand == nil {
-			continue
-		}
 		host := failedCommand.Host
 		errorMessage := failedCommand.Stderr
 		if len(errorMessage) == 0 {
@@ -138,8 +135,8 @@ func doSetup() (*ClusterData, error) {
 	connection := dbconn.NewDBConnFromEnvironment("postgres")
 	err := connection.Connect(1)
 	if err != nil {
-		gplog.Error(fmt.Sprintf("ERROR: Could not connect to GPDB.\n%s\n"+
-			"Please make sure that your Greenplum database is running and you are on the coordinator node.", err.Error()))
+		gplog.Error(fmt.Sprintf("ERROR: Could not connect to Cloudberry.\n%s\n"+
+			"Please make sure that your Apache Cloudberry is running and you are on the coordinator node.", err.Error()))
 		return nil, err
 	}
 
