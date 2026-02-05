@@ -195,6 +195,21 @@ public class ParquetWriteTest extends BaseWritableFeature {
         runWritePrimitivesScenario("pxf_parquet_write_primitives_gzip_classname", "pxf_parquet_read_primitives_gzip_classname", "parquet_write_primitives_gzip_classname", new String[]{"COMPRESSION_CODEC=org.apache.hadoop.io.compress.GzipCodec"});
     }
 
+    @Test(groups = {"features", "gpdb", "security", "hcfs"})
+    public void parquetWritePrimitivesSnappy() throws Exception {
+        runWritePrimitivesScenario("pxf_parquet_write_primitives_snappy", "pxf_parquet_read_primitives_snappy", "parquet_write_primitives_snappy", new String[]{"COMPRESSION_CODEC=snappy"});
+    }
+
+    @Test(groups = {"features", "gpdb", "security", "hcfs"})
+    public void parquetWritePrimitivesUncompressed() throws Exception {
+        runWritePrimitivesScenario("pxf_parquet_write_primitives_uncompressed", "pxf_parquet_read_primitives_uncompressed", "parquet_write_primitives_uncompressed", new String[]{"COMPRESSION_CODEC=uncompressed"});
+    }
+
+    @Test(groups = {"features", "gpdb", "security", "hcfs"})
+    public void parquetWritePrimitivesZStd() throws Exception {
+        runWritePrimitivesScenario("pxf_parquet_write_primitives_zstd", "pxf_parquet_read_primitives_zstd", "parquet_write_primitives_zstd", new String[]{"COMPRESSION_CODEC=zstd"});
+    }
+
     // Numeric precision not defined, test writing data precision in [1, 38]. All the data should be written correctly.
     @Test(groups = {"features", "gpdb", "security", "hcfs"})
     public void parquetWriteUndefinedPrecisionNumeric() throws Exception {
