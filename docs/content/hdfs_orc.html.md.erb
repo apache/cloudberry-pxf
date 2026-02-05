@@ -137,7 +137,7 @@ FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import'|'pxfwritable_export')
 [DISTRIBUTED BY (<column_name> [, ... ] ) | DISTRIBUTED RANDOMLY];
 ```
 
-The specific keywords and values used in the Greenplum Database [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Greenplum/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command are described below.
+The specific keywords and values used in the Apache Cloudberry Database [CREATE EXTERNAL TABLE](https://cloudberry.apache.org/docs/sql-stmts/create-external-table) command are described below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
@@ -147,6 +147,31 @@ The specific keywords and values used in the Greenplum Database [CREATE EXTERNAL
 | \<custom-option\>    | \<custom-option\>s are described below. |
 | FORMAT 'CUSTOM' | Use `FORMAT 'CUSTOM'`with `(FORMATTER='pxfwritable_export')` (write) or `(FORMATTER='pxfwritable_import')` (read).   |
 | DISTRIBUTED BY | If you want to load data from an existing Greenplum Database table into the writable external table, consider specifying the same distribution policy or `<column_name>` on both tables. Doing so will avoid extra motion of data between segments on the load operation.  |
+
+## <a id="profile_cfdw"></a>Creating the Foreign Table
+
+The PXF HDFS `hdfs_pxf_fdw` foreign data wrapper supports reading and writing ORC-formatted HDFS files. When you insert records into a writable external table, the block(s) of data that you insert are written to one file per segment in the directory that you specified.
+
+Use the following syntax to create a Apache Cloudberry Database external table that references an HDFS file or directory:
+
+``` sql
+CREATE SERVER <foreign_server> FOREIGN DATA WRAPPER hdfs_pxf_fdw;
+CREATE USER MAPPING FOR <user_name> SERVER <foreign_server>;
+
+CREATE FOREIGN TABLE [ IF NOT EXISTS ] <table_name>
+    ( <column_name> <data_type> [, ...] | LIKE <other_table> )
+  SERVER <foreign_server>
+  OPTIONS ( resource '<path-to-file>', format 'orc' [, <custom-option> '<value>'[...]]);
+```
+
+The specific keywords and values used in the Apache Cloudberry Database [CREATE FOREIGN TABLE](https://cloudberry.apache.org/docs/sql-stmts/create-foreign-table) command are described below.
+
+| Keyword  | Value |
+|-------|-------------------------------------|
+| \<foreign_server\>    | The named server configuration that PXF uses to access the data. You can override credentials in `CREATE SERVER` statement as described in [Overriding the S3 Server Configuration for Foreign Tables](access_s3.html#s3_override_fdw) |
+| \<path&#8209;to&#8209;hdfs&#8209;file\>    | The path to the file or directory in the HDFS data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](cfg_server.html#pxf-fs-basepath) property setting, PXF considers \<path&#8209;to&#8209;hdfs&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;hdfs&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
+| format    | File format specification: 'orc' |
+| \<custom-option\>    | \<custom-option\>s are described below. |
 
 <a id="customopts"></a>
 The PXF `hdfs:orc` profile supports the following *read* options. You specify this option in the `LOCATION` clause:
@@ -164,7 +189,7 @@ The PXF `hdfs:orc` profile supports a single compression-related write option; y
 
 ## <a id="write"></a>About Writing ORC data
 
-When you insert records into a writable external table, the block(s) of data that you insert are written to one or more files in the directory that you specify in the `LOCATION` clause.
+When you insert records into a writable external table, the block(s) of data that you insert are written to one or more files in the directory that you specify in the `LOCATION` or `resource` clauses.
 
 When you insert ORC data records, the `pxf.orc.write.timezone.utc` property in the `pxf-site.xml` file governs how PXF writes timestamp values to the external data store. By default, PXF writes a timestamp type using the UTC time zone. If you require PXF to write a timestamp type using the local time zone of the PXF JVM, set the `pxf.orc.write.timezone.utc` property to `false` for the server and synchronize the PXF configuration.
 
@@ -231,6 +256,19 @@ Procedure:
              FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import');
     ```
 
+    OR
+
+    ``` sql
+    testdb=# CREATE SERVER example_orc FOREIGN DATA WRAPPER hdfs_pxf_fdw;
+    testdb=# CREATE USER MAPPING FOR CURRENT_USER SERVER example_orc;
+    testdb=# CREATE FOREIGN TABLE sample_orc(location text, month text, num_orders int, total_sales numeric(10,2), items_sold text[])
+               SERVER example_orc
+               OPTIONS (
+               	resource 'data/pxf_examples/orc_example',
+               	format 'orc'
+               );
+    ```
+
 1. Read the data in the file by querying the `sample_orc` table:
 
     ``` sql
@@ -286,6 +324,19 @@ In this example, you create a writable external table to write some data to the 
     postgres=# CREATE WRITABLE EXTERNAL TABLE write_to_sample_orc (location text, month text, num_orders int, total_sales numeric(10,2), items_sold text[] )
         LOCATION ('pxf://data/pxf_examples/orc_example?PROFILE=hdfs:orc')
       FORMAT 'CUSTOM' (FORMATTER='pxfwritable_export');
+    ```
+
+    OR
+
+    ```
+        testdb=# CREATE SERVER example_orc FOREIGN DATA WRAPPER hdfs_pxf_fdw;
+        testdb=# CREATE USER MAPPING FOR CURRENT_USER SERVER example_orc;
+        testdb=# CREATE FOREIGN TABLE sample_orc(location text, month text, num_orders int, total_sales numeric(10,2), items_sold text[])
+                   SERVER example_orc
+                   OPTIONS (
+                   	resource 'data/pxf_examples/orc_example',
+                   	format 'orc'
+                   );
     ```
 
 1. Write a few records to segment files in the `orc_example` directory by inserting into the `write_to_sample_orc` table:
