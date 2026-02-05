@@ -54,7 +54,7 @@ jobs:
         export WORKSPACE=$PWD/workspace
         # Sanitize branch name for Debian version (replace _ with -)
         BRANCH_NAME="${{ matrix.cloudberry_branch }}"
-        CLEAN_BRANCH="${BRANCH_NAME//_/-}"
+        CLEAN_BRANCH=$(echo "$BRANCH_NAME" | tr '_' '-')
         export CLOUDBERRY_VERSION=99.0.0-${CLEAN_BRANCH}
         export CLOUDBERRY_BUILD=1
         bash cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu/script/build_cloudberry_deb.sh
