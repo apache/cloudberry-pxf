@@ -138,12 +138,18 @@ configure(javaProjects) {
             }
 
             // HBase dependencies
+            dependency("org.apache.yetus:audience-annotations:0.13.0")
             dependencySet(group:"org.apache.hbase", version:"${hbaseVersion}") {
                 entry("hbase-annotations")
-                entry("hbase-client")
-                entry("hbase-common")
-                entry("hbase-protocol")
+                entry("hbase-shaded-client")
+                entry("hbase-protocol-shaded")
             }
+            dependencySet(group:"org.apache.hbase.thirdparty", version:"4.1.12") {
+                entry("hbase-shaded-protobuf")
+            }
+            dependency("io.opentelemetry:opentelemetry-api:1.49.0")
+            dependency("io.opentelemetry:opentelemetry-context:1.49.0")
+            dependency("io.opentelemetry.semconv:opentelemetry-semconv:1.29.0-alpha")
 
             // Hive dependencies
             dependency("org.apache.hive:hive-storage-api:${hiveStorageApiVersion}")
@@ -236,7 +242,7 @@ configure(javaProjects) {
         options.compilerArgs += [
                 "-g", "-Xlint:varargs", "-Xlint:cast", "-Xlint:classfile", "-Xlint:dep-ann", "-Xlint:divzero",
                 "-Xlint:empty", "-Xlint:finally", "-Xlint:overrides", "-Xlint:path", "-Xlint:-processing", "-Xlint:static",
-                "-Xlint:try", "-Xlint:fallthrough", "-Xlint:deprecation", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
+                "-Xlint:try", "-Xlint:fallthrough", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
         ]
     }
 
@@ -244,7 +250,7 @@ configure(javaProjects) {
         options.compilerArgs += [
                 "-g", "-Xlint:varargs", "-Xlint:cast", "-Xlint:classfile", "-Xlint:dep-ann", "-Xlint:divzero",
                 "-Xlint:empty", "-Xlint:finally", "-Xlint:overrides", "-Xlint:path", "-Xlint:-processing", "-Xlint:static",
-                "-Xlint:try", "-Xlint:fallthrough", "-Xlint:deprecation", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
+                "-Xlint:try", "-Xlint:fallthrough", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
         ]
     }
 

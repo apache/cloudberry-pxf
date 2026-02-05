@@ -17,20 +17,24 @@ dependencies {
     compileOnly("org.apache.hbase:hbase-annotations")
 
     /*******************************
-     * Implementation Dependencies
+     * Project Dependencies
      *******************************/
 
     implementation(project(':pxf-api'))
-    implementation("com.google.protobuf:protobuf-java")
     implementation("commons-collections:commons-collections")
-    implementation("org.apache.hbase:hbase-client")                  { transitive = false }
-    implementation("org.apache.hbase:hbase-common")                  { transitive = false }
-    implementation("org.apache.hbase:hbase-protocol")                { transitive = false }
-    implementation("org.apache.htrace:htrace-core")                  { transitive = false }
-    implementation("org.apache.zookeeper:zookeeper")                 { transitive = false }
-    implementation("io.netty:netty-common")                          { transitive = false }
-    implementation("io.netty:netty-transport")                       { transitive = false }
-    implementation("com.yammer.metrics:metrics-core")                { transitive = false }
+
+    /*******************************
+     * Hbase
+     *******************************/
+
+    implementation("org.apache.hbase:hbase-shaded-client")                   { transitive = false }
+      implementation("io.opentelemetry:opentelemetry-api")                   { transitive = false }
+      implementation("io.opentelemetry:opentelemetry-context")               { transitive = false }
+      implementation("org.apache.yetus:audience-annotations")                { transitive = false }
+      implementation("io.opentelemetry.semconv:opentelemetry-semconv")       { transitive = false }
+    implementation("org.apache.hbase:hbase-annotations")                     { transitive = false }
+    implementation("org.apache.hbase:hbase-protocol-shaded")                 { transitive = false }
+      implementation("org.apache.hbase.thirdparty:hbase-shaded-protobuf")    { transitive = false }
 
     implementation("org.springframework.boot:spring-boot-starter-log4j2")
 
