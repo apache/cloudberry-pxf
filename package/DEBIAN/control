@@ -1,5 +1,5 @@
-Package: pxf-gp6
+Package: cloudberry-pxf
 Version: %VERSION%
 Architecture: amd64
 Maintainer: %MAINTAINER%
-Description: Greenplum PXF framework for external data access
+Description: Apache Cloudberry PXF (Platform Extension Framework) for advanced data access

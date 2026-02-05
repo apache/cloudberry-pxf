@@ -14,6 +14,6 @@ if [[ "${owner}" != "root" ]]; then
 fi
 
 ${sudo_if_needed} rpm -Uvh ${INSTALL_COMPONENT_SCRIPT_DIR}/${RPM_FILE}
-${sudo_if_needed} chown -R ${owner} /usr/local/pxf-gp*
+${sudo_if_needed} chown -R ${owner} /usr/local/cloudberry-pxf*
 
-echo "Successfully installed PXF version $(cat /usr/local/pxf-gp*/version)"
+echo "Successfully installed PXF version $(cat /usr/local/cloudberry-pxf*/version)"

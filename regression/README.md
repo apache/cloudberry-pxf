@@ -14,7 +14,7 @@ Running the tests
 ## Pre-requisites
 
 You need a running instance of Greenplum and PXF, along with a local installation of Greenplum (to be able to use the `pg_regress` framework).
-The variables `PGHOST` and `PGPORT` must be pointing at the Greenplum master node, and Greenplum environment scripts like `${GPHOME}/greenplum_path.sh` and `gpdb/gpAux/gpdemo/gpdemo-env.sh` should be sourced.
+The variables `PGHOST` and `PGPORT` must be pointing at the Greenplum master node, and Greenplum environment scripts like `${GPHOME}/greenplum_path.sh` (for Cloudberry 2.0) or `${GPHOME}/cloudberry-env.sh` (for Cloudberry 2.1+) should be sourced.
 `pg_config` must be on your path.
 
 For data prep, the appropriate CLIs are required, as we shell out from SQL to these CLIs. These include `hdfs`, `hbase`, and `beeline`.
@@ -46,8 +46,7 @@ By setting environment variables you can change the location of the Greenplum ma
 
 ### General environment variables
 
-All the general environment variables that come from `greenplum_path.sh` and
-`gpdemo-env.sh` must be set. Additionally, `PXF_BASE` must be set if different
+All the general environment variables that come from `greenplum_path.sh` (for Cloudberry 2.0) or `cloudberry-env.sh` (for Cloudberry 2.1+) must be set. Additionally, `PXF_BASE` must be set if different
 from `PXF_HOME`.
 
 * `PXF_TEST_DEBUG`: set to anything to prevent deletion of data, and to run `pg_regress` in debug mode (optional)
