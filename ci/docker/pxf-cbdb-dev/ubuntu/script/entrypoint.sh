@@ -468,7 +468,7 @@ start_hive_services() {
 
 deploy_minio() {
   log "deploying MinIO"
-  bash "${REPO_DIR}/dev/start_minio.bash"
+  bash "${PXF_SCRIPTS}/start_minio.bash"
 }
 
 main() {

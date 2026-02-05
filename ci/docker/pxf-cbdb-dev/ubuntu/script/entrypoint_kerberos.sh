@@ -293,7 +293,7 @@ setup_ssl_material() {
 
 deploy_minio() {
   log "deploying MinIO (for S3 tests)"
-  bash "${REPO_ROOT}/dev/start_minio.bash"
+  bash "${PXF_SCRIPTS}/start_minio.bash"
 }
 
 configure_pxf_s3() {
