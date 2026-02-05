@@ -102,7 +102,7 @@ CREATE FOREIGN TABLE [ IF NOT EXISTS ] <table_name>
 
 | Keyword  | Value |
 |-------|-------------------------------------|
-| \<foreign_server\>    | The named server configuration that PXF uses to access the data. You can override credentials in `CREATE SERVER` statement as described in [Overriding the S3 Server Configuration for External Tables](access_s3.html#s3_override_fdw) |
+| \<foreign_server\>    | The named server configuration that PXF uses to access the data. You can override credentials in `CREATE SERVER` statement as described in [Overriding the S3 Server Configuration for Foreign Tables](access_s3.html#s3_override_fdw) |
 | resource \<path&#8209;to&#8209;file\>    | The path to the directory or file in the object store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](cfg_server.html#pxf-fs-basepath) property setting, PXF considers \<path&#8209;to&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
 | format 'avro'  | File format specification. |
 | \<custom&#8209;option\>=\<value\> | Avro-specific custom options are described in the [PXF HDFS Avro documentation](hdfs_avro.html#customopts). |
