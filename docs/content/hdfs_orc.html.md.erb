@@ -137,7 +137,7 @@ FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import'|'pxfwritable_export')
 [DISTRIBUTED BY (<column_name> [, ... ] ) | DISTRIBUTED RANDOMLY];
 ```
 
-The specific keywords and values used in the Apache Cloudberry Database [CREATE EXTERNAL TABLE](https://cloudberry.apache.org/docs/sql-stmts/create-external-table) command are described below.
+The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](https://cloudberry.apache.org/docs/sql-stmts/create-external-table) command are described below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
@@ -152,7 +152,7 @@ The specific keywords and values used in the Apache Cloudberry Database [CREATE 
 
 The PXF HDFS `hdfs_pxf_fdw` foreign data wrapper supports reading and writing ORC-formatted HDFS files. When you insert records into a foreign table, the block(s) of data that you insert are written to one file per segment in the directory that you specified in the `resource` clause.
 
-Use the following syntax to create an Apache Cloudberry Database foreign table that references an HDFS file or directory:
+Use the following syntax to create an Apache Cloudberry foreign table that references an HDFS file or directory:
 
 ``` sql
 CREATE SERVER <foreign_server> FOREIGN DATA WRAPPER hdfs_pxf_fdw;
@@ -164,7 +164,7 @@ CREATE FOREIGN TABLE [ IF NOT EXISTS ] <table_name>
   OPTIONS ( resource '<path-to-file>', format 'orc' [, <custom-option> '<value>'[...]]);
 ```
 
-The specific keywords and values used in the Apache Cloudberry Database [CREATE FOREIGN TABLE](https://cloudberry.apache.org/docs/sql-stmts/create-foreign-table) command are described below.
+The specific keywords and values used in the Apache Cloudberry [CREATE FOREIGN TABLE](https://cloudberry.apache.org/docs/sql-stmts/create-foreign-table) command are described below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|

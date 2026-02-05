@@ -39,7 +39,7 @@ FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import'|'pxfwritable_export')
 [DISTRIBUTED BY (<column_name> [, ... ] ) | DISTRIBUTED RANDOMLY];
 ```
 
-The specific keywords and values used in the Apache Cloudberry Database [CREATE EXTERNAL TABLE](https://cloudberry.apache.org/docs/sql-stmts/create-external-table) command are described in the table below.
+The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](https://cloudberry.apache.org/docs/sql-stmts/create-external-table) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
@@ -64,7 +64,7 @@ Use one of the following foreign data wrappers with `format 'orc'`.
 | MinIO    | s3_pxf_fdw |
 | S3    | s3_pxf_fdw |
 
-The following syntax creates a Apache Cloudberry Database foreign table that references an ORC-format file:
+The following syntax creates a Apache Cloudberry foreign table that references an ORC-format file:
 
 ``` sql
 CREATE SERVER <foreign_server> FOREIGN DATA WRAPPER <store>_pxf_fdw;
