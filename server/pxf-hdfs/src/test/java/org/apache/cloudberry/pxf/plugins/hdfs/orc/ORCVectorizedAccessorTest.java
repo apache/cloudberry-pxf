@@ -149,6 +149,24 @@ class ORCVectorizedAccessorTest extends ORCVectorizedBaseTest {
     }
 
     @Test
+    public void testOpenForWrite_ZstdCompression() throws IOException {
+        context.addOption("COMPRESSION_CODEC", "zstd");
+        runTestScenario_OpenForWrite(CompressionKind.ZSTD, true);
+    }
+
+    @Test
+    public void testOpenForWrite_Lz4Compression() throws IOException {
+        context.addOption("COMPRESSION_CODEC", "lz4");
+        runTestScenario_OpenForWrite(CompressionKind.LZ4, true);
+    }
+
+    @Test
+    public void testOpenForWrite_LZOCompression() throws IOException {
+        context.addOption("COMPRESSION_CODEC", "lzo");
+        runTestScenario_OpenForWrite(CompressionKind.LZO, true);
+    }
+
+    @Test
     public void testOpenForWrite_OrcWriteTimeZoneUTCMissing() throws IOException {
         runTestScenario_OpenForWrite(CompressionKind.ZLIB, true);
     }
