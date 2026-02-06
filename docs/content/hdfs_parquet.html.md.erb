@@ -35,7 +35,7 @@ Ensure that you have met the PXF Hadoop [Prerequisites](access_hdfs.html#hadoop_
 
 ## <a id="datatype_map"></a>Data Type Mapping
 
-To read and write Parquet primitive data types in Greenplum Database, map Parquet data values to Greenplum Database columns of the same type. 
+To read and write Parquet primitive data types in Apache Cloudberry, map Parquet data values to Apache Cloudberry columns of the same type.
 
 Parquet supports a small set of primitive data types, and uses metadata annotations to extend the data types that it supports. These annotations specify how to interpret the primitive type. For example, Parquet stores both `INTEGER` and `DATE` types as the `INT32` primitive type. An annotation identifies the original type as a `DATE`.
 
@@ -45,7 +45,7 @@ Parquet supports a small set of primitive data types, and uses metadata annotati
 
 PXF uses the following data type mapping when reading Parquet data:
 
-| Parquet Physical Type | Parquet Logical Type | PXF/Greenplum Data Type |
+| Parquet Physical Type | Parquet Logical Type | PXF/Cloudberry Data Type |
 |-------------------|---------------|--------------------------|
 | boolean | -- | Boolean |
 | binary \(byte\_array\) | -- | Bytea |
@@ -67,7 +67,7 @@ PXF uses the following data type mapping when reading Parquet data:
 
 PXF can read a Parquet `LIST` nested type when it represents a one-dimensional array of certain Parquet types. The supported mappings follow:
 
-| Parquet Data Type | PXF/Greenplum Data Type |
+| Parquet Data Type | PXF/Cloudberry Data Type |
 |-------------------|-------------------------|
 | list of \<boolean> | Boolean[] |
 | list of \<binary>  | Bytea[] |
@@ -90,7 +90,7 @@ PXF can read a Parquet `LIST` nested type when it represents a one-dimensional a
 
 PXF uses the following data type mapping when writing Parquet data:
 
-| PXF/Greenplum Data Type | Parquet Physical Type | Parquet Logical Type |
+| PXF/Cloudberry Data Type | Parquet Physical Type | Parquet Logical Type |
 |-------------------|---------------|--------------------------|
 | Bigint | int64 | -- |
 | Boolean | boolean | -- |
@@ -114,7 +114,7 @@ PXF uses the following data type mapping when writing Parquet data:
 
 PXF can write a one-dimensional `LIST` of certain Parquet data types. The supported mappings follow:
 
-| PXF/Greenplum Data Type |  Parquet Data Type |
+| PXF/Cloudberry Data Type |  Parquet Data Type |
 |-------------------|--------------------------|
 | Bigint[] | list of \<int64> |
 | Boolean[] | list of \<boolean> |
@@ -149,7 +149,7 @@ When you provide the Parquet schema file to PXF, you must specify the absolute p
 
 The PXF HDFS connector `hdfs:parquet` profile supports reading and writing HDFS data in Parquet-format. When you insert records into a writable external table, the block(s) of data that you insert are written to one or more files in the directory that you specified.
 
-Use the following syntax to create a Greenplum Database external table that references an HDFS directory:
+Use the following syntax to create a Apache Cloudberry external table that references an HDFS directory:
 
 ``` sql
 CREATE [WRITABLE] EXTERNAL TABLE <table_name>
@@ -160,7 +160,7 @@ FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import'|'pxfwritable_export')
 [DISTRIBUTED BY (<column_name> [, ... ] ) | DISTRIBUTED RANDOMLY];
 ```
 
-The specific keywords and values used in the Greenplum Database [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Greenplum/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command are described in the table below.
+The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](https://cloudberry.apache.org/docs/sql-stmts/create-external-table/) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
@@ -169,10 +169,36 @@ The specific keywords and values used in the Greenplum Database [CREATE EXTERNAL
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. PXF uses the `default` server if not specified. |
 | \<custom&#8209;option\>  | \<custom-option\>s are described below.|
 | FORMAT 'CUSTOM' | Use `FORMAT` '`CUSTOM`' with `(FORMATTER='pxfwritable_export')` (write) or `(FORMATTER='pxfwritable_import')` (read). |
-| DISTRIBUTED BY    | If you want to load data from an existing Greenplum Database table into the writable external table, consider specifying the same distribution policy or `<column_name>` on both tables. Doing so will avoid extra motion of data between segments on the load operation. |
+| DISTRIBUTED BY    | If you want to load data from an existing Apache Cloudberry table into the writable external table, consider specifying the same distribution policy or `<column_name>` on both tables. Doing so will avoid extra motion of data between segments on the load operation. |
+
+
+## <a id="profile_cfdw"></a>Creating the Foreign Table
+
+The PXF HDFS `hdfs_pxf_fdw` foreign data wrapper supports reading and writing Parquet-formatted HDFS files. When you insert records into a foreign table, the block(s) of data that you insert are written to one file per segment in the directory that you specified in the `resource` clause.
+
+Use the following syntax to create an Apache Cloudberry foreign table that references an HDFS file or directory:
+
+``` sql
+CREATE SERVER <foreign_server> FOREIGN DATA WRAPPER hdfs_pxf_fdw;
+CREATE USER MAPPING FOR <user_name> SERVER <foreign_server>;
+
+CREATE FOREIGN TABLE [ IF NOT EXISTS ] <table_name>
+    ( <column_name> <data_type> [, ...] | LIKE <other_table> )
+  SERVER <foreign_server>
+  OPTIONS ( resource '<path-to-file>', format 'parquet' [, <custom-option> '<value>'[...]]);
+```
+
+The specific keywords and values used in the Apache Cloudberry [CREATE FOREIGN TABLE](https://cloudberry.apache.org/docs/sql-stmts/create-foreign-table) command are described below.
+
+| Keyword  | Value |
+|-------|-------------------------------------|
+| \<foreign_server\>    | The named server configuration that PXF uses to access the data. You can override credentials in `CREATE SERVER` statement as described in [Overriding the S3 Server Configuration for Foreign Tables](access_s3.html#s3_override_fdw) |
+| \<path&#8209;to&#8209;hdfs&#8209;file\>    | The path to the directory in the HDFS data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](cfg_server.html#pxf-fs-basepath) property setting, PXF considers \<path&#8209;to&#8209;hdfs&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;hdfs&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
+| format    | The file format; specify `'parquet'` for Parquet-formatted data. |
+| \<custom-option\>    | \<custom-option\>s are described below. |
 
 <a id="customopts"></a>
-The PXF `hdfs:parquet` profile supports the following read option. You specify this option in the `CREATE EXTERNAL TABLE` `LOCATION` clause:
+The PXF `hdfs:parquet` profile supports the following read option:
 
 | Read Option  | Value Description |
 |-------|-------------------------------------|
@@ -188,7 +214,7 @@ The PXF `hdfs:parquet` profile supports encoding- and compression-related write 
 | ENABLE\_DICTIONARY | A boolean value that specifies whether or not to enable dictionary encoding. The default value is `true`; dictionary encoding is enabled when PXF writes Parquet files. |
 | DICTIONARY\_PAGE\_SIZE | When dictionary encoding is enabled, there is a single dictionary page per column, per row group. `DICTIONARY_PAGE_SIZE` is similar to `PAGE_SIZE`, but for the dictionary. The default dictionary page size is `1 * 1024 * 1024` bytes. |
 | PARQUET_VERSION | The Parquet version; PXF supports the values `v1` and `v2` for this option. The default Parquet version is `v1`. |
-| SCHEMA | The absolute path to the Parquet schema file on the Greenplum host or on HDFS. |
+| SCHEMA | The absolute path to the Parquet schema file on the Cloudberry PXF host or on HDFS. |
 
 **Note**: You must explicitly specify `uncompressed` if you do not want PXF to compress the data.
 
@@ -208,12 +234,29 @@ This example utilizes the data schema introduced in [Example: Reading Text Data 
 
 In this example, you create a Parquet-format writable external table that uses the default PXF server to reference Parquet-format data in HDFS, insert some data into the table, and then create a readable external table to read the data.
 
-1. Use the `hdfs:parquet` profile to create a writable external table. For example:
+1. Apache Cloudberry does not support both reading and writing single external table. Create two table - one for read and one for write referencing same HDFS directory:
 
     ``` sql
     postgres=# CREATE WRITABLE EXTERNAL TABLE pxf_tbl_parquet (location text, month text, number_of_orders int, item_quantity_per_order int[], total_sales double precision)
         LOCATION ('pxf://data/pxf_examples/pxf_parquet?PROFILE=hdfs:parquet')
       FORMAT 'CUSTOM' (FORMATTER='pxfwritable_export');
+
+    postgres=# CREATE EXTERNAL TABLE read_pxf_parquet(location text, month text, number_of_orders int, item_quantity_per_order int[], total_sales double precision)
+        LOCATION ('pxf://data/pxf_examples/pxf_parquet?PROFILE=hdfs:parquet')
+      FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import');
+    ```
+
+    OR create single foreign table to read and write operations:
+
+    ```
+        testdb=# CREATE SERVER example_parquet FOREIGN DATA WRAPPER hdfs_pxf_fdw;
+        testdb=# CREATE USER MAPPING FOR CURRENT_USER SERVER example_parquet;
+        testdb=# CREATE FOREIGN TABLE pxf_tbl_parquet(location text, month text, number_of_orders int, item_quantity_per_order int[], total_sales double precision)
+                   SERVER example_parquet
+                   OPTIONS (
+                   	resource 'data/pxf_examples/pxf_parquet',
+                   	format 'parquet'
+                   );
     ```
 
 2. Write a few records to the `pxf_parquet` HDFS directory by inserting directly into the `pxf_tbl_parquet` table. For example:
@@ -223,20 +266,24 @@ In this example, you create a Parquet-format writable external table that uses t
     postgres=# INSERT INTO pxf_tbl_parquet VALUES ( 'Cleveland', 'Oct', 2, '{3333,7777}', 96645.37 );
     ```
 
-3. Recall that Greenplum Database does not support directly querying a writable external table. To read the data in `pxf_parquet`, create a readable external Greenplum Database referencing this HDFS directory:
-
-    ``` sql
-    postgres=# CREATE EXTERNAL TABLE read_pxf_parquet(location text, month text, number_of_orders int, item_quantity_per_order int[], total_sales double precision)
-        LOCATION ('pxf://data/pxf_examples/pxf_parquet?PROFILE=hdfs:parquet')
-        FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import');
-    ```
-
-4. Query the readable external table `read_pxf_parquet`:
+3. Query the readable external table `read_pxf_parquet`:
 
     ``` sql
     postgres=# SELECT * FROM read_pxf_parquet ORDER BY total_sales;
     ```
+    ``` pre
+     location  | month | number_of_orders | item_quantity_per_order | total_sales
+    -----------+-------+------------------+-------------------------+-------------
+     Frankfurt | Mar   |              777 | {1,11,111}              |     3956.98
+     Cleveland | Oct   |             3812 | {3333,7777}             |    96645.4
+    (2 rows)
+    ```
 
+    OR query the same foreign table `pxf_tbl_parquet`:
+
+    ``` sql
+    postgres=# SELECT * FROM pxf_tbl_parquet ORDER BY total_sales;
+    ```
     ``` pre
      location  | month | number_of_orders | item_quantity_per_order | total_sales
     -----------+-------+------------------+-------------------------+-------------

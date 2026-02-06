@@ -32,7 +32,7 @@ Ensure that you have met the PXF Object Store [Prerequisites](access_objstore.ht
 
 ## <a id="datatype_map"></a>Data Type Mapping
 
-Refer to [Data Type Mapping](hdfs_parquet.html#datatype_map) in the PXF HDFS Parquet documentation for a description of the mapping between Greenplum Database and Parquet data types.
+Refer to [Data Type Mapping](hdfs_parquet.html#datatype_map) in the PXF HDFS Parquet documentation for a description of the mapping between Apache Cloudberry and Parquet data types.
 
 ## <a id="profile_cet"></a>Creating the External Table
 
@@ -47,7 +47,7 @@ The PXF `<objstore>:parquet` profiles support reading and writing data in Parque
 | S3    | s3 |
 
 
-Use the following syntax to create a Greenplum Database external table that references an HDFS directory. When you insert records into a writable external table, the block(s) of data that you insert are written to one or more files in the directory that you specified.
+Use the following syntax to create a Apache Cloudberry external table that references an HDFS directory. When you insert records into a writable external table, the block(s) of data that you insert are written to one or more files in the directory that you specified.
 
 ``` sql
 CREATE [WRITABLE] EXTERNAL TABLE <table_name>
@@ -58,7 +58,7 @@ FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import'|'pxfwritable_export')
 [DISTRIBUTED BY (<column_name> [, ... ] ) | DISTRIBUTED RANDOMLY];
 ```
 
-The specific keywords and values used in the Greenplum Database [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Greenplum/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command are described in the table below.
+The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](https://cloudberry.apache.org/docs/sql-stmts/create-external-table/) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
@@ -67,30 +67,70 @@ The specific keywords and values used in the Greenplum Database [CREATE EXTERNAL
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. |
 | \<custom&#8209;option\>=\<value\> | Parquet-specific custom options are described in the [PXF HDFS Parquet documentation](hdfs_parquet.html#customopts). |
 | FORMAT 'CUSTOM' | Use `FORMAT` '`CUSTOM`' with `(FORMATTER='pxfwritable_export')` (write) or `(FORMATTER='pxfwritable_import')` (read). |
-| DISTRIBUTED BY    | If you want to load data from an existing Greenplum Database table into the writable external table, consider specifying the same distribution policy or `<column_name>` on both tables. Doing so will avoid extra motion of data between segments on the load operation. |
+| DISTRIBUTED BY    | If you want to load data from an existing Apache Cloudberry table into the writable external table, consider specifying the same distribution policy or `<column_name>` on both tables. Doing so will avoid extra motion of data between segments on the load operation. |
 
 If you are accessing an S3 object store:
 
 - You can provide S3 credentials via custom options in the `CREATE EXTERNAL TABLE` command as described in [Overriding the S3 Server Configuration for External Tables DDL](access_s3.html#s3_override_ext).
 - If you are reading Parquet data from S3, you can direct PXF to use the S3 Select Amazon service to retrieve the data. Refer to [Using the Amazon S3 Select Service](access_s3.html#s3_select) for more information about the PXF custom option used for this purpose.
 
+## <a id="profile_cfdw"></a>Creating the Foreign Table
+
+Use one of the following foreign data wrappers with `format 'parquet'`.
+
+| Object Store  | Foreign Data Wrapper |
+|-------|-------------------------------------|
+| Azure Blob Storage   | wasbs_pxf_fdw |
+| Azure Data Lake Storage Gen2    | abfss_pxf_fdw |
+| Google Cloud Storage    | gs_pxf_fdw |
+| MinIO    | s3_pxf_fdw |
+| S3    | s3_pxf_fdw |
+
+The following syntax creates a Apache Cloudberry foreign table that references an Parquet-format file:
+
+``` sql
+CREATE SERVER <foreign_server> FOREIGN DATA WRAPPER <store>_pxf_fdw;
+CREATE USER MAPPING FOR <user_name> SERVER <foreign_server>;
+
+CREATE FOREIGN TABLE [ IF NOT EXISTS ] <table_name>
+    ( <column_name> <data_type> [, ...] | LIKE <other_table> )
+  SERVER <foreign_server>
+  OPTIONS ( resource '<path-to-file>', format 'parquet' [, <custom-option> '<value>' [, ...] ]);
+```
+
+| Keyword  | Value |
+|-------|-------------------------------------|
+| \<foreign_server\>    | The named server configuration that PXF uses to access the data. You can override credentials in `CREATE SERVER` statement as described in [Overriding the S3 Server Configuration for Foreign Tables](access_s3.html#s3_override_fdw) |
+| resource \<path&#8209;to&#8209;file\>    | The path to the directory or file in the object store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](cfg_server.html#pxf-fs-basepath) property setting, PXF considers \<path&#8209;to&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
+| format 'parquet'  | The file format; specify `'parquet'` for Parquet-formatted data. |
+| \<custom&#8209;option\>=\<value\> | parquet-specific custom options are described in the [PXF HDFS parquet documentation](hdfs_parquet.html#customopts). |
+
+
 ## <a id="example"></a> Example
 
 Refer to the [Example](hdfs_parquet.html#parquet_write) in the PXF HDFS Parquet documentation for a Parquet write/read example. Modifications that you must make to run the example with an object store include:
 
-- Using the `CREATE WRITABLE EXTERNAL TABLE` syntax and `LOCATION` keywords and settings described above for the writable external table. For example, if your server name is `s3srvcfg`:
+- Using the `CREATE WRITABLE EXTERNAL TABLE` syntax and `LOCATION` keywords and settings described above for the writable and readable external tables. For example, if your server name is `s3srvcfg`:
 
     ``` sql
     CREATE WRITABLE EXTERNAL TABLE pxf_tbl_parquet_s3 (location text, month text, number_of_orders int, item_quantity_per_order int[], total_sales double precision)
       LOCATION ('pxf://BUCKET/pxf_examples/pxf_parquet?PROFILE=s3:parquet&SERVER=s3srvcfg')
     FORMAT 'CUSTOM' (FORMATTER='pxfwritable_export');
-    ```
 
-- Using the `CREATE EXTERNAL TABLE` syntax and `LOCATION` keywords and settings described above for the readable external table. For example, if your server name is `s3srvcfg`:
-
-    ``` sql
     CREATE EXTERNAL TABLE read_pxf_parquet_s3(location text, month text, number_of_orders int, item_quantity_per_order int[], total_sales double precision)
       LOCATION ('pxf://BUCKET/pxf_examples/pxf_parquet?PROFILE=s3:parquet&SERVER=s3srvcfg')
     FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import');
     ```
+- Using the `CREATE FOREIGN TABLE` syntax and settings described above for the foreign table. For example, if your server name is `s3srvcfg`:
 
+    ``` sql
+	CREATE SERVER s3srvcfg FOREIGN DATA WRAPPER s3_pxf_fdw;
+	CREATE USER MAPPING FOR CURRENT_USER SERVER s3srvcfg;
+
+	CREATE FOREIGN TABLE pxf_parquet_s3 (location text, month text, number_of_orders int, item_quantity_per_order int[], total_sales double precision)
+	SERVER s3srvcfg
+	OPTIONS (
+		resource 'BUCKET/pxf_examples/pxf_parquet',
+		format 'parquet'
+	)
+    ```
