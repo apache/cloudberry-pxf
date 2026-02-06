@@ -90,8 +90,6 @@ make
 To install PXF, first make sure that the user has sufficient permissions in the `$GPHOME` and `$PXF_HOME` directories to perform the installation. It's recommended to change ownership to match the installing user. For example, when installing PXF as user `gpadmin` under `/usr/local/cloudberry-db`:
 
 ```bash
-source /usr/local/cloudberry-db/greenplum_path.sh # For Cloudberry 2.0
-source /usr/local/cloudberry-db/cloudberry-env.sh # For Cloudberry 2.1+
 mkdir -p /usr/local/pxf
 export PXF_HOME=/usr/local/pxf
 export PXF_BASE=${HOME}/pxf-base
