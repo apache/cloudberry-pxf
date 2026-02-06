@@ -84,6 +84,9 @@ install-server:
 
 stage:
 	rm -rf build/stage
+	make -C $(SOURCE_EXTENSION_DIR) stage
+	make -C cli stage  
+	make -C server stage
 ifneq ($(SKIP_EXTERNAL_TABLE_PACKAGE_REASON),)
 	@echo "Skipping staging FDW extension because $(SKIP_EXTERNAL_TABLE_PACKAGE_REASON)"
 	$(eval PXF_MODULES := $(filter-out external-table,$(PXF_MODULES)))
@@ -100,7 +103,7 @@ endif
 	cp -a $(SOURCE_EXTENSION_DIR)/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
 	cp -a cli/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
 	cp -a server/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
-	echo $$(git rev-parse --verify HEAD) > build/stage/$${PXF_PACKAGE_NAME}/pxf/commit.sha ;\
+	echo $$(git rev-parse --verify HEAD) > build/stage/$${PXF_PACKAGE_NAME}/commit.sha ;\
 	cp package/install_binary build/stage/$${PXF_PACKAGE_NAME}/install_component ;\
 	echo "===> PXF staging is complete <==="
 
@@ -118,13 +121,12 @@ gppkg-rpm: rpm
 	find build/rpmbuild/RPMS -name pxf-cbdb$(GP_MAJOR_VERSION)-*.rpm -exec cp {} gppkg/ \;
 	source $(GPHOME)/greenplum_path.sh || source $(GPHOME)/cloudberry-env.sh && gppkg --build gppkg
 
-rpm:
-	make -C $(SOURCE_EXTENSION_DIR) stage
-	make -C cli stage
-	make -C server stage
+rpm: stage
 	set -e ;\
 	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
-	PXF_FULL_VERSION=$${PXF_VERSION} ;\
+	GP_BUILD_ARCH=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/build_arch) ;\
+	PXF_PACKAGE_NAME=pxf-cbdb$${GP_MAJOR_VERSION}-${PXF_VERSION}-$${GP_BUILD_ARCH} ;\
+	PXF_FULL_VERSION=${PXF_VERSION} ;\
 	PXF_MAIN_VERSION=$$(echo $${PXF_FULL_VERSION} | sed -E 's/(-SNAPSHOT|-rc[0-9]+)$$//') ;\
 	if [[ $${PXF_FULL_VERSION} == *"-SNAPSHOT" ]]; then \
 		PXF_RELEASE=SNAPSHOT; \
@@ -135,7 +137,7 @@ rpm:
 	fi ;\
 	rm -rf build/rpmbuild ;\
 	mkdir -p build/rpmbuild/{BUILD,RPMS,SOURCES,SPECS} ;\
-	cp -a build/stage/$${PXF_PACKAGE_NAME}/pxf/* build/rpmbuild/SOURCES ;\
+	cp -a build/stage/$${PXF_PACKAGE_NAME}/* build/rpmbuild/SOURCES ;\
 	cp package/*.spec build/rpmbuild/SPECS/ ;\
 	rpmbuild \
 	--define "_topdir $${PWD}/build/rpmbuild" \
@@ -150,7 +152,7 @@ rpm-tar: rpm
 	mkdir -p build/{stagerpm,distrpm}
 	set -e ;\
 	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
-	PXF_RPM_FILE=$$(find build/rpmbuild/RPMS -name pxf-cbdb$${GP_MAJOR_VERSION}-*.rpm) ;\
+	PXF_RPM_FILE=$$(find build/rpmbuild/RPMS -name cloudberry-pxf-*.rpm) ;\
 	PXF_RPM_BASE_NAME=$$(basename $${PXF_RPM_FILE%*.rpm}) ;\
 	PXF_PACKAGE_NAME=$${PXF_RPM_BASE_NAME%.*} ;\
 	mkdir -p build/stagerpm/$${PXF_PACKAGE_NAME} ;\

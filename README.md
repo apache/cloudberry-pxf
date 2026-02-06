@@ -79,7 +79,7 @@ To build PXF, you must have:
 PXF uses Makefiles to build its components. PXF server component uses Gradle that is wrapped into the Makefile for convenience.
 
 ```bash
-cd ~/pxf
+cd cloudberry-pxf/
 
 # Compile PXF
 make
@@ -94,7 +94,7 @@ mkdir -p /usr/local/pxf
 export PXF_HOME=/usr/local/pxf
 export PXF_BASE=${HOME}/pxf-base
 chown -R gpadmin:gpadmin "${GPHOME}" "${PXF_HOME}"
-make -C ~/pxf install
+make -C ~/cloudberry-pxf install
 ```
 
 NOTE: if `PXF_BASE` is not set, it will default to `PXF_HOME`, and server configurations, libraries or other configurations, might get deleted after a PXF re-install.
