@@ -7,7 +7,7 @@ It contains the following versions:
 - Hadoop 3.3.6
 - Hive 3.1.3
 - Zookeeper 3.5.9
-- HBase 2.2.7
+- HBase 2.3.7
 - Tez 0.9.2
 
 This version of Single cluster requires users to make some manual changes to the configuration files once the tarball has been unpacked (see Initialization steps below).

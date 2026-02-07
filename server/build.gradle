@@ -85,12 +85,12 @@ configure(javaProjects) {
             dependency("com.univocity:univocity-parsers:2.9.1")
             dependency("com.yammer.metrics:metrics-core:2.2.0")
             dependency("com.zaxxer:HikariCP:3.4.5")
-            dependency("commons-codec:commons-codec:1.15")
+            dependency("commons-codec:commons-codec:1.14")
             dependency("commons-collections:commons-collections:3.2.2")
             dependency("commons-configuration:commons-configuration:1.10")
             dependency("commons-io:commons-io:2.7")
             dependency("commons-lang:commons-lang:2.6")
-            dependency("commons-lang:commons-lang3:3.18.0")
+            dependency("commons-lang:commons-lang3:3.9")
             dependency("commons-logging:commons-logging:1.1.3")
             dependency("io.airlift:aircompressor:0.27")
             dependency("javax.jdo:jdo-api:3.0.1")
@@ -98,9 +98,9 @@ configure(javaProjects) {
             dependency("net.sf.opencsv:opencsv:2.3")
             dependency("org.antlr:antlr-runtime:3.5.2")
             dependency("org.apache.commons:commons-compress:1.20")
-            dependency("org.apache.commons:commons-crypto:1.1.0")
+            dependency("org.apache.commons:commons-crypto:1.0.0")
             dependency("org.apache.htrace:htrace-core:3.1.0-incubating")
-            dependency("org.apache.htrace:htrace-core4:4.0.1-incubating")
+            dependency("org.apache.htrace:htrace-core4:4.2.0-incubating")
 
             dependency("org.apache.zookeeper:zookeeper:3.4.6")
             dependency("org.codehaus.woodstox:stax2-api:3.1.4")
@@ -151,14 +151,14 @@ configure(javaProjects) {
                 entry("hbase-metrics-api")
                 entry("hbase-metrics")
             }
-            dependencySet(group:"org.apache.hbase.thirdparty", version:"4.1.12") {
+            dependencySet(group:"org.apache.hbase.thirdparty", version:"3.3.0") {
                 entry("hbase-shaded-protobuf")
                 entry("hbase-shaded-miscellaneous")
                 entry("hbase-shaded-gson")
                 entry("hbase-shaded-netty")
                 entry("hbase-unsafe")
             }
-            dependency("org.apache.yetus:audience-annotations:0.13.0")
+            dependency("org.apache.yetus:audience-annotations:0.5.0")
             dependency("io.opentelemetry:opentelemetry-api:1.49.0")
             dependency("io.opentelemetry:opentelemetry-context:1.49.0")
             dependency("io.opentelemetry.semconv:opentelemetry-semconv:1.29.0-alpha")
