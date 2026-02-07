@@ -14,7 +14,6 @@ dependencies {
      *******************************/
 
     compileOnly("com.google.code.findbugs:annotations")
-    compileOnly("org.apache.hbase:hbase-annotations")
 
     /*******************************
      * Project Dependencies
@@ -27,14 +26,34 @@ dependencies {
      * Hbase
      *******************************/
 
-    implementation("org.apache.hbase:hbase-shaded-client")                   { transitive = false }
-      implementation("io.opentelemetry:opentelemetry-api")                   { transitive = false }
-      implementation("io.opentelemetry:opentelemetry-context")               { transitive = false }
-      implementation("org.apache.yetus:audience-annotations")                { transitive = false }
-      implementation("io.opentelemetry.semconv:opentelemetry-semconv")       { transitive = false }
-    implementation("org.apache.hbase:hbase-annotations")                     { transitive = false }
+    implementation("org.apache.hbase:hbase-client")                          { transitive = false }
+    implementation("org.apache.hbase.thirdparty:hbase-shaded-protobuf")      { transitive = false }
+    implementation("org.apache.hbase:hbase-common")                          { transitive = false }
+    implementation("org.apache.hbase:hbase-logging")                         { transitive = false }
+    implementation("org.apache.hbase.thirdparty:hbase-shaded-miscellaneous") { transitive = false }
+    implementation("org.apache.hbase.thirdparty:hbase-shaded-gson")          { transitive = false }
+    implementation("org.apache.hbase.thirdparty:hbase-shaded-netty")         { transitive = false }
+    implementation("org.apache.hbase.thirdparty:hbase-unsafe")               { transitive = false }
+    implementation("org.apache.commons:commons-lang3")                       { transitive = false }
+    implementation("org.apache.commons:commons-crypto")                      { transitive = false }
+    implementation("org.apache.hadoop:hadoop-common")                        { transitive = false }
+    implementation("org.apache.hadoop:hadoop-auth")                          { transitive = false }
+    implementation("org.apache.hbase:hbase-hadoop-compat")                   { transitive = false }
+    implementation("org.apache.hbase:hbase-metrics-api")                     { transitive = false }
+    implementation("org.apache.hbase:hbase-metrics")                         { transitive = false }
+    implementation("org.apache.hbase:hbase-hadoop2-compat")                  { transitive = false }
     implementation("org.apache.hbase:hbase-protocol-shaded")                 { transitive = false }
-      implementation("org.apache.hbase.thirdparty:hbase-shaded-protobuf")    { transitive = false }
+    implementation("org.apache.hbase:hbase-protocol")                        { transitive = false }
+    implementation("com.google.protobuf:protobuf-java")                      { transitive = false }
+    implementation("org.apache.zookeeper:zookeeper")                         { transitive = false }
+//  skip JRuby - it is part of interactive shell
+//    implementation("org.jruby.jcodings:jcodings:1.0.58")                     { transitive = false }
+//    implementation("org.jruby.joni:joni:2.2.1")                              { transitive = false }
+    implementation("org.apache.yetus:audience-annotations")                  { transitive = false }
+    implementation("io.opentelemetry:opentelemetry-api")                     { transitive = false }
+    implementation("io.opentelemetry:opentelemetry-context")                 { transitive = false }
+    implementation("io.opentelemetry.semconv:opentelemetry-semconv")         { transitive = false }
+    implementation("io.dropwizard.metrics:metrics-core:3.2.6")               { transitive = false }
 
     implementation("org.springframework.boot:spring-boot-starter-log4j2")
 
@@ -43,7 +62,6 @@ dependencies {
      *******************************/
 
     testCompileOnly("com.google.code.findbugs:annotations")
-    testCompileOnly("org.apache.hbase:hbase-annotations")
     testImplementation("com.esotericsoftware:minlog")
     testImplementation("com.esotericsoftware:reflectasm")
     testImplementation('org.springframework.boot:spring-boot-starter-test')
