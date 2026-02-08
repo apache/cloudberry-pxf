@@ -93,7 +93,7 @@ To install PXF, first make sure that the user has sufficient permissions in the 
 mkdir -p /usr/local/pxf
 export PXF_HOME=/usr/local/pxf
 export PXF_BASE=${HOME}/pxf-base
-chown -R gpadmin:gpadmin "${GPHOME}" "${PXF_HOME}"
+chown -R gpadmin:gpadmin "${PXF_HOME}"
 make -C ~/cloudberry-pxf install
 ```
 
