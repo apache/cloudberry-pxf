@@ -1,4 +1,8 @@
 #!/bin/sh
 
-sed -i "s|directory =.*|directory = '/usr/local/pxf-gp6/gpextable/'|g" /usr/local/pxf-gp6/gpextable/pxf.control
-sed -i "s|module_pathname =.*|module_pathname = '/usr/local/pxf-gp6/gpextable/pxf'|g" /usr/local/pxf-gp6/gpextable/pxf.control
+PXF_HOME="/usr/local/cloudberry-pxf"
+PXF_EXT_DIR="${PXF_HOME}/gpextable"
+
+# Update pxf.control with correct paths
+sed -i "s|directory =.*|directory = '${PXF_EXT_DIR}/'|g" "${PXF_EXT_DIR}/pxf.control"
+sed -i "s|module_pathname =.*|module_pathname = '${PXF_EXT_DIR}/pxf'|g" "${PXF_EXT_DIR}/pxf.control"

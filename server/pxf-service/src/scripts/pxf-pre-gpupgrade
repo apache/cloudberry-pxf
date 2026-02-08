@@ -58,22 +58,22 @@ pxf_gpdb_major_version=""
 if [[ -f "${metadata_file}" ]]; then
     pxf_gpdb_major_version="$(awk 'BEGIN { FS = \"=\" } /cloudberry.major-version/{ print $2 }' \"${metadata_file}\")"
 else
-    echo "WARNING: metadata file '${metadata_file}' not found; skipping PXF/GPDB compatibility check" >>"${log_file}"
+    echo "WARNING: metadata file '${metadata_file}' not found; skipping PXF/Cloudberry compatibility check" >>"${log_file}"
 fi
 gp_version="$(psql --no-align --tuples-only --command "SHOW server_version")"
 pxf_version="$(cat "${PXF_HOME}"/version)"
 
-echo "PXF ${pxf_version} compiled against GPDB major version '${pxf_gpdb_major_version}'" >>"${log_file}"
-echo "Running GPDB cluster is version '${gp_version}'" >>"${log_file}"
+echo "PXF ${pxf_version} compiled against Cloudberry major version '${pxf_gpdb_major_version}'" >>"${log_file}"
+echo "Running Cloudberry cluster is version '${gp_version}'" >>"${log_file}"
 
 if [[ -n "${pxf_gpdb_major_version}" && "${pxf_gpdb_major_version}" != "${gp_version%%.*}" ]]; then
-    echo "ERROR: This version of PXF only works with GPDB ${pxf_gpdb_major_version}+ but the targeted GPDB cluster is ${gp_version}" | tee -a "${log_file}"
+    echo "ERROR: This version of PXF only works with Cloudberry ${pxf_gpdb_major_version}+ but the targeted Cloudberry cluster is ${gp_version}" | tee -a "${log_file}"
     exit 1
 fi
 
-master_data_dir_query="SELECT datadir FROM pg_catalog.gp_segment_configuration WHERE dbid = 1"
-export MASTER_DATA_DIRECTORY="${MASTER_DATA_DIRECTORY:-$(psql --no-align --tuples-only --command "${master_data_dir_query}")}"
-echo "GPDB master data directory is '${MASTER_DATA_DIRECTORY}'" >>"${log_file}"
+coordinator_data_dir_query="SELECT datadir FROM pg_catalog.gp_segment_configuration WHERE dbid = 1"
+export COORDINATOR_DATA_DIRECTORY="${COORDINATOR_DATA_DIRECTORY:-$(psql --no-align --tuples-only --command "${coordinator_data_dir_query}")}"
+echo "Cloudberry coordinator data directory is '${COORDINATOR_DATA_DIRECTORY}'" >>"${log_file}"
 
 if [[ -d "${PXF_HOME}/gpextable" ]]; then
     PXF_HOME_REGEX="(.*:)*\/gpextable.*"

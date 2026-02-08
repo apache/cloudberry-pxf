@@ -4,7 +4,7 @@
 
 `pxf_regress` is a PSQL test runner written in Go that is heavily inspired by
 `pg_regress`. PXF's automation test framework sets up data in external data
-storage (e.g., Hadoop, Amazon S3, etc), creates Greenplum external tables to
+storage (e.g., Hadoop, Amazon S3, etc), creates Cloudberry external tables to
 work with these data sets, and then invokes `pxf_regress` to run SQL test cases
 via `psql` and compare the results with expected output. Instead of matching
 the features of `pg_regress` exactly, this utility currently implements the
@@ -36,16 +36,16 @@ small_data
     └── query02.sql
 ```
 
-There are no command line flags; the GPDB cluster that `pxf_regress` connects
+There are no command line flags; the Cloudberry cluster that `pxf_regress` connects
 to can be customized with standard [Postgres environment variables][1].
 
 ### Why not use `pg_regress`?
 
-Ideally, PXF would re-use `pg_regress` which is included with upstream GPDB;
-however, PXF supports multiple GPDB versions (currently 5, 6, & 7) with a
-single code base. Differences between the GPDB major versions and the included
+Ideally, PXF would re-use `pg_regress` which is included with upstream Cloudberry;
+however, PXF supports multiple Cloudberry versions with a
+single code base. Differences between the Cloudberry major versions and the included
 `pg_regress` results in non-semantically meaningful (for PXF) differences.
-GPDB's version of `pg_regress` uses a utility called `gpdiff.pl` to compare
+Cloudberry's version of `pg_regress` uses a utility called `gpdiff.pl` to compare
 actual test output with expected test output. From the description of
 [`gpdiff.pl`][2]:
 
@@ -56,9 +56,9 @@ actual test output with expected test output. From the description of
 > single PostgreSQL instance.
 
 When `pg_regress` runs `gpdiff.pl`, it runs the version of `gpdiff.pl` that is
-included with GPDB (`$($GPHOME/bin/pg_config
+included with Cloudberry (`$($GPHOME/bin/pg_config
 --libdir)/postgresql/pgxs/src/test/regress/gpdiff.pl`) with hard-coded options
-that cannot be customized. Not only is `gpdiff.pl` different across GPDB major
+that cannot be customized. Not only is `gpdiff.pl` different across Cloudberry major
 versions, the set of options that `pg_regress` runs it with will be different
 across major versions.
 
@@ -119,4 +119,4 @@ $ tree smoke/small_data
     ```
 
 [1]: https://www.postgresql.org/docs/12/libpq-envars.html
-[2]: https://github.com/greenplum-db/gpdb/blob/main/src/test/regress/gpdiff.pl
+[2]: https://github.com/apache/cloudberry/blob/main/src/test/regress/gpdiff.pl

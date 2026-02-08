@@ -22,7 +22,7 @@ import java.util.List;
 public class Gpdb extends DbSystemObject {
 
 	private static final String DEFAULT_PORT = "5432";
-	private static final String GREENPLUM_DATABASE_PREFIX = "Greenplum Database ";
+	private static final String APACHE_CLOUDBERRY_PREFIX = "Apache Cloudberry ";
 	private static final String IF_NOT_EXISTS_OPTION = "IF NOT EXISTS";
 
 	private String sshUserName;
@@ -580,8 +580,8 @@ public class Gpdb extends DbSystemObject {
 		res.next();
 		String fullVersion = res.getString(1);
 		ReportUtils.report(report, getClass(), "Retrieved from Greenplum: [" + fullVersion + "]");
-        int gpIndex = fullVersion.indexOf(GREENPLUM_DATABASE_PREFIX); // where the version prefix starts
-        String prefix = GREENPLUM_DATABASE_PREFIX;
+        int gpIndex = fullVersion.indexOf(APACHE_CLOUDBERRY_PREFIX); // where the version prefix starts
+        String prefix = APACHE_CLOUDBERRY_PREFIX;
         // Cloudberry forks print strings like:
         //   "PostgreSQL 14.4 (Apache Cloudberry 3.0.0-devel build dev) ..."
         // fall back to the Cloudberry prefix if the Greenplum one is missing

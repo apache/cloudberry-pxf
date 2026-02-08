@@ -1,8 +1,12 @@
 # Platform Extension Framework (PXF) for Apache Cloudberry (Incubating)
 
-[![Slack](https://img.shields.io/badge/Join_Slack-6a32c9)](https://communityinviter.com/apps/cloudberrydb/welcome)
-[![Twitter Follow](https://img.shields.io/twitter/follow/cloudberrydb)](https://twitter.com/cloudberrydb)
-[![Website](https://img.shields.io/badge/Visit%20Website-eebc46)](https://cloudberry.apache.org)
+[![Website](https://img.shields.io/badge/Website-eebc46)](https://cloudberry.apache.org)
+[![Documentation](https://img.shields.io/badge/Documentation-acd94a)](https://cloudberry.apache.org/docs)
+[![Slack](https://img.shields.io/badge/Join_Slack-6a32c9)](https://inviter.co/apache-cloudberry)
+[![Twitter Follow](https://img.shields.io/twitter/follow/ASFCloudberry)](https://twitter.com/ASFCloudberry)
+[![WeChat](https://img.shields.io/badge/WeChat-eebc46)](https://cloudberry.apache.org/community/wechat)
+[![Youtube](https://img.shields.io/badge/Youtube-gebc46)](https://youtube.com/@ApacheCloudberry)
+[![GitHub Discussions](https://img.shields.io/github/discussions/apache/cloudberry)](https://github.com/apache/cloudberry/discussions)
 
 ---
 
@@ -12,7 +16,7 @@ PXF is an extensible framework that allows a distributed database like Greenplum
 PXF includes built-in connectors for accessing data that exists inside HDFS files, Hive tables, HBase tables, JDBC-accessible databases and more.
 Users can also create their own connectors to other data storage or processing engines.
 
-This project is forked from [greenplum/pxf](https://github.com/greenplum-db/pxf-archive) and customized for Apache Cloudberry.
+This project is derived from [greenplum/pxf](https://github.com/greenplum-db/pxf-archive) and customized for Apache Cloudberry.
 
 ## Repository Contents
 
@@ -23,20 +27,12 @@ This project is forked from [greenplum/pxf](https://github.com/greenplum-db/pxf-
 * `automation/` : Contains the automation and integration tests for PXF against the various datasources
 * `ci/` : Contains CI/CD environment and scripts (including singlecluster Hadoop environment)
 * `regression/` : Contains the end-to-end (integration) tests for PXF against the various datasources, utilizing the PostgreSQL testing framework `pg_regress`
-* `downloads/` : An empty directory that serves as a staging location for Cloudberry RPMs for the development Docker image
 
 ## PXF Development
 
 Below are the steps to build and install PXF along with its dependencies including Cloudberry and Hadoop.
 
-> [!Note]
-> To start, ensure you have a `~/workspace` directory and have cloned the `pxf` and its prerequisites (shown below) under it.
-(The name `workspace` is not strictly required but will be used throughout this guide.)
-
 ```bash
-mkdir -p ~/workspace
-cd ~/workspace
-
 git clone https://github.com/apache/cloudberry-pxf.git
 ```
 
@@ -49,22 +45,22 @@ To build PXF, you must have:
 
     Either download and install Cloudberry RPM or build Cloudberry from the source by following instructions in the [Cloudberry](https://github.com/apache/cloudberry).
 
-    Assuming you have installed Cloudberry into `/usr/local/cloudberrydb` directory, run its environment script:
+    Assuming you have installed Cloudberry into `/usr/local/cloudberry-db` directory, run its environment script:
     ```
-    source /usr/local/cloudberrydb/greenplum_path.sh # For Cloudberry 2.0
-    source /usr/local/cloudberrydb/cloudberry-env.sh # For Cloudberry 2.1+
+    source /usr/local/cloudberry-db/greenplum_path.sh # For Cloudberry 2.0
+    source /usr/local/cloudberry-db/cloudberry-env.sh # For Cloudberry 2.1+
     ```
 
 3. JDK 1.8 or JDK 11 to compile/run
 
     Export your `JAVA_HOME`:
     ```
-    export JAVA_HOME=<PATH_TO_YOUR_JAVA_HOME>
+    export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
     ```
 
 4. Go (1.9 or later)
 
-    To install Go on CentOS, `sudo yum install go`. For other platforms, see the [Go downloads page](https://golang.org/dl/).
+    You can download and install Go via [Go downloads page](https://golang.org/dl/).
 
     Make sure to export your `GOPATH` and add go to your `PATH`. For example:
     ```shell
@@ -78,43 +74,34 @@ To build PXF, you must have:
     go install github.com/onsi/ginkgo/ginkgo@latest
     ```
 
-5. cURL (7.29 or later):
-
-    To install cURL devel package on CentOS 7, `sudo yum install libcurl-devel`.
-
-    Note that CentOS 6 provides an older, unsupported version of cURL (7.19). You should install a newer version from source if you are on CentOS 6.
-
-### How to Build PXF
+### Build PXF
 
 PXF uses Makefiles to build its components. PXF server component uses Gradle that is wrapped into the Makefile for convenience.
 
 ```bash
-cd ~/workspace/pxf
+cd cloudberry-pxf/
 
-# Compile & Test PXF
+# Compile PXF
 make
-
-# Only run unit tests
-make test
 ```
 
-### How to Install PXF
+### Install PXF
 
-To install PXF, first make sure that the user has sufficient permissions in the `$GPHOME` and `$PXF_HOME` directories to perform the installation. It's recommended to change ownership to match the installing user. For example, when installing PXF as user `gpadmin` under `/usr/local/cloudberrydb`:
+To install PXF, first make sure that the user has sufficient permissions in the `$GPHOME` and `$PXF_HOME` directories to perform the installation. It's recommended to change ownership to match the installing user. For example, when installing PXF as user `gpadmin` under `/usr/local/cloudberry-db`:
 
 ```bash
-export GPHOME=/usr/local/cloudberrydb
+mkdir -p /usr/local/pxf
 export PXF_HOME=/usr/local/pxf
 export PXF_BASE=${HOME}/pxf-base
-chown -R gpadmin:gpadmin "${GPHOME}" "${PXF_HOME}"
-make -C ~/workspace/pxf install
+chown -R gpadmin:gpadmin "${PXF_HOME}"
+make -C ~/cloudberry-pxf install
 ```
 
 NOTE: if `PXF_BASE` is not set, it will default to `PXF_HOME`, and server configurations, libraries or other configurations, might get deleted after a PXF re-install.
 
-### How to Run PXF
+### Run PXF
 
-Ensure that PXF is in your path. This command can be added to your .bashrc
+Ensure that PXF is in your path. This command can be added to your `.bashrc`:
 
 ```bash
 export PATH=/usr/local/pxf/bin:$PATH
@@ -143,150 +130,12 @@ After PXF has been re-installed, you can restart the PXF instance using:
 pxf restart
 ```
 
-### How to demonstrate Hadoop Integration
-In order to demonstrate end to end functionality you will need Hadoop installed. We have all the related hadoop components (hdfs, hive, hbase, zookeeper, etc) mapped into simple artifact named singlecluster.
-You can [download from here](https://storage.googleapis.com/pxf-public/singlecluster-HDP.tar.gz) and untar the `singlecluster-HDP.tar.gz` file, which contains everything needed to run Hadoop.
-
-```bash
-mv singlecluster-HDP.tar.gz ~/workspace/
-cd ~/workspace
-tar xzf singlecluster-HDP.tar.gz
-```
-
-Create a symlink using `ln -s ~/workspace/singlecluster-HDP ~/workspace/singlecluster` and then follow the steps in [Setup Hadoop](####Setup-Hadoop).
-
-While PXF can run on either Java 8 or Java 11, please ensure that you are running Java 8 for hdfs, hadoop, etc. Please set your java version by seting your `JAVA_HOME` to the appropriate location.
-
-On a Mac, you can set your java version using `JAVA_HOME` like so:
-```
-export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
-````
-
-Initialize the default server configurations:
-```
-cp ${PXF_HOME}/templates/*-site.xml ${PXF_BASE}/servers/default
-```
-
-### Development With Docker
+## Development With Docker
 
 > [!Note]
 > Since the docker container will house all Single cluster Hadoop, Cloudberry and PXF, we recommend that you have at least 4 cpus and 6GB memory allocated to Docker. These settings are available under docker preferences.
 
 We provide a Docker-based development environment that includes Cloudberry, Hadoop, and PXF. See [automation/README.Docker.md](automation/README.Docker.md) for detailed instructions.
-
-**Quick Start:**
-
-```bash
-# Build and start the development container
-docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml build
-docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml up -d
-
-# Enter the container and run setup
-docker exec -it pxf-cbdb-dev bash -c \
-   "cd /home/gpadmin/workspace/cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu && ./script/entrypoint.sh"
-
-# Run tests
-docker exec -it pxf-cbdb-dev bash -c \
-   "cd /home/gpadmin/workspace/cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu && ./script/run_tests.sh"
-
-# Stop and clean up
-docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v
-```
-
-#### Setup Hadoop
-Hdfs will be needed to demonstrate functionality. You can choose to start additional hadoop components (hive/hbase) if you need them.
-
-Setup [User Impersonation](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/Superusers.html) prior to starting the hadoop components (this allows the `gpadmin` user to access hadoop data).
-
-The Docker development environment automatically configures Hadoop. For manual setup, see [automation/README.Docker.md](automation/README.Docker.md).
-
-Setup and start HDFS
-```bash
-pushd ~/workspace/singlecluster/bin
-echo y | ./init-gphd.sh
-./start-hdfs.sh
-popd
-```
-
-Start other optional components based on your need
-
-```bash
-pushd ~/workspace/singlecluster/bin
-# Start Hive
-./start-yarn.sh
-./start-hive.sh
-
-# Start HBase
-./start-zookeeper.sh
-./start-hbase.sh
-popd
-```
-
-#### Setup Minio (optional)
-Minio is an S3-API compatible local storage solution. The development docker image comes with Minio software pre-installed. MinIO is automatically started by the Docker development environment.
-
-After the server starts, you can access Minio UI at `http://localhost:9000` from the host OS. Use `admin` for the access key and `password` for the secret key when connecting to your local Minio instance.
-
-To run S3 automation tests, set `PROTOCOL=minio`. If later you would like to run Hadoop HDFS tests, unset this variable with `unset PROTOCOL` command.
-
-#### Setup PXF
-
-Install PXF Server
-```bash
-# Install PXF
-make -C ~/workspace/pxf install
-
-# Start PXF
-export PXF_JVM_OPTS="-Xmx512m -Xms256m"
-$PXF_HOME/bin/pxf start
-```
-
-Install PXF client (ignore if this is already done)
-```bash
-psql -d template1 -c "create extension pxf"
-```
-
-#### Run PXF Tests
-All tests use a database named `pxfautomation`.
-```bash
-pushd ~/workspace/pxf/automation
-
-# Initialize default server configs using template
-cp ${PXF_HOME}/templates/{hdfs,mapred,yarn,core,hbase,hive}-site.xml ${PXF_BASE}/servers/default
-
-# Run specific tests. Example: Hdfs Smoke Test
-make TEST=HdfsSmokeTest
-
-# Run all tests. This will be very time consuming.
-make GROUP=gpdb
-
-# If you wish to run test(s) against a different storage protocol set the following variable (for eg: s3)
-export PROTOCOL=s3
-popd
-```
-
-If you see any HBase failures, try copying `pxf-hbase-*.jar` to the HBase classpath, and restart HBase:
-
-```
-cp ${PXF_HOME}/lib/pxf-hbase-*.jar ~/workspace/singlecluster/hbase/lib/pxf-hbase.jar
-~/workspace/singlecluster/bin/stop-hbase.sh
-~/workspace/singlecluster/bin/start-hbase.sh
-```
-
-#### Make Changes to PXF
-
-To deploy your changes to PXF in the development environment.
-
-```bash
-# $PXF_HOME folder is replaced each time you make install.
-# So, if you have any config changes, you may want to back those up.
-$PXF_HOME/bin/pxf stop
-make -C ~/workspace/pxf install
-# Make any config changes you had backed up previously
-rm -rf $PXF_HOME/pxf-service
-yes | $PXF_HOME/bin/pxf init
-$PXF_HOME/bin/pxf start
-```
 
 ## IDE Setup (IntelliJ)
 
@@ -311,47 +160,6 @@ no JDK set for Gradle. Just cancel and retry. It goes away the second time.
 - Debug the new configuration in IntelliJ
 - Run a query in CloudberryDB that uses PXF to debug with IntelliJ
 
-## To run a Kerberized Hadoop Cluster
-
-### Requirements
-
-- Download bin_gpdb (from any of the pipelines)
-- Download pxf_tarball (from any of the pipelines)
-
-These instructions allow you to run a Kerberized cluster. See [automation/README.Docker.md](automation/README.Docker.md) for detailed Kerberos setup instructions.
-
-```bash
-docker run --rm -it \
-  --privileged \
-  --hostname c6401.ambari.apache.org \
-  -p 5432:5432 \
-  -p 5888:5888 \
-  -p 8000:8000 \
-  -p 8080:8080 \
-  -p 8020:8020 \
-  -p 9000:9000 \
-  -p 9090:9090 \
-  -p 50070:50070 \
-  -w /home/gpadmin/workspace \
-  -v ~/workspace/cbdb:/home/gpadmin/workspace/gpdb_src \
-  -v ~/workspace/pxf:/home/gpadmin/workspace/pxf_src \
-  -v ~/workspace/singlecluster-HDP:/home/gpadmin/workspace/singlecluster \
-  -v ~/Downloads/bin_cbdb:/home/gpadmin/workspace/bin_cbdb \
-  -v ~/Downloads/pxf_tarball:/home/gpadmin/workspace/pxf_tarball \
-  -e CLUSTER_NAME=hdp \
-  -e NODE=c6401.ambari.apache.org \
-  -e REALM=AMBARI.APACHE.ORG \
-  gcr.io/$PROJECT_ID/gpdb-pxf-dev/gpdb6-centos7-test-pxf-hdp2 /bin/bash
-
-# Inside the container, you can use the scripts in ci/docker/pxf-cbdb-dev/ubuntu/script to set up and run tests.
-
-echo "+----------------------------------------------+"
-echo "| Kerberos admin principal: admin/admin@$REALM |"
-echo "| Kerberos admin password : admin              |"
-echo "+----------------------------------------------+"
-
-su - gpadmin
-```
 
 ## Contribute
 

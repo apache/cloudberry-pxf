@@ -84,6 +84,9 @@ install-server:
 
 stage:
 	rm -rf build/stage
+	make -C $(SOURCE_EXTENSION_DIR) stage
+	make -C cli stage  
+	make -C server stage
 ifneq ($(SKIP_EXTERNAL_TABLE_PACKAGE_REASON),)
 	@echo "Skipping staging FDW extension because $(SKIP_EXTERNAL_TABLE_PACKAGE_REASON)"
 	$(eval PXF_MODULES := $(filter-out external-table,$(PXF_MODULES)))
@@ -100,7 +103,7 @@ endif
 	cp -a $(SOURCE_EXTENSION_DIR)/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
 	cp -a cli/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
 	cp -a server/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
-	echo $$(git rev-parse --verify HEAD) > build/stage/$${PXF_PACKAGE_NAME}/pxf/commit.sha ;\
+	echo $$(git rev-parse --verify HEAD) > build/stage/$${PXF_PACKAGE_NAME}/commit.sha ;\
 	cp package/install_binary build/stage/$${PXF_PACKAGE_NAME}/install_component ;\
 	echo "===> PXF staging is complete <==="
 
@@ -116,15 +119,14 @@ gppkg-rpm: rpm
 	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version)
 	cat package/gppkg_spec.yml.in | sed "s,#arch,`arch`," | sed "s,#os,$(TEST_OS)," | sed "s,#gppkgver,1.0," | sed "s,#gpver,1," > gppkg/gppkg_spec.yml
 	find build/rpmbuild/RPMS -name pxf-cbdb$(GP_MAJOR_VERSION)-*.rpm -exec cp {} gppkg/ \;
-	source $(GPHOME)/greenplum_path.sh && gppkg --build gppkg
+	source $(GPHOME)/greenplum_path.sh || source $(GPHOME)/cloudberry-env.sh && gppkg --build gppkg
 
-rpm:
-	make -C $(SOURCE_EXTENSION_DIR) stage
-	make -C cli stage
-	make -C server stage
+rpm: stage
 	set -e ;\
 	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
-	PXF_FULL_VERSION=$${PXF_VERSION} ;\
+	GP_BUILD_ARCH=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/build_arch) ;\
+	PXF_PACKAGE_NAME=pxf-cbdb$${GP_MAJOR_VERSION}-${PXF_VERSION}-$${GP_BUILD_ARCH} ;\
+	PXF_FULL_VERSION=${PXF_VERSION} ;\
 	PXF_MAIN_VERSION=$$(echo $${PXF_FULL_VERSION} | sed -E 's/(-SNAPSHOT|-rc[0-9]+)$$//') ;\
 	if [[ $${PXF_FULL_VERSION} == *"-SNAPSHOT" ]]; then \
 		PXF_RELEASE=SNAPSHOT; \
@@ -135,7 +137,7 @@ rpm:
 	fi ;\
 	rm -rf build/rpmbuild ;\
 	mkdir -p build/rpmbuild/{BUILD,RPMS,SOURCES,SPECS} ;\
-	cp -a build/stage/$${PXF_PACKAGE_NAME}/pxf/* build/rpmbuild/SOURCES ;\
+	cp -a build/stage/$${PXF_PACKAGE_NAME}/* build/rpmbuild/SOURCES ;\
 	cp package/*.spec build/rpmbuild/SPECS/ ;\
 	rpmbuild \
 	--define "_topdir $${PWD}/build/rpmbuild" \
@@ -150,7 +152,7 @@ rpm-tar: rpm
 	mkdir -p build/{stagerpm,distrpm}
 	set -e ;\
 	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
-	PXF_RPM_FILE=$$(find build/rpmbuild/RPMS -name pxf-cbdb$${GP_MAJOR_VERSION}-*.rpm) ;\
+	PXF_RPM_FILE=$$(find build/rpmbuild/RPMS -name cloudberry-pxf-*.rpm) ;\
 	PXF_RPM_BASE_NAME=$$(basename $${PXF_RPM_FILE%*.rpm}) ;\
 	PXF_PACKAGE_NAME=$${PXF_RPM_BASE_NAME%.*} ;\
 	mkdir -p build/stagerpm/$${PXF_PACKAGE_NAME} ;\
@@ -165,24 +167,24 @@ deb: stage
 	PXF_MAIN_VERSION=$${PXF_VERSION//-SNAPSHOT/} ;\
 	if [[ $${PXF_VERSION} == *"-SNAPSHOT" ]]; then PXF_RELEASE=SNAPSHOT; else PXF_RELEASE=1; fi ;\
 	rm -rf build/debbuild ;\
-	mkdir -p build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION}/$(TARGET_EXTENSION_DIR) ;\
-	cp -a $(SOURCE_EXTENSION_DIR)/build/stage/* build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION}/$(TARGET_EXTENSION_DIR) ;\
-	cp -a cli/build/stage/pxf/* build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION} ;\
-	cp -a server/build/stage/pxf/* build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION} ;\
-	echo $$(git rev-parse --verify HEAD) > build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION}/commit.sha ;\
+	mkdir -p build/debbuild/usr/local/cloudberry-pxf/$(TARGET_EXTENSION_DIR) ;\
+	cp -a $(SOURCE_EXTENSION_DIR)/build/stage/* build/debbuild/usr/local/cloudberry-pxf/ ;\
+	cp -a cli/build/stage/* build/debbuild/usr/local/cloudberry-pxf ;\
+	cp -a server/build/stage/* build/debbuild/usr/local/cloudberry-pxf ;\
+	echo $$(git rev-parse --verify HEAD) > build/debbuild/usr/local/cloudberry-pxf/commit.sha ;\
 	mkdir build/debbuild/DEBIAN ;\
 	cp -a package/DEBIAN/* build/debbuild/DEBIAN/ ;\
-	sed -i -e "s/%VERSION%/$${PXF_MAIN_VERSION}-$${PXF_RELEASE}/" -e "s/%MAINTAINER%/${VENDOR}/" build/debbuild/DEBIAN/control ;\
+	sed -i -e "s/%VERSION%/$${PXF_MAIN_VERSION}-$${PXF_RELEASE}/" -e "s/%MAINTAINER%/${VENDOR}/" -e "s/%ARCH%/$$(dpkg --print-architecture)/" build/debbuild/DEBIAN/control ;\
 	dpkg-deb --build build/debbuild ;\
-	mv build/debbuild.deb build/pxf-cbdb$${GP_MAJOR_VERSION}-$${PXF_MAIN_VERSION}-$${PXF_RELEASE}-ubuntu18.04-amd64.deb
+	mv build/debbuild.deb build/cloudberry-pxf-$${PXF_MAIN_VERSION}-$${PXF_RELEASE}-$$(lsb_release -cs)-$$(dpkg --print-architecture).deb
 
 deb-tar: deb
 	rm -rf build/{stagedeb,distdeb}
 	mkdir -p build/{stagedeb,distdeb}
 	set -e ;\
 	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
-	PXF_DEB_FILE=$$(find build/ -name pxf-cbdb$${GP_MAJOR_VERSION}*.deb) ;\
-	PXF_PACKAGE_NAME=$$(dpkg-deb --field $${PXF_DEB_FILE} Package)-$$(dpkg-deb --field $${PXF_DEB_FILE} Version)-ubuntu18.04 ;\
+	PXF_DEB_FILE=$$(find build/ -name cloudberry-pxf*.deb) ;\
+	PXF_PACKAGE_NAME=$$(dpkg-deb --field $${PXF_DEB_FILE} Package)-$$(dpkg-deb --field $${PXF_DEB_FILE} Version)-$$(lsb_release -si | tr '[:upper:]' '[:lower:]')$$(lsb_release -rs) ;\
 	mkdir -p build/stagedeb/$${PXF_PACKAGE_NAME} ;\
 	cp $${PXF_DEB_FILE} build/stagedeb/$${PXF_PACKAGE_NAME} ;\
 	cp package/install_deb build/stagedeb/$${PXF_PACKAGE_NAME}/install_component ;\
