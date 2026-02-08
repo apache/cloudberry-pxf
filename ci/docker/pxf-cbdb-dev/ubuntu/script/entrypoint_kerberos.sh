@@ -35,7 +35,7 @@ ADMIN_PASS=${ADMIN_PASS:-AdminPass@123}
 PXF_BASE=${PXF_BASE:-/home/gpadmin/pxf-base}
 GPHOME=${GPHOME:-/usr/local/cloudberry-db}
 # GPDB demo master path is required by pg_hba reloads; define a default up front.
-MASTER_DATA_DIRECTORY=${MASTER_DATA_DIRECTORY:-/home/gpadmin/workspace/cloudberry/gpAux/gpdemo/datadirs/qddir/demoDataDir-1}
+COORDINATOR_DATA_DIRECTORY=${COORDINATOR_DATA_DIRECTORY:-/home/gpadmin/workspace/cloudberry/gpAux/gpdemo/datadirs/qddir/demoDataDir-1}
 
 # Java locations vary by arch; prefer Java 8 for Hadoop runtime and Java 11 for builds if needed.
 JAVA_11_ARM=/usr/lib/jvm/java-11-openjdk-arm64
@@ -844,8 +844,8 @@ configure_pg_hba() {
   } | awk '!seen[$0]++' | sudo tee "${tmp_pg_hba}" >/dev/null
   sudo mv "${tmp_pg_hba}" "${PG_HBA}"
   # Reload cluster so new HBA rules take effect immediately for test users.
-  if [ -n "${MASTER_DATA_DIRECTORY}" ] && [ -x "${GPHOME}/bin/pg_ctl" ]; then
-    sudo -u gpadmin env MASTER_DATA_DIRECTORY=${MASTER_DATA_DIRECTORY} GPHOME=${GPHOME} "${GPHOME}/bin/pg_ctl" reload -D "${MASTER_DATA_DIRECTORY}" >/dev/null 2>&1 || true
+  if [ -n "${COORDINATOR_DATA_DIRECTORY}" ] && [ -x "${GPHOME}/bin/pg_ctl" ]; then
+    sudo -u gpadmin env COORDINATOR_DATA_DIRECTORY=${COORDINATOR_DATA_DIRECTORY} GPHOME=${GPHOME} "${GPHOME}/bin/pg_ctl" reload -D "${COORDINATOR_DATA_DIRECTORY}" >/dev/null 2>&1 || true
   fi
 }
 
@@ -875,7 +875,7 @@ ensure_gpdb_databases() {
       sudo -u gpadmin env ${env_path} "${createdb_bin}" "${conn_flags[@]}" -E UTF8 pxfautomation_encoding >/dev/null 2>&1 || true
   fi
 
-  sudo -u gpadmin env MASTER_DATA_DIRECTORY="${mdd}" GPHOME="${gphome}" "${gphome}/bin/pg_ctl" reload -D "${mdd}" >/dev/null 2>&1 || true
+  sudo -u gpadmin env COORDINATOR_DATA_DIRECTORY="${mdd}" GPHOME="${gphome}" "${gphome}/bin/pg_ctl" reload -D "${mdd}" >/dev/null 2>&1 || true
 }
 
 verify_security_mode() {
@@ -1074,7 +1074,7 @@ init_test_env() {
   export PGPORT=${PGPORT:-7000}
   export PGDATABASE=${PGDATABASE:-pxfautomation}
   export PGUSER=${PGUSER:-gpadmin}
-  export MASTER_DATA_DIRECTORY=${MASTER_DATA_DIRECTORY:-/home/gpadmin/workspace/cloudberry/gpAux/gpdemo/datadirs/qddir/demoDataDir-1}
+  export COORDINATOR_DATA_DIRECTORY=${COORDINATOR_DATA_DIRECTORY:-/home/gpadmin/workspace/cloudberry/gpAux/gpdemo/datadirs/qddir/demoDataDir-1}
   export GPHOME=${GPHOME:-/usr/local/cloudberry-db}
   export PATH=/usr/local/bin:${GPHOME}/bin:${PATH}
   export HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/home/gpadmin/workspace/singlecluster/hadoop/etc/hadoop}
@@ -1137,19 +1137,19 @@ EOS
 
   pgrep -f sshd >/dev/null 2>&1 || sudo service ssh start >/dev/null 2>&1 || true
   if ! pgrep -f "${GPHOME}/bin/postgres" >/dev/null 2>&1; then
-    sudo -u gpadmin env MASTER_DATA_DIRECTORY=${MASTER_DATA_DIRECTORY} GPHOME=${GPHOME} "${GPHOME}/bin/gpstart" -a >/dev/null 2>&1 || true
+    sudo -u gpadmin env COORDINATOR_DATA_DIRECTORY=${COORDINATOR_DATA_DIRECTORY} GPHOME=${GPHOME} "${GPHOME}/bin/gpstart" -a >/dev/null 2>&1 || true
   fi
   if [ -f "${PG_HBA}" ] && ! grep -q "mdw/32 trust" "${PG_HBA}"; then
     sed -i '1ihost all all mdw/32 trust' "${PG_HBA}" || echo "host all all mdw/32 trust" | sudo tee -a "${PG_HBA}" >/dev/null
-    sudo -u gpadmin env MASTER_DATA_DIRECTORY=${MASTER_DATA_DIRECTORY} GPHOME=${GPHOME} "${GPHOME}/bin/pg_ctl" reload -D "${MASTER_DATA_DIRECTORY}" >/dev/null 2>&1 || true
+    sudo -u gpadmin env COORDINATOR_DATA_DIRECTORY=${COORDINATOR_DATA_DIRECTORY} GPHOME=${GPHOME} "${GPHOME}/bin/pg_ctl" reload -D "${COORDINATOR_DATA_DIRECTORY}" >/dev/null 2>&1 || true
   fi
   if [ -f "${PG_HBA}" ] && ! grep -q "172.18.0.0/16" "${PG_HBA}"; then
     sed -i '1ihost all all 172.18.0.0/16 trust' "${PG_HBA}" || echo "host all all 172.18.0.0/16 trust" | sudo tee -a "${PG_HBA}" >/dev/null
-    sudo -u gpadmin env MASTER_DATA_DIRECTORY=${MASTER_DATA_DIRECTORY} GPHOME=${GPHOME} "${GPHOME}/bin/pg_ctl" reload -D "${MASTER_DATA_DIRECTORY}" >/dev/null 2>&1 || true
+    sudo -u gpadmin env COORDINATOR_DATA_DIRECTORY=${COORDINATOR_DATA_DIRECTORY} GPHOME=${GPHOME} "${GPHOME}/bin/pg_ctl" reload -D "${COORDINATOR_DATA_DIRECTORY}" >/dev/null 2>&1 || true
   fi
   sudo -u gpadmin env PGHOST=${PGHOST} PGPORT=${PGPORT} PGUSER=${PGUSER} "${GPHOME}/bin/createdb" -T template1 pxfautomation >/dev/null 2>&1 || true
   sudo -u gpadmin env PGHOST=${PGHOST} PGPORT=${PGPORT} PGUSER=${PGUSER} "${GPHOME}/bin/createdb" -T template0 --encoding=WIN1251 --lc-collate=C --lc-ctype=C pxfautomation_encoding >/dev/null 2>&1 || true
-  ensure_gpdb_databases "${PGHOST}" "${PGPORT}" "${GPHOME}" "${MASTER_DATA_DIRECTORY}"
+  ensure_gpdb_databases "${PGHOST}" "${PGPORT}" "${GPHOME}" "${COORDINATOR_DATA_DIRECTORY}"
   for stub in pxf-pre-gpupgrade pxf-post-gpupgrade; do
     if [ ! -x "/usr/local/bin/${stub}" ]; then
       sudo tee "/usr/local/bin/${stub}" >/dev/null <<'SH'
