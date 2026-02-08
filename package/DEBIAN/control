@@ -1,5 +1,5 @@
 Package: cloudberry-pxf
 Version: %VERSION%
-Architecture: amd64
+Architecture: %ARCH%
 Maintainer: %MAINTAINER%
 Description: Apache Cloudberry PXF (Platform Extension Framework) for advanced data access

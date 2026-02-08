@@ -167,24 +167,24 @@ deb: stage
 	PXF_MAIN_VERSION=$${PXF_VERSION//-SNAPSHOT/} ;\
 	if [[ $${PXF_VERSION} == *"-SNAPSHOT" ]]; then PXF_RELEASE=SNAPSHOT; else PXF_RELEASE=1; fi ;\
 	rm -rf build/debbuild ;\
-	mkdir -p build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION}/$(TARGET_EXTENSION_DIR) ;\
-	cp -a $(SOURCE_EXTENSION_DIR)/build/stage/* build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION}/$(TARGET_EXTENSION_DIR) ;\
-	cp -a cli/build/stage/pxf/* build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION} ;\
-	cp -a server/build/stage/pxf/* build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION} ;\
-	echo $$(git rev-parse --verify HEAD) > build/debbuild/usr/local/pxf-cbdb$${GP_MAJOR_VERSION}/commit.sha ;\
+	mkdir -p build/debbuild/usr/local/cloudberry-pxf/$(TARGET_EXTENSION_DIR) ;\
+	cp -a $(SOURCE_EXTENSION_DIR)/build/stage/* build/debbuild/usr/local/cloudberry-pxf/ ;\
+	cp -a cli/build/stage/* build/debbuild/usr/local/cloudberry-pxf ;\
+	cp -a server/build/stage/* build/debbuild/usr/local/cloudberry-pxf ;\
+	echo $$(git rev-parse --verify HEAD) > build/debbuild/usr/local/cloudberry-pxf/commit.sha ;\
 	mkdir build/debbuild/DEBIAN ;\
 	cp -a package/DEBIAN/* build/debbuild/DEBIAN/ ;\
-	sed -i -e "s/%VERSION%/$${PXF_MAIN_VERSION}-$${PXF_RELEASE}/" -e "s/%MAINTAINER%/${VENDOR}/" build/debbuild/DEBIAN/control ;\
+	sed -i -e "s/%VERSION%/$${PXF_MAIN_VERSION}-$${PXF_RELEASE}/" -e "s/%MAINTAINER%/${VENDOR}/" -e "s/%ARCH%/$$(dpkg --print-architecture)/" build/debbuild/DEBIAN/control ;\
 	dpkg-deb --build build/debbuild ;\
-	mv build/debbuild.deb build/pxf-cbdb$${GP_MAJOR_VERSION}-$${PXF_MAIN_VERSION}-$${PXF_RELEASE}-ubuntu18.04-amd64.deb
+	mv build/debbuild.deb build/cloudberry-pxf-$${PXF_MAIN_VERSION}-$${PXF_RELEASE}-$$(lsb_release -cs)-$$(dpkg --print-architecture).deb
 
 deb-tar: deb
 	rm -rf build/{stagedeb,distdeb}
 	mkdir -p build/{stagedeb,distdeb}
 	set -e ;\
 	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
-	PXF_DEB_FILE=$$(find build/ -name pxf-cbdb$${GP_MAJOR_VERSION}*.deb) ;\
-	PXF_PACKAGE_NAME=$$(dpkg-deb --field $${PXF_DEB_FILE} Package)-$$(dpkg-deb --field $${PXF_DEB_FILE} Version)-ubuntu18.04 ;\
+	PXF_DEB_FILE=$$(find build/ -name cloudberry-pxf*.deb) ;\
+	PXF_PACKAGE_NAME=$$(dpkg-deb --field $${PXF_DEB_FILE} Package)-$$(dpkg-deb --field $${PXF_DEB_FILE} Version)-$$(lsb_release -si | tr '[:upper:]' '[:lower:]')$$(lsb_release -rs) ;\
 	mkdir -p build/stagedeb/$${PXF_PACKAGE_NAME} ;\
 	cp $${PXF_DEB_FILE} build/stagedeb/$${PXF_PACKAGE_NAME} ;\
 	cp package/install_deb build/stagedeb/$${PXF_PACKAGE_NAME}/install_component ;\
