@@ -1,5 +1,5 @@
 #!/bin/sh
 
-rm -f /usr/local/pxf-gp6/conf/pxf-private.classpath
-rm -rf /usr/local/pxf-gp6/pxf-service
-rm -rf /usr/local/pxf-gp6/run
+rm -f /usr/local/cloudberry-pxf/conf/pxf-private.classpath
+rm -rf /usr/local/cloudberry-pxf/pxf-service
+rm -rf /usr/local/cloudberry-pxf/run

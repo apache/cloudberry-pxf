@@ -27,8 +27,6 @@ Requires: bash
 # installing on Cloudberry node, so inherit Cloudberry's dependencies
 # implicitly
 
-Requires: cloudberry-db
-
 # Weak dependencies either OpenJDK 8 or 11
 Suggests: java-1.8.0-openjdk
 Suggests: java-11-openjdk

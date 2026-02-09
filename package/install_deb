@@ -14,6 +14,6 @@ if [[ "${owner}" != "root" ]]; then
 fi
 
 ${sudo_if_needed} dpkg --install ${INSTALL_COMPONENT_SCRIPT_DIR}/${DEB_FILE}
-${sudo_if_needed} chown --recursive ${owner} /usr/local/pxf-gp*
+${sudo_if_needed} chown --recursive ${owner} /usr/local/cloudberry-pxf*
 
-echo "Successfully installed PXF version $(cat /usr/local/pxf-gp*/version)"
+echo "Successfully installed PXF version $(cat /usr/local/cloudberry-pxf*/version)"
