@@ -98,7 +98,7 @@ endif
 	set -e ;\
 	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
 	GP_BUILD_ARCH=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/build_arch) ;\
-	PXF_PACKAGE_NAME=pxf-cbdb$${GP_MAJOR_VERSION}-$${PXF_VERSION}-$${GP_BUILD_ARCH} ;\
+	PXF_PACKAGE_NAME=pxf-cloudberry$${GP_MAJOR_VERSION}-$${PXF_VERSION}-$${GP_BUILD_ARCH} ;\
 	mkdir -p build/stage/$${PXF_PACKAGE_NAME} ;\
 	cp -a $(SOURCE_EXTENSION_DIR)/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
 	cp -a cli/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
@@ -118,14 +118,14 @@ gppkg-rpm: rpm
 	mkdir -p gppkg/deps
 	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version)
 	cat package/gppkg_spec.yml.in | sed "s,#arch,`arch`," | sed "s,#os,$(TEST_OS)," | sed "s,#gppkgver,1.0," | sed "s,#gpver,1," > gppkg/gppkg_spec.yml
-	find build/rpmbuild/RPMS -name pxf-cbdb$(GP_MAJOR_VERSION)-*.rpm -exec cp {} gppkg/ \;
+	find build/rpmbuild/RPMS -name pxf-cloudberry$(GP_MAJOR_VERSION)-*.rpm -exec cp {} gppkg/ \;
 	source $(GPHOME)/greenplum_path.sh || source $(GPHOME)/cloudberry-env.sh && gppkg --build gppkg
 
 rpm: stage
 	set -e ;\
 	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
 	GP_BUILD_ARCH=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/build_arch) ;\
-	PXF_PACKAGE_NAME=pxf-cbdb$${GP_MAJOR_VERSION}-${PXF_VERSION}-$${GP_BUILD_ARCH} ;\
+	PXF_PACKAGE_NAME=pxf-cloudberry$${GP_MAJOR_VERSION}-${PXF_VERSION}-$${GP_BUILD_ARCH} ;\
 	PXF_FULL_VERSION=${PXF_VERSION} ;\
 	PXF_MAIN_VERSION=$$(echo $${PXF_FULL_VERSION} | sed -E 's/(-SNAPSHOT|-rc[0-9]+)$$//') ;\
 	if [[ $${PXF_FULL_VERSION} == *"-SNAPSHOT" ]]; then \
