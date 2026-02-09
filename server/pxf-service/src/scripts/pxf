@@ -217,7 +217,7 @@ function doHelp() {
 	  restart             restart the local PXF server instance (not supported for cluster)
 	  status              show the status of the local PXF server instance
 	  version             show the version of PXF server
-	  register            install PXF extension under \$GPHOME (useful after upgrades of Greenplum server)
+	  register            install PXF extension under \$GPHOME (useful after upgrades of Cloudberry server)
 	  prepare             prepares a new base directory specified by the \$PXF_BASE environment variable.
 	                      It creates the servers, logs, lib, keytabs, and run directories inside \$PXF_BASE
 	                      and copies configuration files.
@@ -253,11 +253,11 @@ function doReset() {
 function installExtensions() {
     if [[ -d ${parent_script_dir}/gpextable ]]; then
         if [[ -z "${GPHOME}" ]]; then
-            echoYellow 'WARNING: environment variable GPHOME is not set, skipping install of Greenplum External Table PXF Extension'
-        elif [[ ! -f ${GPHOME}/greenplum_path.sh ]]; then
-            echoYellow "WARNING: environment variable GPHOME (${GPHOME}) must be set to a valid Greenplum installation, skipping install of Greenplum External Table PXF Extension'"
+            echoYellow 'WARNING: environment variable GPHOME is not set, skipping install of Cloudberry External Table PXF Extension'
+        elif [[ ! -f ${GPHOME}/greenplum_path.sh && ! -f ${GPHOME}/cloudberry-env.sh ]]; then
+            echoYellow "WARNING: environment variable GPHOME (${GPHOME}) must be set to a valid Cloudberry installation, skipping install of Cloudberry External Table PXF Extension'"
         else
-            echoGreen "Installing Greenplum External Table PXF Extension into '${GPHOME}'"
+            echoGreen "Installing Cloudberry External Table PXF Extension into '${GPHOME}'"
 
             local target_control_file="${GPHOME}/share/postgresql/extension/pxf.control"
             install --verbose --mode=0644 "${parent_script_dir}/gpextable/pxf.control" "${target_control_file}" || fail "cannot install pxf.control to '${target_control_file}'"
@@ -265,11 +265,11 @@ function installExtensions() {
     fi
     if [[ -d ${parent_script_dir}/fdw ]]; then
         if [[ -z "${GPHOME}" ]]; then
-            echoYellow 'WARNING: environment variable GPHOME is not set, skipping install of Greenplum Foreign Data Wrapper PXF Extension'
-        elif [[ ! -f ${GPHOME}/greenplum_path.sh ]]; then
-            echoYellow "WARNING: environment variable GPHOME (${GPHOME}) must be set to a valid Greenplum installation, skipping install of Greenplum Foreign Data Wrapper PXF Extension'"
+            echoYellow 'WARNING: environment variable GPHOME is not set, skipping install of Cloudberry Foreign Data Wrapper PXF Extension'
+        elif [[ ! -f ${GPHOME}/greenplum_path.sh && ! -f ${GPHOME}/cloudberry-env.sh ]]; then
+            echoYellow "WARNING: environment variable GPHOME (${GPHOME}) must be set to a valid Cloudberry installation, skipping install of Cloudberry Foreign Data Wrapper PXF Extension'"
         else
-            echoGreen "Installing Greenplum Foreign Data Wrapper PXF Extension into '${GPHOME}'"
+            echoGreen "Installing Cloudberry Foreign Data Wrapper PXF Extension into '${GPHOME}'"
 
             local target_control_file="${GPHOME}/share/postgresql/extension/pxf_fdw.control"
             install --verbose --mode=0644 "${parent_script_dir}/fdw/pxf_fdw.control" "${target_control_file}" || fail "cannot install pxf_fdw.control to '${target_control_file}'"

@@ -214,6 +214,84 @@ This product is derived from software originally developed by:
    notices and license terms. Your use of these subcomponents is subject to the 
    terms and conditions of the subcomponent's license, as noted in the LICENSE file.
 
+
+The Greenplum Platform Extension Framework includes:
+
+----------------------------
+   Apache License - Version 2.0
+
+The following files are licensed under the Apache License, Version 2.0:
+
+FDW Module:
+   fdw/libchurl.c
+   fdw/libchurl.h
+   fdw/pxf_bridge.c
+   fdw/pxf_bridge.h
+   fdw/pxf_filter.c
+   fdw/pxf_filter.h
+   fdw/pxf_header.c
+   fdw/pxf_header.h
+
+External Table Module:
+   external-table/src/gpdbwritableformatter.c
+   external-table/src/libchurl.c
+   external-table/src/libchurl.h
+   external-table/src/pxfbridge.c
+   external-table/src/pxfbridge.h
+   external-table/src/pxffilters.c
+   external-table/src/pxffilters.h
+   external-table/src/pxfheaders.c
+   external-table/src/pxfheaders.h
+   external-table/src/pxfprotocol.c
+   external-table/src/pxfuriparser.c
+   external-table/src/pxfuriparser.h
+   external-table/test/pxffilters_test.c
+   external-table/test/pxfheaders_test.c
+   external-table/test/pxfprotocol_test.c
+   external-table/test/pxfuriparser_test.c
+
+Server Module (Java Sources):
+   server/build.gradle
+   server/gradle.properties
+   server/settings.gradle
+   server/pxf-api/src/main/java/org/apache/cloudberry/pxf/api/*.java
+   server/pxf-api/src/test/java/org/apache/cloudberry/pxf/api/**/*.java
+   server/pxf-hbase/src/main/java/org/apache/cloudberry/pxf/plugins/hbase/**/*.java
+   server/pxf-hbase/src/test/java/org/apache/cloudberry/pxf/plugins/hbase/**/*.java
+   server/pxf-hdfs/src/main/java/org/apache/cloudberry/pxf/plugins/hdfs/**/*.java
+   server/pxf-hdfs/src/test/java/org/apache/cloudberry/pxf/plugins/hdfs/**/*.java
+   server/pxf-hive/src/main/java/org/apache/cloudberry/pxf/plugins/hive/**/*.java
+   server/pxf-hive/src/test/java/org/apache/cloudberry/pxf/plugins/hive/**/*.java
+   server/pxf-jdbc/src/main/java/org/apache/cloudberry/pxf/plugins/jdbc/**/*.java
+   server/pxf-jdbc/src/test/java/org/apache/cloudberry/pxf/plugins/jdbc/**/*.java
+   server/pxf-json/src/main/java/org/apache/cloudberry/pxf/plugins/json/**/*.java
+   server/pxf-json/src/test/java/org/apache/cloudberry/pxf/plugins/json/**/*.java
+   server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/**/*.java
+   server/pxf-service/src/test/java/org/apache/cloudberry/pxf/service/**/*.java
+
+Documentation Templates:
+   docs/content/*.html.md.erb
+
+Configuration Files:
+   server/pxf-api/src/test/resources/pxf-profiles-default.xml
+   server/pxf-hive/src/test/resources/pxf-profiles-default.xml
+   server/pxf-jdbc/src/test/resources/log4j.properties
+   server/pxf-json/src/test/resources/log4j.properties
+   server/pxf-service/src/main/resources/pxf-profiles-default.xml
+   server/pxf-service/src/templates/conf/pxf-profiles.xml
+   server/pxf-service/src/test/resources/pxf-profiles-default.xml
+
+CI/Test Templates:
+   automation/src/test/resources/templates/zk/zoo.cfg
+   ci/singlecluster/templates/hadoop/etc/hadoop/core-site.xml
+   ci/singlecluster/templates/hadoop/etc/hadoop/hdfs-site.xml
+   ci/singlecluster/templates/hadoop/etc/hadoop/yarn-env.sh
+   ci/singlecluster/templates/hbase/conf/hbase-env.sh
+   ci/singlecluster/templates/hbase/conf/hbase-site.xml
+   ci/singlecluster/templates/ranger/install.properties
+   ci/singlecluster/templates/tez/conf/tez-site.xml
+   ci/singlecluster/templates/usersync/install.properties
+
 =======================================================================
 
 This product bundles Gradle Wrapper, which is licensed under

@@ -57,7 +57,7 @@ public class ShellSystemObject extends BaseSystemObject {
             "GPHOME",
             "GPHD_ROOT",
             "GPDATA",
-            "MASTER_DATA_DIRECTORY",
+            "COORDINATOR_DATA_DIRECTORY",
             "PGPORT",
             "PGHOST",
             "PGDATABASE"
