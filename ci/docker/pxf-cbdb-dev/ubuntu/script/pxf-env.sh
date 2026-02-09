@@ -35,7 +35,7 @@ export COMMON_JAVA_OPTS=${COMMON_JAVA_OPTS:-}
 # --------------------------------------------------------------------
 export PGHOST=${PGHOST:-localhost}
 export PGPORT=${PGPORT:-7000}
-export MASTER_DATA_DIRECTORY=${MASTER_DATA_DIRECTORY:-/home/gpadmin/workspace/cloudberry/gpAux/gpdemo/datadirs/qddir/demoDataDir-1}
+export COORDINATOR_DATA_DIRECTORY=${COORDINATOR_DATA_DIRECTORY:-/home/gpadmin/workspace/cloudberry/gpAux/gpdemo/datadirs/qddir/demoDataDir-1}
 # set cloudberry timezone utc
 export PGTZ=UTC
 

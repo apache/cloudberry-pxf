@@ -130,7 +130,7 @@ Note: If you get an error saying that the jar does not exist, ensure that you ha
 - `src/main/java` - contains related classes and utilities for the test
 - `src/test/java` - contains the TestNG cases.
 - `sqlrepo` - contains SQL test cases.
-- `src/main/java/org/greenplum/pxf/automation/components` - contains all the supported services/components with simple API abstractions.
+- `src/main/java/org/apache/cloudberry/pxf/automation/components` - contains all the supported services/components with simple API abstractions.
 
 ### General Automation Architecture
 

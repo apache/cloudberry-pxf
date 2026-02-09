@@ -18,11 +18,14 @@ include $(PGXS)
 .PHONY: stage
 stage: pxf.so
 	mkdir -p build/stage/gpextable
+	mkdir -p build/metadata
 	install -c -m 755 pxf.so build/stage/gpextable/pxf.so
 	install -c -m 644 pxf.control build/stage/gpextable/
 	install -c -m 644 $(DATA) build/stage/gpextable/
-	@echo "cloudberry.version=$(CLB_VERSION)" > build/stage/gpextable/metadata
-	@echo "cloudberry.major-version=$(CLB_MAJORVERSION)" >> build/stage/gpextable/metadata
+	@echo "$(GP_MAJORVERSION)" > build/metadata/gp_major_version
+	@echo "$(shell uname -m)" > build/metadata/build_arch
+	@echo "cloudberry.version=$(GP_VERSION)" > build/stage/gpextable/metadata
+	@echo "cloudberry.major-version=$(GP_MAJORVERSION)" >> build/stage/gpextable/metadata
 
 .PHONY: clean-all
 clean-all: clean
