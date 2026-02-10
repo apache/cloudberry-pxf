@@ -1,0 +1,26 @@
+-- @description query04 for PXF parallel scan EXPLAIN - no Gather with workers=0 on parallel table
+-- start_matchsubs
+--
+-- m/cost=\d+\.\d+\.\.\d+\.\d+/
+-- s/cost=\d+\.\d+\.\.\d+\.\d+/cost=XXX/
+--
+-- m/rows=\d+/
+-- s/rows=\d+/rows=NNN/
+--
+-- m/width=\d+/
+-- s/width=\d+/width=NN/
+--
+-- end_matchsubs
+SET optimizer = off;
+SET
+SET enable_parallel = true;
+SET
+SET max_parallel_workers_per_gather = 0;
+SET
+EXPLAIN SELECT count(*) FROM pxf_parallel_enabled;
+                                       QUERY PLAN
+----------------------------------------------------------------------------------------
+ Gather Motion 1:1  (slice1; segments: 1)  (cost=XXX rows=NNN width=NN)
+   ->  Aggregate  (cost=XXX rows=NNN width=NN)
+         ->  Foreign Scan on pxf_parallel_enabled  (cost=XXX rows=NNN width=NN)
+(3 rows)
