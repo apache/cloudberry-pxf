@@ -1,4 +1,4 @@
-Package: cloudberry-pxf
+Package: apache-cloudberry-pxf-incubating
 Version: %VERSION%
 Architecture: %ARCH%
 Maintainer: %MAINTAINER%

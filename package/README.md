@@ -10,14 +10,14 @@ Apache Cloudberry PXF (Platform Extension Framework) consists of 3 groups of art
 The PXF build system can create an RPM package on CentOS platform and a DEB package on Ubuntu platform,
 respectively. PXF compiles against and generates packages for Apache Cloudberry.
 
-For example, `cloudberry-pxf-1.2.3-1.el7.x86_64.rpm` represents an RPM package of PXF version 1.2.3 intended to work with
+For example, `apache-cloudberry-pxf-incubating-1.2.3-1.el7.x86_64.rpm` represents an RPM package of PXF version 1.2.3 intended to work with
 Apache Cloudberry on CentOS / Red Hat 7 operating systems.
 
 ## PXF RPM specification
 On CentOS platforms PXF product is packaged as an RPM. The specification on how to build the RPM is provided by the
 `cloudberry-pxf.spec` file in this directory. The following key design decisions were made:
 
-* the name of the RPM package is `cloudberry-pxf`
+* the name of the RPM package is `apache-cloudberry-pxf-incubating`
 * to install a newer RPM package, a user will have to upgrade the PXF RPM
 * the RPM installs PXF server into `/usr/local/cloudberry-pxf-[VERSION]` directory (e.g. `/usr/local/cloudberry-pxf-1.2.3`)
 * the RPM is relocatable, a user can specify --prefix option when installing the RPM to install the server into another directory
@@ -25,7 +25,7 @@ On CentOS platforms PXF product is packaged as an RPM. The specification on how 
 * the PXF Apache Cloudberry extension is copied into Cloudberry install location during `pxf init` command issued by a user after the install
 * the PXF RPM version number follows 3-number semantic versioning and must be provided during the RPM build process
 * the PXF RPM release number is usually specified as `1`
-* example PXF RPM names are : `cloudberry-pxf-1.2.3-1.el7.x86_64.rpm` and `cloudberry-pxf-1.2.3-1.el8.x86_64.rpm` 
+* example PXF RPM names are : `apache-cloudberry-pxf-incubating-1.2.3-1.el7.x86_64.rpm` and `apache-cloudberry-pxf-incubating-1.2.3-1.el8.x86_64.rpm` 
 
 ## PXF RPM build process
 
@@ -45,7 +45,7 @@ To install PXF from an RPM, follow these steps:
 installation should either be the same as the one owning the Cloudberry installation or have write privileges to the
 Cloudberry installation directory. This is necessary to be able to register the PXF Apache Cloudberry extension with Cloudberry.
 3. If a previous PXF version has been installed, stop the PXF server.
-4. As a superuser, run `rpm -Uvh cloudberry-pxf-1.2.3-1.el7.x86_64.rpm` to install the RPM into `/usr/local/cloudberry-pxf-1.2.3`
+4. As a superuser, run `rpm -Uvh apache-cloudberry-pxf-incubating-1.2.3-1.el7.x86_64.rpm` to install the RPM into `/usr/local/cloudberry-pxf-1.2.3`
 5. As a superuser, run `chown gpadmin:gpadmin /usr/local/cloudberry-pxf-1.2.3` to change ownership of PXF installation to the user `gpadmin`.
 Specify a different user other than `gpadmin`, if desired.
 
@@ -56,5 +56,5 @@ The PXF configuration directory should remain intact. You will need to have Java
 ## PXF removal process
 To remove the installed PXF package, follow these steps:
 1. Stop the PXF server.
-2. As a superuser, run `rpm -e cloudberry-pxf`. This will remove all files installed by the RPM package
+2. As a superuser, run `rpm -e apache-cloudberry-pxf-incubating`. This will remove all files installed by the RPM package
 and the PXF runtime directories. The PXF configuration directory should remain intact.
