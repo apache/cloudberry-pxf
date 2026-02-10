@@ -49,6 +49,18 @@ typedef struct PxfFdwScanState
 	PxfOptions *options;
 	CopyFromState	cstate;
 	ProjectionInfo *projectionInfo;
+
+	/*
+	 * Cloudberry gang-parallel state (virtual segment ID based).
+	 * Used when Cloudberry's gang expansion creates multiple processes per
+	 * segment but PG's DSM callbacks are not invoked. Each gang worker gets
+	 * a unique virtual segment ID so PXF's round-robin distributes fragments
+	 * evenly without data duplication.
+	 */
+	bool		gang_parallel;		/* true when using virtual segment IDs */
+	int			worker_index;		/* this worker's index within the segment gang */
+	int			virtual_seg_id;		/* virtual segment ID sent to PXF */
+	int			virtual_seg_count;	/* virtual segment count sent to PXF */
 } PxfFdwScanState;
 
 /*
@@ -79,5 +91,9 @@ int			PxfBridgeRead(void *outbuf, int minlen, int maxlen, void *extra);
 
 /* Writes data from the given buffer of a given size to the PXF server */
 int			PxfBridgeWrite(PxfFdwModifyState *context, char *databuf, int datalen);
+
+/* Start import with virtual segment ID for gang-parallel mode */
+void		PxfBridgeImportStartVirtual(PxfFdwScanState *pxfsstate,
+										int virtualSegId, int virtualSegCount);
 
 #endif							/* _PXFBRIDGE_H */
