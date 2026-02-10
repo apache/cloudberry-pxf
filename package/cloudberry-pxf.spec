@@ -6,7 +6,7 @@
 # Disable automatic dependency processing both for requirements and provides
 AutoReqProv: no
 
-Name:      cloudberry-pxf
+Name:      apache-cloudberry-pxf-incubating
 Version:   %{pxf_version}
 Release:   %{pxf_release}%{?dist}
 
@@ -16,7 +16,7 @@ URL:       https://cloudberry.apache.org
 Vendor:    %{vendor}
 Group:     Applications/Databases
 
-Prefix:   /usr/local/%{name}-%{version}
+Prefix:   /usr/local/cloudberry-pxf-%{version}
 
 # Java server can be installed on a new node, only bash is needed for
 # management scripts
@@ -78,7 +78,7 @@ fi
 %__cp -R %{_sourcedir}/* %{buildroot}/%{prefix}
 
 # Create symlink
-%__ln_s %{prefix} %{buildroot}/usr/local/%{name}
+%__ln_s %{prefix} %{buildroot}/usr/local/cloudberry-pxf
 
 %post
 sed -i "s|directory =.*|directory = '${RPM_INSTALL_PREFIX}/gpextable/'|g" "${RPM_INSTALL_PREFIX}/gpextable/pxf.control"
@@ -91,7 +91,7 @@ fi
 
 %files
 %{prefix}
-/usr/local/%{name}
+/usr/local/cloudberry-pxf
 
 # If a file is not marked as a config file, or if a file has not been altered
 # since installation, then it will be silently replaced by the version from the
@@ -129,5 +129,5 @@ fi
 %preun
 # Remove symlink on uninstall
 if [ $1 -eq 0 ] ; then
-    %__rm -f /usr/local/%{name}
+    %__rm -f /usr/local/cloudberry-pxf
 fi

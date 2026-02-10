@@ -152,7 +152,7 @@ rpm-tar: rpm
 	mkdir -p build/{stagerpm,distrpm}
 	set -e ;\
 	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
-	PXF_RPM_FILE=$$(find build/rpmbuild/RPMS -name cloudberry-pxf-*.rpm) ;\
+	PXF_RPM_FILE=$$(find build/rpmbuild/RPMS -name apache-cloudberry-pxf-incubating-*.rpm) ;\
 	PXF_RPM_BASE_NAME=$$(basename $${PXF_RPM_FILE%*.rpm}) ;\
 	PXF_PACKAGE_NAME=$${PXF_RPM_BASE_NAME%.*} ;\
 	mkdir -p build/stagerpm/$${PXF_PACKAGE_NAME} ;\
@@ -176,14 +176,14 @@ deb: stage
 	cp -a package/DEBIAN/* build/debbuild/DEBIAN/ ;\
 	sed -i -e "s/%VERSION%/$${PXF_MAIN_VERSION}-$${PXF_RELEASE}/" -e "s/%MAINTAINER%/${VENDOR}/" -e "s/%ARCH%/$$(dpkg --print-architecture)/" build/debbuild/DEBIAN/control ;\
 	dpkg-deb --build build/debbuild ;\
-	mv build/debbuild.deb build/cloudberry-pxf-$${PXF_MAIN_VERSION}-$${PXF_RELEASE}-$$(lsb_release -si | tr '[:upper:]' '[:lower:]')$$(lsb_release -sr)-$$(dpkg --print-architecture).deb
+	mv build/debbuild.deb build/apache-cloudberry-pxf-incubating-$${PXF_MAIN_VERSION}-$${PXF_RELEASE}-$$(lsb_release -si | tr '[:upper:]' '[:lower:]')$$(lsb_release -sr)-$$(dpkg --print-architecture).deb
 
 deb-tar: deb
 	rm -rf build/{stagedeb,distdeb}
 	mkdir -p build/{stagedeb,distdeb}
 	set -e ;\
 	GP_MAJOR_VERSION=$$(cat $(SOURCE_EXTENSION_DIR)/build/metadata/gp_major_version) ;\
-	PXF_DEB_FILE=$$(find build/ -name cloudberry-pxf*.deb) ;\
+	PXF_DEB_FILE=$$(find build/ -name apache-cloudberry-pxf-incubating*.deb) ;\
 	PXF_PACKAGE_NAME=$$(dpkg-deb --field $${PXF_DEB_FILE} Package)-$$(dpkg-deb --field $${PXF_DEB_FILE} Version)-$$(lsb_release -si | tr '[:upper:]' '[:lower:]')$$(lsb_release -rs) ;\
 	mkdir -p build/stagedeb/$${PXF_PACKAGE_NAME} ;\
 	cp $${PXF_DEB_FILE} build/stagedeb/$${PXF_PACKAGE_NAME} ;\
