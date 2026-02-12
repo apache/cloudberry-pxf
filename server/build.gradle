@@ -90,6 +90,7 @@ configure(javaProjects) {
             dependency("commons-configuration:commons-configuration:1.10")
             dependency("commons-io:commons-io:2.7")
             dependency("commons-lang:commons-lang:2.6")
+            dependency("commons-lang:commons-lang3:3.9")
             dependency("commons-logging:commons-logging:1.1.3")
             dependency("io.airlift:aircompressor:0.27")
             dependency("javax.jdo:jdo-api:3.0.1")
@@ -97,8 +98,9 @@ configure(javaProjects) {
             dependency("net.sf.opencsv:opencsv:2.3")
             dependency("org.antlr:antlr-runtime:3.5.2")
             dependency("org.apache.commons:commons-compress:1.20")
+            dependency("org.apache.commons:commons-crypto:1.0.0")
             dependency("org.apache.htrace:htrace-core:3.1.0-incubating")
-            dependency("org.apache.htrace:htrace-core4:4.0.1-incubating")
+            dependency("org.apache.htrace:htrace-core4:4.2.0-incubating")
 
             dependency("org.apache.zookeeper:zookeeper:3.4.6")
             dependency("org.codehaus.woodstox:stax2-api:3.1.4")
@@ -139,11 +141,28 @@ configure(javaProjects) {
 
             // HBase dependencies
             dependencySet(group:"org.apache.hbase", version:"${hbaseVersion}") {
-                entry("hbase-annotations")
                 entry("hbase-client")
                 entry("hbase-common")
                 entry("hbase-protocol")
+                entry("hbase-protocol-shaded")
+                entry("hbase-logging")
+                entry("hbase-hadoop-compat")
+                entry("hbase-hadoop2-compat")
+                entry("hbase-metrics-api")
+                entry("hbase-metrics")
             }
+            dependencySet(group:"org.apache.hbase.thirdparty", version:"3.3.0") {
+                entry("hbase-shaded-protobuf")
+                entry("hbase-shaded-miscellaneous")
+                entry("hbase-shaded-gson")
+                entry("hbase-shaded-netty")
+                entry("hbase-unsafe")
+            }
+            dependency("org.apache.yetus:audience-annotations:0.5.0")
+            dependency("io.opentelemetry:opentelemetry-api:1.49.0")
+            dependency("io.opentelemetry:opentelemetry-context:1.49.0")
+            dependency("io.opentelemetry.semconv:opentelemetry-semconv:1.29.0-alpha")
+            dependency("io.dropwizard.metrics:metrics-core:3.2.6")
 
             // Hive dependencies
             dependency("org.apache.hive:hive-storage-api:${hiveStorageApiVersion}")
@@ -237,7 +256,7 @@ configure(javaProjects) {
         options.compilerArgs += [
                 "-g", "-Xlint:varargs", "-Xlint:cast", "-Xlint:classfile", "-Xlint:dep-ann", "-Xlint:divzero",
                 "-Xlint:empty", "-Xlint:finally", "-Xlint:overrides", "-Xlint:path", "-Xlint:-processing", "-Xlint:static",
-                "-Xlint:try", "-Xlint:fallthrough", "-Xlint:deprecation", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
+                "-Xlint:try", "-Xlint:fallthrough", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
         ]
     }
 
@@ -245,7 +264,7 @@ configure(javaProjects) {
         options.compilerArgs += [
                 "-g", "-Xlint:varargs", "-Xlint:cast", "-Xlint:classfile", "-Xlint:dep-ann", "-Xlint:divzero",
                 "-Xlint:empty", "-Xlint:finally", "-Xlint:overrides", "-Xlint:path", "-Xlint:-processing", "-Xlint:static",
-                "-Xlint:try", "-Xlint:fallthrough", "-Xlint:deprecation", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
+                "-Xlint:try", "-Xlint:fallthrough", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
         ]
     }
 

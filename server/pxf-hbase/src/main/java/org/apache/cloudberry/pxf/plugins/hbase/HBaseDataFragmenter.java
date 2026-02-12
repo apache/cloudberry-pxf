@@ -81,7 +81,6 @@ public class HBaseDataFragmenter extends BaseFragmenter {
     public List<Fragment> getFragments() throws Exception {
 
         // check that Zookeeper and HBase master are available
-        HBaseAdmin.checkHBaseAvailable(configuration);
         connection = ConnectionFactory.createConnection(configuration);
         Admin hbaseAdmin = connection.getAdmin();
         if (!HBaseUtilities.isTableAvailable(hbaseAdmin, context.getDataSource())) {
