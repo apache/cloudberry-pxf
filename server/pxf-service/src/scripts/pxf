@@ -380,6 +380,16 @@ function do_start() {
     JAVA_OPTS=($PXF_JVM_OPTS  "${PXF_OPTS[@]}")
     RUN_ARGS=(--spring.config.location=classpath:/application.properties,file:${PXF_BASE}/conf/pxf-application.properties)
 
+    # Detect Java major version and add --add-opens flags for Java 11+
+    local java_major_version
+    java_major_version=$("$javaexe" -version 2>&1 | head -1 | sed -E 's/.*version "([0-9]+).*/\1/')
+    if [[ "$java_major_version" -ge 11 ]] 2>/dev/null; then
+        JAVA_OPTS+=(
+            '--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED'
+            '--add-opens=java.base/java.net=ALL-UNNAMED'
+        )
+    fi
+
     local arguments=(-Dsun.misc.URLClassPath.disableJarChecking=true "${JAVA_OPTS[@]}" -jar "$jarfile" $RUN_ARGS)
 
     working_dir=$(dirname "$jarfile")
