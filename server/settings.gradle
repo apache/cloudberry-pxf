@@ -25,6 +25,7 @@ include 'pxf-service',
         'pxf-hdfs',
         'pxf-hive',
         'pxf-jdbc',
+        'pxf-jdbc-drivers',
         'pxf-json',
         'pxf-s3',
         'pxf-diagnostic'
