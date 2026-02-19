@@ -40,7 +40,10 @@ help:
 	@echo	"  - test - runs unit tests for all PXF modules"
 	@echo   "  - coverage - runs unit tests for all PXF modules and gives a coverage report"
 	@echo	"  - install - setup PXF in the configured deployPath"
-	@echo	"  - stage - build PXF server and stage resulting artifacts for packaging"
+	@echo	"  - stage - build PXF server and stage resulting artifacts for packaging (no JDBC drivers in build/stage/lib)"
+	@echo	"  - stage-notest - same as stage but skip tests (no JDBC drivers in build/stage/lib)"
+	@echo	"  - stage-jdbc-drivers - copy JDBC driver JARs to build/stage/lib"
+	@echo	"  - install-jdbc-drivers - setup PXF JDBC drivers in the configured deployPath"
 	@echo	"  - doc - creates aggregate javadoc under docs"
 
 all: prepare-gradle-wrapper
@@ -94,6 +97,18 @@ stage-notest: prepare-gradle-wrapper
 	install -m 700 -d "build/stage/logs"
 	install -m 700 -d "build/stage/run"
 	install -m 700 -d "build/stage/keytabs"
+
+.PHONY: stage-jdbc-drivers
+stage-jdbc-drivers: prepare-gradle-wrapper
+	./gradlew $(PXF_GRADLE_PROPERTIES) stageJdbcDrivers
+
+.PHONY: install
+install-jdbc-drivers: stage-jdbc-drivers
+	@if [ -z "$(PXF_HOME)" ]; then \
+		echo "ERROR: PXF_HOME is not set"; exit 2; \
+	fi
+	mkdir -p "$(PXF_HOME)"/lib
+	cp -R build/stage/lib/. "$(PXF_HOME)"/lib/
 
 clean: prepare-gradle-wrapper
 	./gradlew clean

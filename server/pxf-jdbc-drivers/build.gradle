@@ -1,0 +1,34 @@
+dependencies {
+    // PostgreSQL driver is used by PXF itself. 
+    // Its version is defined in server/build.gradle
+
+    // Clickhouse
+    implementation('com.clickhouse:clickhouse-jdbc:0.6.5')
+    implementation('com.clickhouse:clickhouse-jdbc:0.6.5:http')
+    implementation('at.yawk.lz4:lz4-java')
+    implementation('org.apache.httpcomponents.client5:httpclient5:5.3.1')     { transitive = false }
+       implementation('org.apache.httpcomponents.core5:httpcore5:5.2.4')    { transitive = false }
+       implementation('org.apache.httpcomponents.core5:httpcore5-h2:5.2.4') { transitive = false }
+
+
+    // DB2
+    implementation('net.sf.jt400:jt400:11.2')
+
+    // MSSQL
+    implementation('com.microsoft.sqlserver:mssql-jdbc:8.2.2.jre11')
+
+    // MySQL
+    implementation('mysql:mysql-connector-java:8.0.26')       { transitive = false }
+
+    // Snowflake
+    implementation('net.snowflake:snowflake-jdbc:3.13.9')
+
+    // ORA
+    implementation('com.oracle.database.jdbc:ojdbc11:23.3.0.23.09')
+    implementation('com.oracle.database.jdbc:ucp11:23.3.0.23.09')
+    implementation('com.oracle.database.nls:orai18n:23.3.0.23.09')
+
+    // trino
+    implementation('io.trino:trino-jdbc:403')
+
+}
