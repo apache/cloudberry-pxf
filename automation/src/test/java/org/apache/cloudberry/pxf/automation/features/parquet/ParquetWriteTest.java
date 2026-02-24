@@ -210,6 +210,11 @@ public class ParquetWriteTest extends BaseWritableFeature {
         runWritePrimitivesScenario("pxf_parquet_write_primitives_zstd", "pxf_parquet_read_primitives_zstd", "parquet_write_primitives_zstd", new String[]{"COMPRESSION_CODEC=zstd"});
     }
 
+    @Test(groups = {"features", "gpdb", "security", "hcfs"})
+    public void parquetWritePrimitivesLZ4_RAW() throws Exception {
+        runWritePrimitivesScenario("pxf_parquet_write_primitives_lz4_raw", "pxf_parquet_read_primitives_lz4_raw", "parquet_write_primitives_lz4_raw", new String[]{"COMPRESSION_CODEC=lz4_raw"});
+    }
+
     // Numeric precision not defined, test writing data precision in [1, 38]. All the data should be written correctly.
     @Test(groups = {"features", "gpdb", "security", "hcfs"})
     public void parquetWriteUndefinedPrecisionNumeric() throws Exception {
