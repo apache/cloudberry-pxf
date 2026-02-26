@@ -23,7 +23,7 @@ name: Dependency Submission
 
 on:
   push:
-    branches: [ 'main' ]
+    branches: [ 'main', 'REL_2_STABLE' ]
 
 permissions:
   contents: write

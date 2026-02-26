@@ -23,7 +23,7 @@ name: PXF CI Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, REL_2_STABLE ]
   pull_request:
     types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
@@ -40,7 +40,7 @@ env:
   JAVA_HOME: "/usr/lib/jvm/java-11-openjdk"
   GO_VERSION: "1.21"
   GPHOME: "/usr/local/cloudberry-db"
-  CLOUDBERRY_VERSION: "main"
+  CLOUDBERRY_VERSION: "REL_2_STABLE"
   PXF_HOME: "/usr/local/pxf"
 
 jobs:
