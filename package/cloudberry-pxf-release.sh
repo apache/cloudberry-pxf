@@ -25,12 +25,11 @@
 # tarball assembly.
 #
 # Supported Features:
-#   - Validates version consistency across configure.ac, configure, gpversion.py, and pom.xml
+#   - Validates version consistency between release tag and version file
 #   - Supports both final releases and release candidates (e.g., 2.0.0-incubating, 2.0.0-incubating-rc1)
 #   - Optionally reuses existing annotated Git tags if they match the current HEAD
 #   - Verifies that Git submodules are initialized (if defined in .gitmodules)
 #   - Verifies Git identity (user.name and user.email) prior to tagging
-#   - Creates a BUILD_NUMBER file (currently hardcoded as 1) in the release tarball
 #   - Recursively archives all submodules into the source tarball
 #   - Generates SHA-512 checksum (.sha512) using sha512sum for cross-platform consistency
 #   - Generates GPG signature (.asc) for the source tarball, unless --skip-signing is used
@@ -41,35 +40,34 @@
 #   - Validates availability of required tools (sha512sum, gtar, gpg) with platform-specific guidance
 #
 # Usage:
-#   ./cloudberry-release.sh --stage --tag 2.0.0-incubating-rc1 --gpg-user your@apache.org
+#   ./cloudberry-pxf-release.sh --stage --tag 2.0.0-incubating-rc1 --gpg-user your@apache.org
 #
 # Options:
 #   -s, --stage               Stage a release candidate and generate source tarball
 #   -t, --tag <tag>           Tag to apply or validate (e.g., 2.0.0-incubating-rc1)
 #   -f, --force-tag-reuse     Allow reuse of an existing tag (must match HEAD)
-#   -r, --repo <path>         Optional path to local Cloudberry Git repository
+#   -r, --repo <path>         Optional path to local cloudberry-pxf Git repository
 #   -S, --skip-remote-check   Skip validation of remote.origin.url (useful for forks/mirrors)
 #   -g, --gpg-user <key>      GPG key ID or email to use for signing (required)
 #   -k, --skip-signing        Skip GPG key validation and signature generation
 #   -h, --help                Show usage and exit
 #
 # Requirements:
-#   - Must be run from the root of a valid Apache Cloudberry Git clone,
+#   - Must be run from the root of a valid cloudberry-pxf Git clone,
 #     or the path must be explicitly provided using --repo
 #   - Git user.name and user.email must be configured
-#   - Repository remote must be: git@github.com:apache/cloudberry.git
+#   - Repository remote must be: git@github.com:apache/cloudberry-pxf.git
 #   - Required tools: sha512sum, tar (gtar on macOS), gpg, xmllint
 #   - On macOS: brew install coreutils gnu-tar gnupg
 #
 # Examples:
-#   ./cloudberry-release.sh -s -t 2.0.0-incubating-rc1 --gpg-user your@apache.org
-#   ./cloudberry-release.sh -s -t 2.0.0-incubating-rc1 --skip-signing
-#   ./cloudberry-release.sh --stage --tag 2.0.0-incubating-rc2 --force-tag-reuse --gpg-user your@apache.org
-#   ./cloudberry-release.sh --stage --tag 2.0.0-incubating-rc1 -r ~/cloudberry --skip-remote-check --gpg-user your@apache.org
+#   ./cloudberry-pxf-release.sh -s -t 2.0.0-incubating-rc1 --gpg-user your@apache.org
+#   ./cloudberry-pxf-release.sh -s -t 2.0.0-incubating-rc1 --skip-signing
+#   ./cloudberry-pxf-release.sh --stage --tag 2.0.0-incubating-rc2 --force-tag-reuse --gpg-user your@apache.org
+#   ./cloudberry-pxf-release.sh --stage --tag 2.0.0-incubating-rc1 -r ~/cloudberry-pxf --skip-remote-check --gpg-user your@apache.org
 #
 # Notes:
 #   - When reusing a tag, the `--force-tag-reuse` flag must be provided.
-#   - This script creates a BUILD_NUMBER file in the source root for traceability. It is included in the tarball.
 # ======================================================================
 
 set -euo pipefail
@@ -204,7 +202,7 @@ section() {
 }
 
 show_help() {
-  echo "Apache Cloudberry (Incubating) Release Tool"
+  echo "Apache Cloudberry PXF (Incubating) Release Tool"
   echo
   echo "Usage:"
   echo "  $0 --stage --tag <version-tag>"
@@ -220,12 +218,12 @@ show_help() {
   echo "      Reuse existing tag if it matches current HEAD"
   echo
   echo "  -r, --repo <path>"
-  echo "      Optional path to a local Cloudberry Git repository clone"
+  echo "      Optional path to a local cloudberry-pxf Git repository clone"
   echo
   echo "  -S, --skip-remote-check"
   echo "      Skip remote.origin.url check (use for forks or mirrors)"
   echo "      Required for official releases:"
-  echo "        git@github.com:apache/cloudberry.git"
+  echo "        git@github.com:apache/cloudberry-pxf.git"
   echo
   echo "  -g, --gpg-user <key>"
   echo "      GPG key ID or email to use for signing (required unless --skip-signing)"
@@ -316,36 +314,40 @@ else
   echo "INFO: GPG signing has been intentionally skipped (--skip-signing)."
 fi
 
-  # Change to the specified repository directory
-  cd "$REPO_ARG"
-
-  if [[ ! -d ".git" ]]; then
-    echo "ERROR: '$REPO_ARG' is not a valid Git repository."
+# Resolve repository location
+if [[ -n "$REPO_ARG" ]]; then
+  if [[ ! -d "$REPO_ARG" ]]; then
+    echo "ERROR: --repo path '$REPO_ARG' does not exist."
     exit 1
   fi
+  cd "$REPO_ARG"
+fi
 
-  if [[ "$SKIP_REMOTE_CHECK" != true ]]; then
-    REMOTE_URL=$(git config --get remote.origin.url || true)
-    if [[ "$REMOTE_URL" != "git@github.com:apache/cloudberry-pxf.git" ]]; then
-      echo "ERROR: remote.origin.url must be set to 'git@github.com:apache/cloudberry.git' for official releases."
-      echo "  Found: '${REMOTE_URL:-<unset>}'"
-      echo
-      echo "This check ensures the release is being staged from the authoritative upstream repository."
-      echo "Use --skip-remote-check only if this is a fork or non-release automation."
-      exit 1
-    fi
-  fi
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "ERROR: Current directory is not inside a Git repository."
+  echo "Run from a cloudberry-pxf clone or pass --repo <path>."
+  exit 1
+fi
 
-# If --repo was not provided, ensure we are in a valid source directory
-if [[ -z "$REPO_ARG" ]]; then
-  if [[ ! -f configure.ac || ! -f gpMgmt/bin/gppylib/gpversion.py || ! -f pom.xml ]]; then
-    echo "ERROR: You must run this script from the root of a valid Cloudberry Git clone"
-    echo "       or pass the path using --repo <source-dir>."
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
+
+# Ensure we are in a valid cloudberry-pxf source directory
+if [[ ! -f version ]]; then
+  echo "ERROR: '$REPO_ROOT' does not look like a valid cloudberry-pxf source root."
+  echo "Missing required file:"
+  echo "  - version"
+  exit 1
+fi
+
+if [[ "$SKIP_REMOTE_CHECK" != true ]]; then
+  REMOTE_URL=$(git config --get remote.origin.url || true)
+  if [[ "$REMOTE_URL" != "git@github.com:apache/cloudberry-pxf.git" ]]; then
+    echo "ERROR: remote.origin.url must be 'git@github.com:apache/cloudberry-pxf.git' for official releases."
+    echo "  Found: '${REMOTE_URL:-<unset>}'"
     echo
-    echo "Missing one or more expected files:"
-    echo "  - configure.ac"
-    echo "  - gpMgmt/bin/gppylib/gpversion.py"
-    echo "  - pom.xml"
+    echo "This check ensures the release is being staged from the authoritative upstream repository."
+    echo "Use --skip-remote-check only if this is a fork or non-release automation."
     exit 1
   fi
 fi
@@ -368,16 +370,34 @@ if $STAGE; then
   confirm_next_step
 fi
 
+section "Validating Version Consistency"
 
-# Extract base version from tag (remove -rc suffix if present)
-BASE_VERSION="$TAG"
-if [[ "$TAG" =~ ^(.+)-rc[0-9]+$ ]]; then
-  BASE_VERSION="${BASH_REMATCH[1]}"
+# Validate tag format
+SEMVER_REGEX='^[0-9]+\.[0-9]+\.[0-9]+-incubating(-rc[0-9]+)?$'
+if ! [[ "$TAG" =~ $SEMVER_REGEX ]]; then
+  echo "ERROR: Tag '$TAG' does not match expected pattern (e.g., 2.0.0-incubating or 2.0.0-incubating-rc1)."
+  exit 1
 fi
+
+
+# Extract base version from tag (strip -incubating and optional -rcN)
+BASE_VERSION=$(echo "$TAG" | sed -E 's/-incubating(-rc[0-9]+)?$//')
 
 echo "Version validation strategy:"
 echo "  Tag: $TAG"
 echo "  Base version (for source files): $BASE_VERSION"
+
+VERSION_FILE=$(tr -d '[:space:]' < version)
+if [[ -z "$VERSION_FILE" ]]; then
+  echo "ERROR: version file is empty."
+  exit 1
+fi
+
+if [[ "$VERSION_FILE" != "$BASE_VERSION" ]]; then
+  echo "ERROR: version file value ($VERSION_FILE) does not match base version ($BASE_VERSION)."
+  echo "For RC tags like '$TAG', version should contain '$BASE_VERSION'."
+  exit 1
+fi
 
 
 # Ensure working tree is clean
@@ -389,6 +409,7 @@ fi
 echo "Version consistency verified"
 printf "    %-14s: %s\n" "Release Tag"   "$TAG"
 printf "    %-14s: %s\n" "Base Version"  "$BASE_VERSION"
+printf "    %-14s: %s\n" "version file"  "$VERSION_FILE"
 confirm_next_step
 
 section "Checking the state of the Tag"
@@ -479,10 +500,6 @@ section "Staging release: $TAG"
     echo "INFO: Reusing existing tag '$TAG'; skipping tag creation."
   fi
 
-  echo "Creating BUILD_NUMBER file with commit hash"
-  build_num=$(git rev-parse --short HEAD)
-  echo "$build_num" > BUILD_NUMBER
-
   echo -e "\nTag Summary"
   TAG_OBJECT=$(git rev-parse "$TAG")
   TAG_COMMIT=$(git rev-list -n 1 "$TAG")
@@ -502,7 +519,6 @@ section "Staging release: $TAG"
   export COPY_EXTENDED_ATTRIBUTES_DISABLE=1
 
   git archive --format=tar --prefix="apache-cloudberry-pxf-${TAG}/" "$TAG" | tar -x -C "$TMP_DIR"
-  cp BUILD_NUMBER "$TMP_DIR/apache-cloudberry-pxf-${TAG}/"
 
   # Archive submodules if any
   if [ -s .gitmodules ]; then
@@ -616,4 +632,3 @@ section "Staging release: $TAG"
 
   section "Release candidate for $TAG staged successfully"
 fi
-
