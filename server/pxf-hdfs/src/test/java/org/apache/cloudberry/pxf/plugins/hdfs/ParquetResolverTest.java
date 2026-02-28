@@ -194,6 +194,78 @@ public class ParquetResolverTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
+    public void testSetFields_UUID() throws IOException {
+        List<Type> typeFields = new ArrayList<>();
+        typeFields.add(new PrimitiveType(Type.Repetition.OPTIONAL, PrimitiveTypeName.BINARY, "id", org.apache.parquet.schema.OriginalType.UTF8));
+        typeFields.add(new PrimitiveType(Type.Repetition.OPTIONAL, PrimitiveTypeName.BINARY, "value", org.apache.parquet.schema.OriginalType.UTF8));
+        schema = new MessageType("hive_schema", typeFields);
+        context.setMetadata(schema);
+
+        List<ColumnDescriptor> columnDescriptors = new ArrayList<>();
+        columnDescriptors.add(new ColumnDescriptor("id", DataType.UUID.getOID(), 0, "uuid", null));
+        columnDescriptors.add(new ColumnDescriptor("value", DataType.VARCHAR.getOID(), 1, "varchar", null));
+        context.setTupleDescription(columnDescriptors);
+
+        resolver.setRequestContext(context);
+        resolver.afterPropertiesSet();
+
+        String uuidValue = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+        List<OneField> fields = new ArrayList<>();
+        fields.add(new OneField(DataType.TEXT.getOID(), uuidValue));
+        fields.add(new OneField(DataType.TEXT.getOID(), "test"));
+
+        OneRow row = resolver.setFields(fields);
+        assertNotNull(row);
+        Object data = row.getData();
+        assertNotNull(data);
+        assertTrue(data instanceof Group);
+        Group group = (Group) data;
+
+        // assert UUID value is stored as string in BINARY column
+        assertEquals(uuidValue, group.getString(0, 0));
+        assertEquals("test", group.getString(1, 0));
+
+        // assert value repetition count
+        for (int i = 0; i < 2; i++) {
+            assertEquals(1, group.getFieldRepetitionCount(i));
+        }
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSetFields_UUID_Null() throws IOException {
+        List<Type> typeFields = new ArrayList<>();
+        typeFields.add(new PrimitiveType(Type.Repetition.OPTIONAL, PrimitiveTypeName.BINARY, "id", org.apache.parquet.schema.OriginalType.UTF8));
+        typeFields.add(new PrimitiveType(Type.Repetition.OPTIONAL, PrimitiveTypeName.BINARY, "value", org.apache.parquet.schema.OriginalType.UTF8));
+        schema = new MessageType("hive_schema", typeFields);
+        context.setMetadata(schema);
+
+        List<ColumnDescriptor> columnDescriptors = new ArrayList<>();
+        columnDescriptors.add(new ColumnDescriptor("id", DataType.UUID.getOID(), 0, "uuid", null));
+        columnDescriptors.add(new ColumnDescriptor("value", DataType.VARCHAR.getOID(), 1, "varchar", null));
+        context.setTupleDescription(columnDescriptors);
+
+        resolver.setRequestContext(context);
+        resolver.afterPropertiesSet();
+
+        List<OneField> fields = new ArrayList<>();
+        fields.add(new OneField(DataType.TEXT.getOID(), null));
+        fields.add(new OneField(DataType.TEXT.getOID(), "test"));
+
+        OneRow row = resolver.setFields(fields);
+        assertNotNull(row);
+        Object data = row.getData();
+        assertNotNull(data);
+        assertTrue(data instanceof Group);
+        Group group = (Group) data;
+
+        // assert null UUID is not written (repetition count 0)
+        assertEquals(0, group.getFieldRepetitionCount(0));
+        assertEquals(1, group.getFieldRepetitionCount(1));
+    }
+
+    @Test
     public void testSetFields_Primitive_Nulls() throws IOException {
         schema = getParquetSchemaForPrimitiveTypes(Type.Repetition.OPTIONAL, false);
         // schema has changed, set metadata again

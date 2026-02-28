@@ -582,6 +582,7 @@ public class ParquetFileAccessor extends BasePlugin implements Accessor {
                 logicalTypeAnnotation = LogicalTypeAnnotation.dateType();
                 break;
             case TIME:
+            case UUID:
             case VARCHAR:
             case BPCHAR:
             case TEXT:

@@ -68,6 +68,15 @@ public class ParquetUtilitiesTest {
     }
 
     @Test
+    public void testParsePostgresArrayUuidArray() {
+        // GPDB UUID is a parquet BINARY primitive type with String annotation (same as text)
+        String value = "{a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11,b1ffcd00-0d1c-5f09-cc7e-7ccace491b22}";
+
+        List<Object> result = parquetUtilities.parsePostgresArray(value, PrimitiveType.PrimitiveTypeName.BINARY, LogicalTypeAnnotation.StringLogicalTypeAnnotation.stringType());
+        assertIterableEquals(Arrays.asList("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", "b1ffcd00-0d1c-5f09-cc7e-7ccace491b22"), result);
+    }
+
+    @Test
     public void testParsePostgresArrayDateArray() {
         // GPDB Date is an parquet INT64 primitive type with String annotation
         String value = "{\"1985-01-01\",\"1990-04-30\"}";
