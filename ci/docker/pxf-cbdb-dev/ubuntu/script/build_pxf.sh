@@ -68,11 +68,11 @@ export PXF_HOME=/usr/local/pxf
 sudo mkdir -p "$PXF_HOME"
 sudo chown -R gpadmin:gpadmin "$PXF_HOME"
 
-# Build all PXF components
-make all
-
-# Install PXF
-make install
+# Build and Install PXF
+make -C external-table install
+make -C fdw install
+make -C cli install
+make -C server install-server
 
 # Set up PXF environment
 
