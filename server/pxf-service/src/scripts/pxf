@@ -382,7 +382,7 @@ function do_start() {
 
     # Detect Java major version and add --add-opens flags for Java 11+
     local java_major_version
-    java_major_version=$("$javaexe" -version 2>&1 | head -1 | sed -E 's/.*version "([0-9]+).*/\1/')
+    java_major_version=$("$javaexe" -version 2>&1 | grep version | head -1 | sed -E 's/.*version "([0-9]+).*/\1/')
     if [[ "$java_major_version" -ge 11 ]] 2>/dev/null; then
         JAVA_OPTS+=(
             '--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED'
