@@ -258,7 +258,9 @@ configure(javaProjects) {
                 "-Xlint:empty", "-Xlint:finally", "-Xlint:overrides", "-Xlint:path", "-Xlint:-processing", "-Xlint:static",
                 "-Xlint:try", "-Xlint:fallthrough", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
         ]
-        options.compilerArgs += JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17) ?  ["-Xlint:-removal"] : []
+        // JEP 411 (Java 17) - java.security.AccessController is deprecated.
+        // Note, in JEP 486 (Java 24) Security Manager is completely disabled, however Java-API is not broken.
+        options.compilerArgs += JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17) ? ["-Xlint:-removal"] : []
     }
 
     compileTestJava {
@@ -267,7 +269,9 @@ configure(javaProjects) {
                 "-Xlint:empty", "-Xlint:finally", "-Xlint:overrides", "-Xlint:path", "-Xlint:-processing", "-Xlint:static",
                 "-Xlint:try", "-Xlint:fallthrough", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
         ]
-        options.compilerArgs += JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17) ?  ["-Xlint:-removal"] : []
+        // JEP 411 (Java 17) - java.security.AccessController is deprecated.
+        // Note, in JEP 486 (Java 24) Security Manager is completely disabled, however Java-API is not broken.
+        options.compilerArgs += JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17) ? ["-Xlint:-removal"] : []
     }
 
     configurations {
