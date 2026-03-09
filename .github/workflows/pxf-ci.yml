@@ -114,7 +114,7 @@ jobs:
         retention-days: 1
 
   java-compatibility-test:
-    name: build-and-test with java v${{ matrix.Java }}
+    name: build-and-test with java v${{ matrix.java }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
