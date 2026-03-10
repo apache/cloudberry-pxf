@@ -8,6 +8,8 @@ export PXF_VERSION
 
 export SKIP_EXTERNAL_TABLE_BUILD_REASON
 export SKIP_FDW_BUILD_REASON
+export SKIP_EXTERNAL_TABLE_PACKAGE_REASON
+export SKIP_FDW_PACKAGE_REASON
 
 SOURCE_EXTENSION_DIR = external-table
 TARGET_EXTENSION_DIR = gpextable
@@ -65,7 +67,7 @@ it:
 
 install:
 ifneq ($(SKIP_EXTERNAL_TABLE_BUILD_REASON),)
-	@echo "Skipping installing FDW extension because $(SKIP_EXTERNAL_TABLE_BUILD_REASON)"
+	@echo "Skipping installing external-table extension because $(SKIP_EXTERNAL_TABLE_BUILD_REASON)"
 	$(eval PXF_MODULES := $(filter-out external-table,$(PXF_MODULES)))
 endif
 ifneq ($(SKIP_FDW_BUILD_REASON),)
@@ -85,10 +87,15 @@ install-server:
 stage:
 	rm -rf build/stage
 	make -C $(SOURCE_EXTENSION_DIR) stage
+ifeq ($(SKIP_FDW_PACKAGE_REASON),)
+	make -C fdw stage
+else
+	@echo "Skipping staging FDW extension because $(SKIP_FDW_PACKAGE_REASON)"
+endif
 	make -C cli stage  
 	make -C server stage
 ifneq ($(SKIP_EXTERNAL_TABLE_PACKAGE_REASON),)
-	@echo "Skipping staging FDW extension because $(SKIP_EXTERNAL_TABLE_PACKAGE_REASON)"
+	@echo "Skipping staging external-table extension because $(SKIP_EXTERNAL_TABLE_PACKAGE_REASON)"
 	$(eval PXF_MODULES := $(filter-out external-table,$(PXF_MODULES)))
 endif
 ifneq ($(SKIP_FDW_PACKAGE_REASON),)
@@ -101,6 +108,9 @@ endif
 	PXF_PACKAGE_NAME=pxf-cloudberry$${GP_MAJOR_VERSION}-$${PXF_VERSION}-$${GP_BUILD_ARCH} ;\
 	mkdir -p build/stage/$${PXF_PACKAGE_NAME} ;\
 	cp -a $(SOURCE_EXTENSION_DIR)/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
+	if [[ -z "$${SKIP_FDW_PACKAGE_REASON:-}" ]]; then \
+		cp -a fdw/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
+	fi ;\
 	cp -a cli/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
 	cp -a server/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
 	echo $$(git rev-parse --verify HEAD) > build/stage/$${PXF_PACKAGE_NAME}/commit.sha ;\
@@ -169,6 +179,9 @@ deb: stage
 	rm -rf build/debbuild ;\
 	mkdir -p build/debbuild/usr/local/cloudberry-pxf/$(TARGET_EXTENSION_DIR) ;\
 	cp -a $(SOURCE_EXTENSION_DIR)/build/stage/* build/debbuild/usr/local/cloudberry-pxf/ ;\
+	if [[ -z "$${SKIP_FDW_PACKAGE_REASON:-}" ]] && [[ -d fdw/build/stage ]]; then \
+		cp -a fdw/build/stage/* build/debbuild/usr/local/cloudberry-pxf/ ;\
+	fi ;\
 	cp -a cli/build/stage/* build/debbuild/usr/local/cloudberry-pxf ;\
 	cp -a server/build/stage/* build/debbuild/usr/local/cloudberry-pxf ;\
 	echo $$(git rev-parse --verify HEAD) > build/debbuild/usr/local/cloudberry-pxf/commit.sha ;\
