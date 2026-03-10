@@ -2,3 +2,8 @@
 
 sed -i "s|directory =.*|directory = '/usr/local/cloudberry-pxf/gpextable/'|g" "/usr/local/cloudberry-pxf/gpextable/pxf.control"
 sed -i "s|module_pathname =.*|module_pathname = '/usr/local/cloudberry-pxf/gpextable/pxf'|g" "/usr/local/cloudberry-pxf/gpextable/pxf.control"
+
+if [ -f "/usr/local/cloudberry-pxf/fdw/pxf_fdw.control" ]; then
+  sed -i "s|directory =.*|directory = '/usr/local/cloudberry-pxf/fdw/'|g" "/usr/local/cloudberry-pxf/fdw/pxf_fdw.control"
+  sed -i "s|module_pathname =.*|module_pathname = '/usr/local/cloudberry-pxf/fdw/pxf_fdw'|g" "/usr/local/cloudberry-pxf/fdw/pxf_fdw.control"
+fi
