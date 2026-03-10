@@ -3,7 +3,7 @@ PXF Packaging
 
 Apache Cloudberry PXF (Platform Extension Framework) consists of 3 groups of artifacts, each developed using a different underlying technology:
 
-* Apache Cloudberry extension -- written in C; when built, produces a `pxf.so` library and configuration files
+* Apache Cloudberry extensions -- written in C; when built, produces the `pxf` (external table) and `pxf_fdw` (foreign data wrapper) libraries and extension files
 * PXF Server -- written in Java; when built, produces a `pxf.war` file, Tomcat server, dependent JAR files, templates and scripts
 * Script Cluster Plugin -- written in Go; when built, produces a `pxf-cli` executable
 
