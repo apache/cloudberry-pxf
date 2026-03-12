@@ -57,5 +57,11 @@ dependencies {
 }
 
 test {
+    if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
+        jvmArgs += [
+                // JEP486 removes access to `sun.*` API
+                '--add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED',
+        ]
+    }
     useJUnitPlatform()
 }
