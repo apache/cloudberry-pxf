@@ -77,10 +77,7 @@ DETECTED_PLATFORM=""
 DETECTED_SHA_TOOL=""
 DETECTED_TAR_TOOL=""
 SOURCE_EXCLUDES=(
-  "--exclude=*/gradlew"
-  "--exclude=*/gradlew.bat"
   "--exclude=*/gradle/wrapper/gradle-wrapper.jar"
-  "--exclude=*/gradle/wrapper/gradle-wrapper.properties"
 )
 
 # Platform detection and tool check
@@ -574,7 +571,7 @@ section "Staging release: $TAG"
   echo -e "Archive saved to: $TAR_NAME"
   
   echo "Verifying tarball does not contain Gradle wrapper files..."
-  GRADLE_WRAPPER_FILES=$($DETECTED_TAR_TOOL -tzf "$TAR_NAME" | grep -E '(gradlew|gradlew\.bat|gradle-wrapper\.jar|gradle-wrapper\.properties)$' || true)
+  GRADLE_WRAPPER_FILES=$($DETECTED_TAR_TOOL -tzf "$TAR_NAME" | grep -E '(gradle-wrapper\.jar)$' || true)
   if [[ -n "$GRADLE_WRAPPER_FILES" ]]; then
     echo "WARNING: Found Gradle wrapper files in tarball:"
     echo "$GRADLE_WRAPPER_FILES"
