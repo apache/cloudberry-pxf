@@ -29,7 +29,7 @@ PXF_GRADLE_PROPERTIES = -Pversion=$(PXF_VERSION) -PapiVersion=$(PXF_API_VERSION)
 
 .PHONY: prepare-gradle-wrapper
 prepare-gradle-wrapper:
-	@APP_HOME="$(CURDIR)" bash ./gradle-include.sh
+	@APP_HOME="$(CURDIR)" bash ./gradlew-install.sh
 
 help:
 	@echo
