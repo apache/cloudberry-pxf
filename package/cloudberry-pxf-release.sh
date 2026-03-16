@@ -76,6 +76,12 @@ set -euo pipefail
 DETECTED_PLATFORM=""
 DETECTED_SHA_TOOL=""
 DETECTED_TAR_TOOL=""
+SOURCE_EXCLUDES=(
+  "--exclude=*/gradlew"
+  "--exclude=*/gradlew.bat"
+  "--exclude=*/gradle/wrapper/gradle-wrapper.jar"
+  "--exclude=*/gradle/wrapper/gradle-wrapper.properties"
+)
 
 # Platform detection and tool check
 check_platform_and_tools() {
@@ -550,16 +556,33 @@ section "Staging release: $TAG"
   # Create tarball using the detected tar tool
   if [[ "$DETECTED_PLATFORM" == "macOS" ]]; then
     echo "Using GNU tar for cross-platform compatibility..."
-    $DETECTED_TAR_TOOL --exclude='._*' --exclude='.DS_Store' --exclude='__MACOSX' -czf "$TAR_NAME" -C "$TMP_DIR" "apache-cloudberry-pxf-${TAG}"
+    $DETECTED_TAR_TOOL \
+      --exclude='._*' \
+      --exclude='.DS_Store' \
+      --exclude='__MACOSX' \
+      "${SOURCE_EXCLUDES[@]}" \
+      -czf "$TAR_NAME" -C "$TMP_DIR" "apache-cloudberry-pxf-${TAG}"
     echo "INFO: macOS detected - applied extended attribute cleanup and GNU tar"
   else
     # On other platforms, use standard tar
-    $DETECTED_TAR_TOOL -czf "$TAR_NAME" -C "$TMP_DIR" "apache-cloudberry-pxf-${TAG}"
+    $DETECTED_TAR_TOOL \
+      "${SOURCE_EXCLUDES[@]}" \
+      -czf "$TAR_NAME" -C "$TMP_DIR" "apache-cloudberry-pxf-${TAG}"
   fi
   
   rm -rf "$TMP_DIR"
   echo -e "Archive saved to: $TAR_NAME"
   
+  echo "Verifying tarball does not contain Gradle wrapper files..."
+  GRADLE_WRAPPER_FILES=$($DETECTED_TAR_TOOL -tzf "$TAR_NAME" | grep -E '(gradlew|gradlew\.bat|gradle-wrapper\.jar|gradle-wrapper\.properties)$' || true)
+  if [[ -n "$GRADLE_WRAPPER_FILES" ]]; then
+    echo "WARNING: Found Gradle wrapper files in tarball:"
+    echo "$GRADLE_WRAPPER_FILES"
+    echo "These files must be excluded from Apache source release artifacts."
+  else
+    echo "[OK] Tarball verified clean of Gradle wrapper files"
+  fi
+
   # Verify that no macOS extended attribute files are included
   if [[ "$DETECTED_PLATFORM" == "macOS" ]]; then
     echo "Verifying tarball does not contain macOS-specific files..."

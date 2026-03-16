@@ -85,6 +85,25 @@ cd cloudberry-pxf/
 make
 ```
 
+### Build PXF from Apache source release
+
+Apache source release archives can exclude Gradle wrapper files. In this case, build with a system-installed Gradle instead of `./gradlew`.
+
+```bash
+cd cloudberry-pxf/
+
+# Build non-Java modules
+make -C external-table
+make -C fdw
+make -C cli
+
+# Build server module with system Gradle (wrapper-free)
+cd server
+gradle -Pversion="$(cat ../version)" -PapiVersion="$(cat ../api_version)" test stage
+```
+
+The server build currently expects Gradle `6.8.2`.
+
 ### Install PXF
 
 To install PXF, first make sure that the user has sufficient permissions in the `$GPHOME` and `$PXF_HOME` directories to perform the installation. It's recommended to change ownership to match the installing user. For example, when installing PXF as user `gpadmin` under `/usr/local/cloudberry-db`:
