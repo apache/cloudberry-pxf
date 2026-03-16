@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Copyright (C) 2024 Dremio
 #
@@ -14,8 +15,14 @@
 # limitations under the License.
 #
 
-# Downloads the gradle-wrapper.jar if necessary and verifies its integrity.
-# Included from /.gradlew
+# Download the gradle-wrapper.jar if necessary and verify its integrity.
+# This script is invoked by server/Makefile
+
+if [[ -z "${APP_HOME:-}" ]]; then
+  # set APP_HOME as parent directory of the current script
+  APP_HOME="$(cd -- "$(dirname -- "$0")" && pwd)"
+fi
+
 
 # Extract the Gradle version from gradle-wrapper.properties.
 GRADLE_DIST_VERSION="$(grep distributionUrl= "$APP_HOME/gradle/wrapper/gradle-wrapper.properties" | sed 's/^.*gradle-\([0-9.]*\)-[a-z]*.zip$/\1/')"

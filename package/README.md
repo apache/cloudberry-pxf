@@ -36,24 +36,6 @@ To build an RPM, follow these steps:
 4. Run `make clean rpm` from the top-level directory to build artifacts and assemble the RPM
 5. The RPM will be available in `build/rpmbuild/RPMS` directory
 
-## Building from Apache source release
-
-Apache source release archives may exclude Gradle wrapper.
-In this case, build using a system-installed Gradle (without wrapper files):
-
-1. Install Gradle `6.8.2` (the server build-compatible version).
-2. Build non-Java modules from the repository root:
-   - `make -C external-table`
-   - `make -C fdw`
-   - `make -C cli`
-3. Build and stage the server module with system Gradle:
-   - `cd server`
-   - `gradle -Pversion="$(cat ../version)" -PapiVersion="$(cat ../api_version)" test stage`
-4. Continue packaging with the staged artifacts under `server/build/stage` and other module build outputs.
-
-If wrapper files are present (for local development clones), `make clean rpm` remains the standard entry point.
-
-
 ## PXF RPM installation process
 To install PXF from an RPM, follow these steps:
 1. Build or download PXF RPM for Apache Cloudberry. The following example will assume
