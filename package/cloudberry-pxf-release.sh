@@ -76,9 +76,6 @@ set -euo pipefail
 DETECTED_PLATFORM=""
 DETECTED_SHA_TOOL=""
 DETECTED_TAR_TOOL=""
-SOURCE_EXCLUDES=(
-  "--exclude=*/gradle/wrapper/gradle-wrapper.jar"
-)
 
 # Platform detection and tool check
 check_platform_and_tools() {
@@ -553,18 +550,11 @@ section "Staging release: $TAG"
   # Create tarball using the detected tar tool
   if [[ "$DETECTED_PLATFORM" == "macOS" ]]; then
     echo "Using GNU tar for cross-platform compatibility..."
-    $DETECTED_TAR_TOOL \
-      --exclude='._*' \
-      --exclude='.DS_Store' \
-      --exclude='__MACOSX' \
-      "${SOURCE_EXCLUDES[@]}" \
-      -czf "$TAR_NAME" -C "$TMP_DIR" "apache-cloudberry-pxf-${TAG}"
+    $DETECTED_TAR_TOOL --exclude='._*' --exclude='.DS_Store' --exclude='__MACOSX' -czf "$TAR_NAME" -C "$TMP_DIR" "apache-cloudberry-pxf-${TAG}"
     echo "INFO: macOS detected - applied extended attribute cleanup and GNU tar"
   else
     # On other platforms, use standard tar
-    $DETECTED_TAR_TOOL \
-      "${SOURCE_EXCLUDES[@]}" \
-      -czf "$TAR_NAME" -C "$TMP_DIR" "apache-cloudberry-pxf-${TAG}"
+    $DETECTED_TAR_TOOL -czf "$TAR_NAME" -C "$TMP_DIR" "apache-cloudberry-pxf-${TAG}"
   fi
   
   rm -rf "$TMP_DIR"

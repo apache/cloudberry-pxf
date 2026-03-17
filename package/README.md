@@ -36,6 +36,7 @@ To build an RPM, follow these steps:
 4. Run `make clean rpm` from the top-level directory to build artifacts and assemble the RPM
 5. The RPM will be available in `build/rpmbuild/RPMS` directory
 
+
 ## PXF RPM installation process
 To install PXF from an RPM, follow these steps:
 1. Build or download PXF RPM for Apache Cloudberry. The following example will assume
