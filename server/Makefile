@@ -27,6 +27,10 @@ PXF_API_VERSION ?= $(shell cat $(PXF_ROOT_DIR)/api_version)
 
 PXF_GRADLE_PROPERTIES = -Pversion=$(PXF_VERSION) -PapiVersion=$(PXF_API_VERSION)
 
+.PHONY: prepare-gradle-wrapper
+prepare-gradle-wrapper:
+	@APP_HOME="$(CURDIR)" bash ./gradlew-install.sh
+
 help:
 	@echo
 	@echo   "Possible targets"
@@ -39,10 +43,10 @@ help:
 	@echo	"  - stage - build PXF server and stage resulting artifacts for packaging"
 	@echo	"  - doc - creates aggregate javadoc under docs"
 
-all:
+all: prepare-gradle-wrapper
 	./gradlew $(PXF_GRADLE_PROPERTIES) clean stage
 
-compile:
+compile: prepare-gradle-wrapper
 	./gradlew $(PXF_GRADLE_PROPERTIES) compileJava
 
 GRADLEW_TEST_PARAMS = test
@@ -56,21 +60,21 @@ ifneq "$(TEST)" ""
 	GRADLEW_TEST_PARAMS = :$(PROJECT):test --rerun-tasks --tests $(TEST_PATH)
 endif
 
-test unittest:
+test unittest: prepare-gradle-wrapper
 	@if [ -n '$(TEST)' ] && [ -z '${TEST_FILE}' ]; then \
 		echo 'Test $(TEST) was not found'; \
 		exit 1; \
 	fi
 	./gradlew $(PXF_GRADLE_PROPERTIES) ${GRADLEW_TEST_PARAMS}
 
-coverage:
+coverage: prepare-gradle-wrapper
 	./gradlew $(PXF_GRADLE_PROPERTIES) ${GRADLEW_TEST_PARAMS} jacocoTestReport
 	@echo
 	@echo  "Coverage reports can be found within each server module under <module-name>/build/reports/jacoco"
 	@echo  "For example, the pxf-service coverage report is located at $(shell pwd)/pxf-service/build/reports/jacoco/test/html/index.html"
 
 .PHONY: stage
-stage:
+stage: prepare-gradle-wrapper
 	./gradlew $(PXF_GRADLE_PROPERTIES) test stage
 	install -m 744 -d "build/stage/lib"
 	install -m 744 -d "build/stage/lib/native"
@@ -81,7 +85,7 @@ stage:
 	install -m 700 -d "build/stage/keytabs"
 
 .PHONY: stage-notest
-stage-notest:
+stage-notest: prepare-gradle-wrapper
 	./gradlew $(PXF_GRADLE_PROPERTIES) stage -x test
 	install -m 744 -d "build/stage/lib"
 	install -m 744 -d "build/stage/lib/native"
@@ -91,7 +95,7 @@ stage-notest:
 	install -m 700 -d "build/stage/run"
 	install -m 700 -d "build/stage/keytabs"
 
-clean:
+clean: prepare-gradle-wrapper
 	./gradlew clean
 	rm -rf build
 
@@ -100,7 +104,7 @@ clean-all: clean
 
 distclean maintainer-clean: clean
 
-doc:
+doc: prepare-gradle-wrapper
 	./gradlew $(PXF_GRADLE_PROPERTIES) aggregateJavadoc
 
 .PHONY: install
@@ -120,5 +124,5 @@ install-server: stage-notest
 	cp -R build/stage/* "$(PXF_HOME)"
 
 .PHONY: version
-version:
+version: prepare-gradle-wrapper
 	@./gradlew -q version

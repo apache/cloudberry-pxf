@@ -560,6 +560,16 @@ section "Staging release: $TAG"
   rm -rf "$TMP_DIR"
   echo -e "Archive saved to: $TAR_NAME"
   
+  echo "Verifying tarball does not contain Gradle wrapper files..."
+  GRADLE_WRAPPER_FILES=$($DETECTED_TAR_TOOL -tzf "$TAR_NAME" | grep -E '(gradle-wrapper\.jar)$' || true)
+  if [[ -n "$GRADLE_WRAPPER_FILES" ]]; then
+    echo "WARNING: Found Gradle wrapper files in tarball:"
+    echo "$GRADLE_WRAPPER_FILES"
+    echo "These files must be excluded from Apache source release artifacts."
+  else
+    echo "[OK] Tarball verified clean of Gradle wrapper files"
+  fi
+
   # Verify that no macOS extended attribute files are included
   if [[ "$DETECTED_PLATFORM" == "macOS" ]]; then
     echo "Verifying tarball does not contain macOS-specific files..."

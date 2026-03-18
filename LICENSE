@@ -291,14 +291,3 @@ CI/Test Templates:
    ci/singlecluster/templates/ranger/install.properties
    ci/singlecluster/templates/tez/conf/tez-site.xml
    ci/singlecluster/templates/usersync/install.properties
-
-=======================================================================
-
-This product bundles Gradle Wrapper, which is licensed under
-the Apache License, Version 2.0.
-
-   Copyright © Gradle, Inc.
-
-   server/gradle/wrapper/gradle-wrapper.jar
-
-=======================================================================
