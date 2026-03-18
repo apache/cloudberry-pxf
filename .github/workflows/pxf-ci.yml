@@ -128,7 +128,7 @@ jobs:
           distribution: 'corretto'
       - name: Assemble and test with Gradle
         working-directory: ./server
-        run: make -C server test
+        run: make test
 
   # Stage 2: Parallel test jobs using matrix strategy
   pxf-test:
