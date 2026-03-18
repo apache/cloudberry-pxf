@@ -14,7 +14,6 @@ dist/
 
 HELP.md
 build/
-!gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**
 !**/src/test/**
 
@@ -33,3 +32,6 @@ build/
 *.iml
 *.ipr
 out/
+
+# ASF Policies doesn't allow complied binaries in the source tarballs
+gradle/wrapper/gradle-wrapper.jar
