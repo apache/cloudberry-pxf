@@ -22,6 +22,11 @@ ifneq "$(GROUP)" ""
 	MAVEN_TEST_OPTS+= -Dgroups=$(GROUP)
 endif
 
+EXCLUDED_GROUPS ?= testcontainers
+ifneq "$(EXCLUDED_GROUPS)" ""
+	MAVEN_TEST_OPTS+= -DexcludedGroups=$(EXCLUDED_GROUPS)
+endif
+
 MAVEN_TEST_OPTS+= -Djava.awt.headless=true -DuseFDW=$(USE_FDW) -Duser.timezone=UTC
 
 ifneq "$(OFFLINE)" "true"
@@ -244,6 +249,18 @@ else
 	@echo "***** Feature tests: *****"
 	@ls src/test/java/org/apache/cloudberry/pxf/automation/features/*/*Test.java | sed 's/.*\///g' | sed 's/\.java//g' | awk '{print "* ", $$1}'
 endif
+
+# Run Testcontainers-based tests.
+# Usage:
+#   make test-tc                          => run all testcontainers tests
+#   make test-tc TC_GROUP=jdbc-tc         => run only jdbc-tc group
+.PHONY: test-tc
+test-tc: check-env symlink_pxf_jars pxf_regress
+	$(MVN) -B -e -Djava.awt.headless=true -Duser.timezone=UTC \
+		-DuseFDW=$(USE_FDW) \
+		-Dgroups=$(or $(TC_GROUP),testcontainers) \
+		-DexcludedGroups= \
+		test
 
 .PHONY: pxf_regress
 pxf_regress:

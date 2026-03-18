@@ -4,20 +4,22 @@ import java.io.File;
 
 import annotations.FailsWithFDW;
 import annotations.WorksWithFDW;
+import org.apache.cloudberry.pxf.automation.AbstractTestcontainersTest;
+import org.apache.cloudberry.pxf.automation.applications.CloudberryApplication;
 import org.apache.cloudberry.pxf.automation.structures.tables.basic.Table;
 import org.apache.cloudberry.pxf.automation.structures.tables.pxf.ExternalTable;
 import org.apache.cloudberry.pxf.automation.structures.tables.utils.TableFactory;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import org.apache.cloudberry.pxf.automation.enums.EnumPartitionType;
 
-import org.apache.cloudberry.pxf.automation.features.BaseFeature;
-
 @WorksWithFDW
-public class JdbcTest extends BaseFeature {
+public class JdbcTest extends AbstractTestcontainersTest {
 
     private static final String POSTGRES_DRIVER_CLASS = "org.postgresql.Driver";
-    private static final String GPDB_PXF_AUTOMATION_DB_JDBC = "jdbc:postgresql://";
+    private static final String localDataResourcesFolder = "src/test/resources/data";
+
     private static final String[] TYPES_TABLE_FIELDS = new String[]{
             "t1    text",
             "t2    text",
@@ -61,6 +63,9 @@ public class JdbcTest extends BaseFeature {
             "count int",
             "max  int"};
 
+    @Deprecated
+    private CloudberryApplication gpdb;
+
     private ExternalTable pxfJdbcSingleFragment;
     private ExternalTable pxfJdbcDateWideRangeOn;
     private ExternalTable pxfJdbcDateWideRangeOff;
@@ -86,9 +91,14 @@ public class JdbcTest extends BaseFeature {
     private Table gpdbWritableTargetTableNoBatch, gpdbWritableTargetTablePool;
     private Table gpdbDeptTable, gpdbEmpTable;
 
-    @Override
-    protected void beforeClass() throws Exception {
+    @BeforeClass(alwaysRun = true)
+    public void setUp() throws Exception {
+        gpdb = cloudberry; // alias
         prepareData();
+    }
+
+    private void runSqlTest(String sqlTestPath) throws Exception {
+        regress.runSqlTest(sqlTestPath);
     }
 
     protected void prepareData() throws Exception {
@@ -193,7 +203,7 @@ public class JdbcTest extends BaseFeature {
                 TYPES_TABLE_FIELDS,
                 gpdbNativeTableTypes.getName(),
                 POSTGRES_DRIVER_CLASS,
-                GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                 gpdb.getUserName());
         pxfJdbcSingleFragment.setHost(pxfHost);
         pxfJdbcSingleFragment.setPort(pxfPort);
@@ -207,7 +217,7 @@ public class JdbcTest extends BaseFeature {
                         TYPES_TABLE_FIELDS,
                         gpdbNativeTableTypes.getName(),
                         POSTGRES_DRIVER_CLASS,
-                        GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                        gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                         13,
                         "USD:UAH",
                         "1",
@@ -226,7 +236,7 @@ public class JdbcTest extends BaseFeature {
                         TYPES_TABLE_FIELDS,
                         gpdbNativeTableTypes.getName(),
                         POSTGRES_DRIVER_CLASS,
-                        GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                        gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                         2,
                         "1:6",
                         "1",
@@ -245,7 +255,7 @@ public class JdbcTest extends BaseFeature {
                         TYPES_TABLE_FIELDS,
                         gpdbNativeTableTypes.getName(),
                         POSTGRES_DRIVER_CLASS,
-                        GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                        gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                         11,
                         "2015-03-06:2015-03-20",
                         "1:DAY",
@@ -302,7 +312,7 @@ public class JdbcTest extends BaseFeature {
                 TYPES_TABLE_FIELDS,
                 gpdbWritableTargetTable.getName(),
                 POSTGRES_DRIVER_CLASS,
-                GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                 gpdb.getUserName(), null);
         pxfJdbcWritable.setHost(pxfHost);
         pxfJdbcWritable.setPort(pxfPort);
@@ -314,7 +324,7 @@ public class JdbcTest extends BaseFeature {
                 TYPES_TABLE_FIELDS,
                 dateTimeWritableTargetTableWithDateWideRangeOn.getName(),
                 POSTGRES_DRIVER_CLASS,
-                GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                 gpdb.getUserName(), null);
         pxfJdbcDateTimeWritableWithDateWideRangeOn.setHost(pxfHost);
         pxfJdbcDateTimeWritableWithDateWideRangeOn.setPort(pxfPort);
@@ -326,7 +336,7 @@ public class JdbcTest extends BaseFeature {
                 TYPES_TABLE_FIELDS,
                 dateTimeWritableTargetTableWithDateWideRangeOff.getName(),
                 POSTGRES_DRIVER_CLASS,
-                GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                 gpdb.getUserName(), null);
         pxfJdbcDateTimeWritableWithDateWideRangeOff.setHost(pxfHost);
         pxfJdbcDateTimeWritableWithDateWideRangeOff.setPort(pxfPort);
@@ -338,7 +348,7 @@ public class JdbcTest extends BaseFeature {
                 TYPES_TABLE_FIELDS_SMALL,
                 gpdbWritableTargetTableNoBatch.getName(),
                 POSTGRES_DRIVER_CLASS,
-                GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                 gpdb.getUserName(), "BATCH_SIZE=1");
         pxfJdbcWritableNoBatch.setHost(pxfHost);
         pxfJdbcWritableNoBatch.setPort(pxfPort);
@@ -349,7 +359,7 @@ public class JdbcTest extends BaseFeature {
                 TYPES_TABLE_FIELDS_SMALL,
                 gpdbWritableTargetTablePool.getName(),
                 POSTGRES_DRIVER_CLASS,
-                GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                 gpdb.getUserName(), "POOL_SIZE=2");
         pxfJdbcWritablePool.setHost(pxfHost);
         pxfJdbcWritablePool.setPort(pxfPort);
@@ -362,7 +372,7 @@ public class JdbcTest extends BaseFeature {
                 COLUMNS_TABLE_FIELDS,
                 gpdbNativeTableColumns.getName(),
                 POSTGRES_DRIVER_CLASS,
-                GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                 gpdb.getUserName());
         pxfJdbcColumns.setHost(pxfHost);
         pxfJdbcColumns.setPort(pxfPort);
@@ -375,7 +385,7 @@ public class JdbcTest extends BaseFeature {
                 COLUMNS_TABLE_FIELDS_IN_DIFFERENT_ORDER_SUBSET,
                 gpdbNativeTableColumns.getName(),
                 POSTGRES_DRIVER_CLASS,
-                GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                 gpdb.getUserName());
         pxfJdbcColumnProjectionSubset.setHost(pxfHost);
         pxfJdbcColumnProjectionSubset.setPort(pxfPort);
@@ -388,7 +398,7 @@ public class JdbcTest extends BaseFeature {
                 COLUMNS_TABLE_FIELDS_SUPERSET,
                 gpdbNativeTableColumns.getName(),
                 POSTGRES_DRIVER_CLASS,
-                GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                 gpdb.getUserName());
         pxfJdbcColumnProjectionSuperset.setHost(pxfHost);
         pxfJdbcColumnProjectionSuperset.setPort(pxfPort);
@@ -401,7 +411,7 @@ public class JdbcTest extends BaseFeature {
                 TYPES_TABLE_FIELDS,
                 gpdbNativeTableTypes.getName(),
                 POSTGRES_DRIVER_CLASS,
-                GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                 gpdb.getUserName(), "FETCH_SIZE=0");
         pxfJdbcSingleFragment.setHost(pxfHost);
         pxfJdbcSingleFragment.setPort(pxfPort);
@@ -414,7 +424,7 @@ public class JdbcTest extends BaseFeature {
                 TYPES_TABLE_FIELDS,
                 gpdbNativeTableTypesWithDateWideRange.getName(),
                 POSTGRES_DRIVER_CLASS,
-                GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                 gpdb.getUserName());
         pxfJdbcDateWideRangeOn.setHost(pxfHost);
         pxfJdbcDateWideRangeOn.setPort(pxfPort);
@@ -426,7 +436,7 @@ public class JdbcTest extends BaseFeature {
                 TYPES_TABLE_FIELDS,
                 gpdbNativeTableTypesWithDateWideRange.getName(),
                 POSTGRES_DRIVER_CLASS,
-                GPDB_PXF_AUTOMATION_DB_JDBC + gpdb.getMasterHost() + ":" + gpdb.getPort() + "/pxfautomation",
+                gpdb.getCloudberryMappedJdbcUrl("pxfautomation"),
                 gpdb.getUserName());
         pxfJdbcDateWideRangeOff.setHost(pxfHost);
         pxfJdbcDateWideRangeOff.setPort(pxfPort);
@@ -461,22 +471,22 @@ public class JdbcTest extends BaseFeature {
         gpdb.createTableAndVerify(pxfJdbcNamedQuery);
     }
 
-    @Test(groups = {"features", "gpdb", "security", "jdbc"})
+    @Test(groups = {"testcontainers", "jdbc-tc"})
     public void singleFragmentTable() throws Exception {
         runSqlTest("features/jdbc/single_fragment");
     }
 
-    @Test(groups = {"features", "gpdb", "security", "jdbc"})
+    @Test(groups = {"testcontainers", "jdbc-tc"})
     public void multipleFragmentsTables() throws Exception {
         runSqlTest("features/jdbc/multiple_fragments");
     }
 
-    @Test(groups = {"features", "gpdb", "security", "jdbc"})
+    @Test(groups = {"testcontainers", "jdbc-tc"})
     public void readServerConfig() throws Exception {
         runSqlTest("features/jdbc/server_config");
     }
 
-    @Test(groups = {"features", "gpdb", "security", "jdbc"})
+    @Test(groups = {"testcontainers", "jdbc-tc"})
     public void readViewSessionParams() throws Exception {
         runSqlTest("features/jdbc/session_params");
     }
@@ -485,7 +495,7 @@ public class JdbcTest extends BaseFeature {
     // All the Writable Tests are failing with this Error:
     // ERROR:  PXF server error : class java.io.DataInputStream cannot be cast to class
     // [B (java.io.DataInputStream and [B are in module java.base of loader 'bootstrap')
-    @Test(groups = {"features", "gpdb", "security", "jdbc"})
+    @Test(groups = {"testcontainers", "jdbc-tc"})
     public void jdbcWritableTable() throws Exception {
         runSqlTest("features/jdbc/writable");
     }
@@ -494,44 +504,44 @@ public class JdbcTest extends BaseFeature {
     // All the Writable Tests are failing with this Error:
     // ERROR:  PXF server error : class java.io.DataInputStream cannot be cast to class
     // [B (java.io.DataInputStream and [B are in module java.base of loader 'bootstrap')
-    @Test(groups = {"features", "gpdb", "security", "jdbc"})
+    @Test(groups = {"testcontainers", "jdbc-tc"})
     public void jdbcWritableTableWithDateWideRange() throws Exception {
         runSqlTest("features/jdbc/writable_date_wide_range");
     }
 
     @FailsWithFDW
-    @Test(groups = {"features", "gpdb", "security", "jdbc"})
+    @Test(groups = {"testcontainers", "jdbc-tc"})
     public void jdbcWritableTableNoBatch() throws Exception {
         runSqlTest("features/jdbc/writable_nobatch");
     }
 
     @FailsWithFDW
-    @Test(groups = {"features", "gpdb", "security", "jdbc"})
+    @Test(groups = {"testcontainers", "jdbc-tc"})
     public void jdbcWritableTablePool() throws Exception {
         runSqlTest("features/jdbc/writable_pool");
     }
 
-    @Test(groups = {"features", "gpdb", "security", "jdbc"})
+    @Test(groups = {"testcontainers", "jdbc-tc"})
     public void jdbcColumns() throws Exception {
         runSqlTest("features/jdbc/columns");
     }
 
-    @Test(groups = {"features", "gpdb", "security", "jdbc"})
+    @Test(groups = {"testcontainers", "jdbc-tc"})
     public void jdbcColumnProjection() throws Exception {
         runSqlTest("features/jdbc/column_projection");
     }
 
-    @Test(groups = {"features", "gpdb", "security", "jdbc"})
+    @Test(groups = {"testcontainers", "jdbc-tc"})
     public void jdbcReadableTableNoBatch() throws Exception {
         runSqlTest("features/jdbc/readable_nobatch");
     }
 
-    @Test(groups = {"features", "gpdb", "security", "jdbc"})
+    @Test(groups = {"testcontainers", "jdbc-tc"})
     public void jdbcReadableTableWithDateWideRange() throws Exception {
         runSqlTest("features/jdbc/readable_date_wide_range");
     }
 
-    @Test(groups = {"features", "gpdb", "security", "jdbc"})
+    @Test(groups = {"testcontainers", "jdbc-tc"})
     public void jdbcNamedQuery() throws Exception {
         runSqlTest("features/jdbc/named_query");
     }

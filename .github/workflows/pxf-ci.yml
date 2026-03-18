@@ -301,10 +301,142 @@ jobs:
           exit 1
         fi
 
+  # Stage 2b: Testcontainers-based tests
+  build-pxf-testcontainer-image:
+    name: Build PXF Testcontainer Image
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout PXF source
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Build pxf-cbdb testcontainer image
+      run: |
+        docker build \
+          -t pxf/cbdb-testcontainer:1 \
+          automation/src/main/resources/testcontainers/pxf-cbdb
+        docker save pxf/cbdb-testcontainer:1 > /tmp/pxf-cbdb-testcontainer-image.tar
+
+    - name: Upload pxf-cbdb testcontainer image
+      uses: actions/upload-artifact@v4
+      with:
+        name: pxf-cbdb-testcontainer-image
+        path: /tmp/pxf-cbdb-testcontainer-image.tar
+        retention-days: 1
+
+  pxf-testcontainer-test:
+    name: "TC Test - ${{ matrix.tc_group }} (${{ matrix.test_mode }})"
+    needs: [build-pxf-testcontainer-image]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tc_group: jdbc-tc
+            test_mode: external-table
+            use_fdw: "false"
+          - tc_group: jdbc-tc
+            test_mode: fdw
+            use_fdw: "true"
+    steps:
+
+    - name: Checkout PXF source
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        submodules: true
+
+    - name: Set up JDK ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: ${{ env.JAVA_VERSION }}
+
+    - name: Download pxf-cbdb testcontainer image
+      uses: actions/download-artifact@v4
+      with:
+        name: pxf-cbdb-testcontainer-image
+        path: /tmp
+
+    - name: Load pxf-cbdb testcontainer image
+      run: |
+        docker load < /tmp/pxf-cbdb-testcontainer-image.tar
+
+    - name: Build PXF stage artifacts (no unit tests)
+      run: |
+        make -C server stage-notest
+
+    - name: Run Testcontainers tests - ${{ matrix.tc_group }} (${{ matrix.test_mode }})
+      id: run_test
+      continue-on-error: true
+      timeout-minutes: 120
+      working-directory: automation
+      env:
+        PXF_HOME: ${{ github.workspace }}/server/build/stage
+      run: |
+        make test-tc TC_GROUP=${{ matrix.tc_group }} USE_FDW=${{ matrix.use_fdw }}
+
+    - name: Collect artifacts and generate stats
+      if: always()
+      id: collect_artifacts
+      run: |
+        mkdir -p artifacts/logs
+        TC_GROUP="${{ matrix.tc_group }}"
+        TEST_MODE="${{ matrix.test_mode }}"
+        TEST_RESULT="${{ steps.run_test.outcome }}"
+
+        TOTAL=0; PASSED=0; FAILED=0; SKIPPED=0
+        for xml in automation/target/surefire-reports/TEST-*.xml; do
+          if [ -f "$xml" ]; then
+            tests=$(grep -oP 'tests="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+            failures=$(grep -oP 'failures="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+            errors=$(grep -oP 'errors="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+            skipped=$(grep -oP 'skipped="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+            TOTAL=$((TOTAL + tests))
+            FAILED=$((FAILED + failures + errors))
+            SKIPPED=$((SKIPPED + skipped))
+          fi
+        done
+        PASSED=$((TOTAL - FAILED - SKIPPED))
+
+        cat > artifacts/test_stats.json <<EOF
+        {
+          "group": "tc:$TC_GROUP:$TEST_MODE",
+          "result": "$TEST_RESULT",
+          "total": $TOTAL,
+          "passed": $PASSED,
+          "failed": $FAILED,
+          "skipped": $SKIPPED
+        }
+        EOF
+
+        echo "failed_count=$FAILED" >> $GITHUB_OUTPUT
+        echo "skipped_count=$SKIPPED" >> $GITHUB_OUTPUT
+        echo "Test stats for tc:$TC_GROUP ($TEST_MODE): total=$TOTAL, passed=$PASSED, failed=$FAILED, skipped=$SKIPPED"
+
+    - name: Upload test artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-tc-${{ matrix.tc_group }}-${{ matrix.test_mode }}
+        path: artifacts/**
+        if-no-files-found: ignore
+        retention-days: 7
+
+    - name: Check test result
+      if: always()
+      run: |
+        FAILED_COUNT="${{ steps.collect_artifacts.outputs.failed_count || 0 }}"
+        if [ "${{ steps.run_test.outcome }}" == "failure" ] || [ "$FAILED_COUNT" -gt 0 ]; then
+          echo "Testcontainer test group ${{ matrix.tc_group }} (${{ matrix.test_mode }}) failed (Failures: $FAILED_COUNT)"
+          exit 1
+        fi
+
   # Stage 3: Summary job
   test-summary:
     name: Test Summary
-    needs: [pxf-test]
+    needs: [pxf-test, pxf-testcontainer-test]
     if: always()
     runs-on: ubuntu-latest
     steps:
