@@ -96,6 +96,10 @@ To build PXF, you must have:
 
 PXF uses Makefiles to build its components. PXF server component uses Gradle that is wrapped into the Makefile for convenience.
 
+> [!NOTE]
+> To comply with Apache Software Foundation release guidelines, `gradle-wrapper.jar` is not included in the source distribution. It will be downloaded automatically during the initial build. Please ensure you have an active and stable internet connection.
+
+
 ```bash
 cd cloudberry-pxf/
 
