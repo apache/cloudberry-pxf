@@ -91,8 +91,54 @@ jobs:
         path: workspace/cloudberry-source.tar.gz
         retention-days: 7
 
+  build-cloudberry-rpm:
+    name: Build Cloudberry RPM Package
+    runs-on: ubuntu-latest
+    container:
+      image: apache/incubator-cloudberry:cbdb-build-rocky9-latest
+      options: --user root
+    steps:
+    - name: Checkout Cloudberry source
+      uses: actions/checkout@v4
+      with:
+        repository: apache/cloudberry
+        ref: ${{ env.CLOUDBERRY_VERSION }}
+        path: workspace/cloudberry
+        submodules: true
+
+    - name: Checkout PXF source (for build script)
+      uses: actions/checkout@v4
+      with:
+        path: cloudberry-pxf
+
+    - name: Build Cloudberry RPM
+      run: |
+        export WORKSPACE=$PWD/workspace
+        export CLOUDBERRY_VERSION=99.0.0
+        export CLOUDBERRY_BUILD=1
+        bash cloudberry-pxf/ci/docker/pxf-cbdb-dev/rocky9/script/build_cloudberry_rpm.sh
+
+    - name: Package Cloudberry source
+      run: |
+        cd workspace
+        tar czf cloudberry-source-rocky9.tar.gz cloudberry/
+
+    - name: Upload RPM artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: cloudberry-rpm
+        path: workspace/cloudberry-rpm/*.rpm
+        retention-days: 7
+
+    - name: Upload Cloudberry source artifact (Rocky 9)
+      uses: actions/upload-artifact@v4
+      with:
+        name: cloudberry-source-rocky9
+        path: workspace/cloudberry-source-rocky9.tar.gz
+        retention-days: 7
+
   build-docker-images:
-    name: Build Docker Images
+    name: Build Docker Images (Ubuntu)
     runs-on: ubuntu-latest
     steps:
     - name: Checkout PXF source
@@ -129,6 +175,28 @@ jobs:
       - name: Assemble and test with Gradle
         working-directory: ./server
         run: make test
+
+  build-docker-images-rocky9:
+    name: Build Docker Images (Rocky 9)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout PXF source
+      uses: actions/checkout@v4
+      with:
+        path: cloudberry-pxf
+
+    - name: Build singlecluster Rocky 9 image
+      run: |
+        cd cloudberry-pxf/ci/singlecluster
+        docker build --build-arg BASE_IMAGE=apache/incubator-cloudberry:cbdb-build-rocky9-latest -t pxf/singlecluster-rocky9:3 .
+        docker save pxf/singlecluster-rocky9:3 > /tmp/singlecluster-rocky9-image.tar
+
+    - name: Upload singlecluster Rocky 9 image
+      uses: actions/upload-artifact@v4
+      with:
+        name: singlecluster-rocky9-image
+        path: /tmp/singlecluster-rocky9-image.tar
+        retention-days: 1
 
   # Stage 2: Parallel test jobs using matrix strategy
   pxf-test:
@@ -214,14 +282,14 @@ jobs:
         docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry
         docker cp /tmp/*.deb pxf-cbdb-dev:/tmp/
         docker exec pxf-cbdb-dev sudo chown gpadmin:gpadmin /tmp/*.deb
-        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu && ./script/entrypoint.sh"
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf && ./ci/docker/pxf-cbdb-dev/common/script/entrypoint.sh"
 
     - name: Run Test - ${{ matrix.test_group }}
       id: run_test
       continue-on-error: true
       timeout-minutes: 120
       run: |
-        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/automation && source ../ci/docker/pxf-cbdb-dev/ubuntu/script/pxf-env.sh && ../ci/docker/pxf-cbdb-dev/ubuntu/script/run_tests.sh ${{ matrix.test_group }}"
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/automation && source ../ci/docker/pxf-cbdb-dev/common/script/pxf-env.sh && ../ci/docker/pxf-cbdb-dev/common/script/run_tests.sh ${{ matrix.test_group }}"
         
     - name: Collect artifacts and generate stats
       if: always()
@@ -301,10 +369,182 @@ jobs:
           exit 1
         fi
 
+  # Stage 2b: Rocky 9 parallel test jobs
+  pxf-test-rocky9:
+    name: Test PXF Rocky9 - ${{ matrix.test_group }}
+    needs: [build-cloudberry-rpm, build-docker-images-rocky9]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test_group:
+          - cli
+          - external-table
+          - fdw
+          - server
+          - sanity
+          - smoke
+          - hdfs
+          - hcatalog
+          - hcfs
+          - hive
+          - hbase
+          - profile
+          - jdbc
+          - proxy
+          - unused
+          - s3
+          - features
+          - gpdb
+          - gpdb_fdw
+          - load
+          - pxf_extension
+    steps:
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/hostedtoolcache
+        sudo docker system prune -af
+        df -h
+
+    - name: Checkout PXF source
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        path: cloudberry-pxf
+        submodules: true
+
+    - name: Download Cloudberry RPM
+      uses: actions/download-artifact@v4
+      with:
+        name: cloudberry-rpm
+        path: /tmp
+
+    - name: Download Cloudberry source (Rocky 9)
+      uses: actions/download-artifact@v4
+      with:
+        name: cloudberry-source-rocky9
+        path: /tmp
+
+    - name: Download singlecluster Rocky 9 image
+      uses: actions/download-artifact@v4
+      with:
+        name: singlecluster-rocky9-image
+        path: /tmp
+
+    - name: Load singlecluster Rocky 9 image
+      run: |
+        docker load < /tmp/singlecluster-rocky9-image.tar
+
+    - name: Prepare Cloudberry source
+      run: |
+        tar xzf /tmp/cloudberry-source-rocky9.tar.gz
+        chmod -R u+rwX,go+rX cloudberry
+
+    - name: Start Services
+      id: start_services
+      run: |
+        cd cloudberry-pxf
+        docker compose -f ci/docker/pxf-cbdb-dev/rocky9/docker-compose.yml down -v || true
+        docker compose -f ci/docker/pxf-cbdb-dev/rocky9/docker-compose.yml build
+        docker compose -f ci/docker/pxf-cbdb-dev/rocky9/docker-compose.yml up -d
+        docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry
+        docker cp /tmp/*.rpm pxf-cbdb-dev:/tmp/
+        docker exec pxf-cbdb-dev sudo chown gpadmin:gpadmin /tmp/*.rpm
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf && ./ci/docker/pxf-cbdb-dev/common/script/entrypoint.sh"
+
+    - name: Run Test - ${{ matrix.test_group }}
+      id: run_test
+      continue-on-error: true
+      timeout-minutes: 120
+      run: |
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/automation && source ../ci/docker/pxf-cbdb-dev/common/script/pxf-env.sh && ../ci/docker/pxf-cbdb-dev/common/script/run_tests.sh ${{ matrix.test_group }}"
+
+    - name: Collect artifacts and generate stats
+      if: always()
+      id: collect_artifacts
+      run: |
+        mkdir -p artifacts/logs
+        TEST_GROUP="${{ matrix.test_group }}"
+        TEST_RESULT="${{ steps.run_test.outcome }}"
+
+        # Initialize counters
+        TOTAL=0
+        PASSED=0
+        FAILED=0
+        SKIPPED=0
+
+        # Copy test artifacts
+        cp -r cloudberry-pxf/automation/test_artifacts/* artifacts/ 2>/dev/null || true
+        docker exec pxf-cbdb-dev bash -c "cp -r /usr/local/pxf/logs/* /tmp/pxf-logs/ 2>/dev/null || true" || true
+        docker cp pxf-cbdb-dev:/tmp/pxf-logs artifacts/logs/ 2>/dev/null || true
+
+        # Parse surefire reports for automation tests
+        if [[ "$TEST_GROUP" != "cli" && "$TEST_GROUP" != "server" ]]; then
+          for xml in cloudberry-pxf/automation/target/surefire-reports/TEST-*.xml; do
+            if [ -f "$xml" ]; then
+              tests=$(grep -oP 'tests="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+              failures=$(grep -oP 'failures="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+              errors=$(grep -oP 'errors="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+              skipped=$(grep -oP 'skipped="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+
+              TOTAL=$((TOTAL + tests))
+              FAILED=$((FAILED + failures + errors))
+              SKIPPED=$((SKIPPED + skipped))
+            fi
+          done
+          PASSED=$((TOTAL - FAILED - SKIPPED))
+        fi
+
+        # Generate stats JSON
+        cat > artifacts/test_stats.json <<EOF
+        {
+          "group": "$TEST_GROUP",
+          "result": "$TEST_RESULT",
+          "total": $TOTAL,
+          "passed": $PASSED,
+          "failed": $FAILED,
+          "skipped": $SKIPPED
+        }
+        EOF
+
+        echo "failed_count=$FAILED" >> $GITHUB_OUTPUT
+        echo "skipped_count=$SKIPPED" >> $GITHUB_OUTPUT
+        echo "Test stats for $TEST_GROUP (Rocky 9): total=$TOTAL, passed=$PASSED, failed=$FAILED, skipped=$SKIPPED"
+
+    - name: Cleanup containers
+      if: always()
+      run: |
+        cd cloudberry-pxf
+        docker compose -f ci/docker/pxf-cbdb-dev/rocky9/docker-compose.yml down -v || true
+
+    - name: Upload test artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-rocky9-${{ matrix.test_group }}
+        path: artifacts/**
+        if-no-files-found: ignore
+        retention-days: 7
+
+    - name: Check test result
+      if: always()
+      run: |
+        FAILED_COUNT="${{ steps.collect_artifacts.outputs.failed_count || 0 }}"
+        SKIPPED_COUNT="${{ steps.collect_artifacts.outputs.skipped_count || 0 }}"
+
+        if [ "${{ steps.run_test.outcome }}" == "failure" ] || [ "$FAILED_COUNT" -gt 0 ]; then
+          echo "Test group ${{ matrix.test_group }} (Rocky 9) failed (Failures: $FAILED_COUNT, Skipped: $SKIPPED_COUNT)"
+          exit 1
+        fi
+
   # Stage 3: Summary job
   test-summary:
     name: Test Summary
-    needs: [pxf-test]
+    needs: [pxf-test, pxf-test-rocky9]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -318,79 +558,89 @@ jobs:
       run: |
         echo "## PXF Test Results Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        
-        # Overall counters
-        OVERALL_TOTAL=0
-        OVERALL_PASSED=0
-        OVERALL_FAILED=0
-        OVERALL_SKIPPED=0
-        GROUPS_PASSED=0
-        GROUPS_FAILED=0
-        FAILED_GROUP_NAMES=""
-        
-        # Collect all test stats
-        declare -A GROUP_STATS
-        
-        for dir in all-artifacts/test-results-*; do
-          if [ -d "$dir" ] && [ -f "$dir/test_stats.json" ]; then
-            group=$(cat "$dir/test_stats.json" | grep -oP '"group":\s*"\K[^"]+' || basename "$dir" | sed 's/test-results-//')
-            result=$(cat "$dir/test_stats.json" | grep -oP '"result":\s*"\K[^"]+' || echo "unknown")
-            total=$(cat "$dir/test_stats.json" | grep -oP '"total":\s*\K\d+' || echo "0")
-            passed=$(cat "$dir/test_stats.json" | grep -oP '"passed":\s*\K\d+' || echo "0")
-            failed=$(cat "$dir/test_stats.json" | grep -oP '"failed":\s*\K\d+' || echo "0")
-            skipped=$(cat "$dir/test_stats.json" | grep -oP '"skipped":\s*\K\d+' || echo "0")
-            
-            GROUP_STATS[$group]="$result,$total,$passed,$failed,$skipped"
-            
-            OVERALL_TOTAL=$((OVERALL_TOTAL + total))
-            OVERALL_PASSED=$((OVERALL_PASSED + passed))
-            OVERALL_FAILED=$((OVERALL_FAILED + failed))
-            OVERALL_SKIPPED=$((OVERALL_SKIPPED + skipped))
-            
-            if [ "$result" == "success" ] && [ "$failed" -eq 0 ]; then
-              GROUPS_PASSED=$((GROUPS_PASSED + 1))
-            else
-              GROUPS_FAILED=$((GROUPS_FAILED + 1))
-              FAILED_GROUP_NAMES="${FAILED_GROUP_NAMES}${group} "
+
+        generate_os_summary() {
+          local os_label="$1"
+          local pattern="$2"
+
+          # OS-level counters
+          local OVERALL_TOTAL=0
+          local OVERALL_PASSED=0
+          local OVERALL_FAILED=0
+          local OVERALL_SKIPPED=0
+          local GROUPS_PASSED=0
+          local GROUPS_FAILED=0
+          local FAILED_GROUP_NAMES=""
+
+          declare -A GROUP_STATS
+
+          for dir in all-artifacts/${pattern}; do
+            if [ -d "$dir" ] && [ -f "$dir/test_stats.json" ]; then
+              group=$(cat "$dir/test_stats.json" | grep -oP '"group":\s*"\K[^"]+' || basename "$dir" | sed "s/${pattern%\*}//")
+              result=$(cat "$dir/test_stats.json" | grep -oP '"result":\s*"\K[^"]+' || echo "unknown")
+              total=$(cat "$dir/test_stats.json" | grep -oP '"total":\s*\K\d+' || echo "0")
+              passed=$(cat "$dir/test_stats.json" | grep -oP '"passed":\s*\K\d+' || echo "0")
+              failed=$(cat "$dir/test_stats.json" | grep -oP '"failed":\s*\K\d+' || echo "0")
+              skipped=$(cat "$dir/test_stats.json" | grep -oP '"skipped":\s*\K\d+' || echo "0")
+
+              GROUP_STATS[$group]="$result,$total,$passed,$failed,$skipped"
+
+              OVERALL_TOTAL=$((OVERALL_TOTAL + total))
+              OVERALL_PASSED=$((OVERALL_PASSED + passed))
+              OVERALL_FAILED=$((OVERALL_FAILED + failed))
+              OVERALL_SKIPPED=$((OVERALL_SKIPPED + skipped))
+
+              if [ "$result" == "success" ] && [ "$failed" -eq 0 ]; then
+                GROUPS_PASSED=$((GROUPS_PASSED + 1))
+              else
+                GROUPS_FAILED=$((GROUPS_FAILED + 1))
+                FAILED_GROUP_NAMES="${FAILED_GROUP_NAMES}${group} "
+              fi
             fi
-          fi
-        done
-        
-        # Overall summary
-        echo "### Overall Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        if [ $GROUPS_FAILED -eq 0 ]; then
-          echo "✅ **All ${GROUPS_PASSED} test groups passed**" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "❌ **${GROUPS_FAILED} of $((GROUPS_PASSED + GROUPS_FAILED)) test groups failed**" >> $GITHUB_STEP_SUMMARY
-        fi
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "- Total Tests: $OVERALL_TOTAL" >> $GITHUB_STEP_SUMMARY
-        echo "- Passed: $OVERALL_PASSED" >> $GITHUB_STEP_SUMMARY
-        echo "- Failed: $OVERALL_FAILED" >> $GITHUB_STEP_SUMMARY
-        echo "- Skipped: $OVERALL_SKIPPED" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        # Detailed table
-        echo "### Test Results by Group" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "| Test Group | Status | Passed | Failed | Skipped | Total |" >> $GITHUB_STEP_SUMMARY
-        echo "|------------|--------|-------:|-------:|--------:|------:|" >> $GITHUB_STEP_SUMMARY
-        
-        for group in $(echo "${!GROUP_STATS[@]}" | tr ' ' '\n' | sort); do
-          IFS=',' read -r result total passed failed skipped <<< "${GROUP_STATS[$group]}"
-          if [ "$result" == "success" ] && [ "$failed" -eq 0 ]; then
-            status="✅ PASS"
+          done
+
+          echo "### ${os_label}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ $GROUPS_FAILED -eq 0 ]; then
+            echo "All ${GROUPS_PASSED} test groups passed" >> $GITHUB_STEP_SUMMARY
           else
-            status="❌ FAIL"
+            echo "${GROUPS_FAILED} of $((GROUPS_PASSED + GROUPS_FAILED)) test groups failed" >> $GITHUB_STEP_SUMMARY
           fi
-          echo "| $group | $status | $passed | $failed | $skipped | $total |" >> $GITHUB_STEP_SUMMARY
-        done
-        
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        # Check if any group failed
-        if [ $GROUPS_FAILED -gt 0 ]; then
-          echo "::error::${GROUPS_FAILED} test group(s) failed: ${FAILED_GROUP_NAMES}"
-          exit 1
-        fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Total Tests: $OVERALL_TOTAL" >> $GITHUB_STEP_SUMMARY
+          echo "- Passed: $OVERALL_PASSED" >> $GITHUB_STEP_SUMMARY
+          echo "- Failed: $OVERALL_FAILED" >> $GITHUB_STEP_SUMMARY
+          echo "- Skipped: $OVERALL_SKIPPED" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "| Test Group | Status | Passed | Failed | Skipped | Total |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|-------:|-------:|--------:|------:|" >> $GITHUB_STEP_SUMMARY
+
+          for group in $(echo "${!GROUP_STATS[@]}" | tr ' ' '\n' | sort); do
+            IFS=',' read -r result total passed failed skipped <<< "${GROUP_STATS[$group]}"
+            if [ "$result" == "success" ] && [ "$failed" -eq 0 ]; then
+              status="PASS"
+            else
+              status="FAIL"
+            fi
+            echo "| $group | $status | $passed | $failed | $skipped | $total |" >> $GITHUB_STEP_SUMMARY
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ $GROUPS_FAILED -gt 0 ]; then
+            echo "::error::${os_label}: ${GROUPS_FAILED} test group(s) failed: ${FAILED_GROUP_NAMES}"
+            return 1
+          fi
+          return 0
+        }
+
+        EXIT_CODE=0
+
+        # Ubuntu results (test-results-<group>, excluding test-results-rocky9-*)
+        generate_os_summary "Ubuntu 22.04" "test-results-[!r]*" || EXIT_CODE=1
+
+        # Rocky 9 results
+        generate_os_summary "Rocky 9" "test-results-rocky9-*" || EXIT_CODE=1
+
+        exit $EXIT_CODE

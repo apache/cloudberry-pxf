@@ -107,13 +107,26 @@ check_pxf() {
   fi
 }
 
+# Auto-detect default Java 8 path based on OS
+_detect_java8_default() {
+  if [ -d /usr/lib/jvm/java-8-openjdk-amd64 ]; then
+    echo "/usr/lib/jvm/java-8-openjdk-amd64"
+  elif [ -d /usr/lib/jvm/java-8-openjdk-arm64 ]; then
+    echo "/usr/lib/jvm/java-8-openjdk-arm64"
+  elif [ -d /usr/lib/jvm/java-1.8.0-openjdk ]; then
+    echo "/usr/lib/jvm/java-1.8.0-openjdk"
+  else
+    echo "/usr/lib/jvm/java-8-openjdk"
+  fi
+}
+
 health_check() {
   log "sanity check Hadoop/Hive/HBase/PXF"
   GPHD_ROOT=${GPHD_ROOT:-/home/gpadmin/workspace/singlecluster}
   HADOOP_ROOT=${HADOOP_ROOT:-${GPHD_ROOT}/hadoop}
   HBASE_ROOT=${HBASE_ROOT:-${GPHD_ROOT}/hbase}
   HIVE_ROOT=${HIVE_ROOT:-${GPHD_ROOT}/hive}
-  JAVA_HADOOP=${JAVA_HADOOP:-/usr/lib/jvm/java-8-openjdk-amd64}
+  JAVA_HADOOP=${JAVA_HADOOP:-$(_detect_java8_default)}
 
   export JAVA_HOME="${JAVA_HADOOP}"
   export PATH="$JAVA_HOME/bin:$HADOOP_ROOT/bin:$HIVE_ROOT/bin:$HBASE_ROOT/bin:$PATH"
