@@ -23,11 +23,11 @@ under the License.
 
 In this example, you:
 
-- Install the ClickHouse JDBC driver on the Apache Cloudberry coordinator (see [JDBC driver installation](jdbc_pxf.html#cfg_jdbc_driver))
+- Install the ClickHouse JDBC driver on the Apache Cloudberry (see [Registering PXF Library Dependencies](reg_jar_depend.html))
 - Create a ClickHouse table, and insert data into the table
-- Create a PXF readable external table that references the ClickHouse table using `JDBC_DRIVER` and `DB_URL` in the `LOCATION` clause (no separate PXF server configuration directory is required)
+- Create a PXF readable external table or a foreign table (`jdbc_pxf_fdw`) that references the ClickHouse table
 - Read the data in the ClickHouse table using PXF
-- Create a PXF writable external table that references the ClickHouse table
+- Create a PXF writable external table or a writable foreign table that references the ClickHouse table
 - Write data to the ClickHouse table using PXF
 - Read the data in the ClickHouse table again
 
@@ -62,11 +62,17 @@ VALUES
 
 ## <a id="ex_jdbconfig_1"></a>JDBC driver
 
-Place the ClickHouse JDBC driver JAR under `$PXF_BASE/lib` on every coordinator and segment host, synchronize PXF, and restart PXF. The Cloudberry build can bundle JDBC drivers from `server/pxf-jdbc-drivers`; follow your deployment’s procedure (for example, the automation `Makefile` target that stages PXF and links drivers).
+Place the ClickHouse JDBC driver JAR under `$PXF_BASE/lib` on coordinator and segment host, synchronize PXF, and restart PXF.
 
-You do **not** need a `servers/clickhouse/jdbc-site.xml` if you pass connection options in the external table definition, as shown below.
+You do **not** need a `servers/clickhouse/jdbc-site.xml` if you pass connection options in the external table `LOCATION` or in `CREATE SERVER ... OPTIONS` for a foreign table, as shown below.
+
+Automated tests exercise ClickHouse server versions **24** and **26** together with the ClickHouse JDBC driver **0.6.5**. In practice this driver tends to work more reliably when the HTTP stack uses **Apache HttpClient**; add the JDBC URL parameter `http_connection_provider=APACHE_HTTP_CLIENT` (for example `jdbc:clickhouse://clickhousehost:8123/default?http_connection_provider=APACHE_HTTP_CLIENT`). To use that mode, you must also place the **Apache HttpClient 5** JAR on the PXF classpath: copy `org.apache.httpcomponents.client5:httpclient5` (and its required dependencies, if any) into `$PXF_BASE/lib` next to the ClickHouse driver JAR, then synchronize PXF and restart PXF. See [Registering PXF Library Dependencies](reg_jar_depend.html).
 
 ## <a id="ex_readjdbc_1"></a>Read from the ClickHouse Table
+
+You can use either an external table (PXF `pxf` protocol) or a foreign table (`jdbc_pxf_fdw`).
+
+### <a id="ex_readjdbc_ext"></a>Using an external table
 
 Perform the following procedure to create a PXF external table that references the `pxf_ch_types` ClickHouse table, and reads the data in the table:
 
@@ -88,7 +94,43 @@ Perform the following procedure to create a PXF external table that references t
    SELECT * FROM pxf_ch_read ORDER BY i_int;
    ```
 
+### <a id="ex_readjdbc_fdw"></a>Using a foreign table
+
+For foreign tables use `jdbc_pxf_fdw` foreign data wrapper. Define the JDBC driver and URL on the foreign server using `jdbc_driver` and `db_url` in `OPTIONS` (see [Overriding the JDBC Server Configuration with DDL](jdbc_pxf.html#jdbc_override)), then set `resource` to the remote table identifier (`<database>.<table>`).
+
+**Advantage over external tables:** with the `pxf` protocol you must define two objects—a `CREATE EXTERNAL TABLE` for reads and a `CREATE WRITABLE EXTERNAL TABLE` for writes—because import and export use different formatters. With **foreign tables**, one `CREATE FOREIGN TABLE` is enough: the same definition supports both `SELECT` and `INSERT` (when the JDBC connector supports writes), so you avoid duplicated DDL and keep a single logical name for the remote table.
+
+1. Create a foreign server, a user mapping, and one foreign table that references the remote ClickHouse table:
+
+   ```sql
+   CREATE SERVER clickhouse_jdbc_srv FOREIGN DATA WRAPPER jdbc_pxf_fdw
+     OPTIONS (
+       jdbc_driver 'com.clickhouse.jdbc.ClickHouseDriver',
+       db_url 'jdbc:clickhouse://clickhousehost:8123/default'
+     );
+
+   CREATE USER MAPPING FOR CURRENT_USER SERVER clickhouse_jdbc_srv;
+
+   CREATE FOREIGN TABLE pxf_ch_fdw(
+     i_int int, s_small smallint, b_big bigint,
+     f_float32 real, d_float64 double precision, b_bool boolean,
+     dec numeric, t_text text, bin bytea, d_date date,
+     d_ts timestamp, d_tstz timestamp with time zone, d_uuid uuid
+   ) SERVER clickhouse_jdbc_srv
+     OPTIONS ( resource 'default.pxf_ch_types' );
+   ```
+
+   Alternatively, you can keep credentials and JDBC settings in a PXF server configuration directory and reference it with `OPTIONS ( config 'your_server_dir' )` on `CREATE SERVER`; see [Configuring the JDBC Connector](jdbc_cfg.html).
+
+2. Read the data:
+
+   ```sql
+   SELECT * FROM pxf_ch_fdw ORDER BY i_int;
+   ```
+
 ## <a id="ex_writejdbc_1"></a>Write to the ClickHouse Table
+
+### <a id="ex_writejdbc_ext"></a>Using an external table
 
 Perform the following procedure to create a PXF writable external table that references the `pxf_ch_types` ClickHouse table, and writes data to the table:
 
@@ -115,10 +157,31 @@ Perform the following procedure to create a PXF writable external table that ref
       '550e8400-e29b-41d4-a716-446655440000'::uuid);
    ```
 
-3. Read the data back:
+3. Read the data back (using the readable external table from the previous section):
 
    ```sql
    SELECT * FROM pxf_ch_read ORDER BY i_int;
+   ```
+
+### <a id="ex_writejdbc_fdw"></a>Using a foreign table
+
+Reuse the same foreign server and foreign table `pxf_ch_fdw` from [Using a foreign table](#ex_readjdbc_fdw). A `INSERT` into that foreign table is routed to the remote ClickHouse table named in `resource`; you do **not** need a second foreign table for writes.
+
+1. Insert a row:
+
+   ```sql
+   INSERT INTO pxf_ch_fdw VALUES
+     (2, 3, 4, 2.25, 4.1415926, true, CAST('12345.6789012345' AS numeric),
+      'hello2', decode('41424344','hex'), DATE '2020-01-02',
+      TIMESTAMP '2020-01-02 03:04:05.006',
+      TIMESTAMPTZ '2020-01-02 03:04:05.006+00',
+      '550e8400-e29b-41d4-a716-446655440000'::uuid);
+   ```
+
+2. Read the data back:
+
+   ```sql
+   SELECT * FROM pxf_ch_fdw ORDER BY i_int;
    ```
 
 ## Data Type Mapping and Limitations
