@@ -24,9 +24,9 @@ buildscript {
 }
 
 plugins {
-    id "io.franzbecker.gradle-lombok" version "3.3.0"
+    id "io.freefair.lombok" version "6.6.3"
     id "org.springframework.boot" version "${springBootVersion}" apply false
-    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.15.RELEASE'
 }
 
 // override Spring Framework version to pick the Spring MVC 5.3.33 with the async race condition fix
@@ -59,7 +59,7 @@ idea {
 configure(javaProjects) {
     apply plugin: 'java'
     apply plugin: 'io.spring.dependency-management'
-    apply plugin: "io.franzbecker.gradle-lombok"
+    apply plugin: "io.freefair.lombok"
 
     group = 'org.apache.cloudberry.pxf'
     version = "${version}"
@@ -258,6 +258,9 @@ configure(javaProjects) {
                 "-Xlint:empty", "-Xlint:finally", "-Xlint:overrides", "-Xlint:path", "-Xlint:-processing", "-Xlint:static",
                 "-Xlint:try", "-Xlint:fallthrough", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
         ]
+        // JEP 411 (Java 17) - java.security.AccessController is deprecated.
+        // Note, in JEP 486 (Java 24) Security Manager is completely disabled, however Java-API is not broken.
+        options.compilerArgs += JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17) ? ["-Xlint:-removal"] : []
     }
 
     compileTestJava {
@@ -266,6 +269,9 @@ configure(javaProjects) {
                 "-Xlint:empty", "-Xlint:finally", "-Xlint:overrides", "-Xlint:path", "-Xlint:-processing", "-Xlint:static",
                 "-Xlint:try", "-Xlint:fallthrough", "-Xlint:unchecked", "-Xlint:-options", "-Werror"
         ]
+        // JEP 411 (Java 17) - java.security.AccessController is deprecated.
+        // Note, in JEP 486 (Java 24) Security Manager is completely disabled, however Java-API is not broken.
+        options.compilerArgs += JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17) ? ["-Xlint:-removal"] : []
     }
 
     configurations {

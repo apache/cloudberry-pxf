@@ -26,7 +26,7 @@ fi
 
 # Extract the Gradle version from gradle-wrapper.properties.
 GRADLE_DIST_VERSION="$(grep distributionUrl= "$APP_HOME/gradle/wrapper/gradle-wrapper.properties" | sed 's/^.*gradle-\([0-9.]*\)-[a-z]*.zip$/\1/')"
-GRADLE_WRAPPER_SHA256="$APP_HOME/gradle/wrapper/gradle-wrapper-${GRADLE_DIST_VERSION}.jar.sha256"
+GRADLE_WRAPPER_SHA256="$APP_HOME/gradle/wrapper/gradle-${GRADLE_DIST_VERSION}-wrapper.jar.sha256"
 GRADLE_WRAPPER_JAR="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
 if [ -x "$(command -v sha256sum)" ] ; then
   SHASUM="sha256sum"

@@ -1369,7 +1369,7 @@
             -->
 
             <exclude>.github/pull_request_template.md</exclude>
-            <exclude>server/gradle/wrapper/gradle-6.8.2-wrapper.jar.sha256</exclude>
+            <exclude>server/gradle/wrapper/gradle-7.6.6-wrapper.jar.sha256</exclude>
 
           </excludes>
 
