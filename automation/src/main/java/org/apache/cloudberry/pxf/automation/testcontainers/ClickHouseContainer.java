@@ -14,9 +14,10 @@ import org.testcontainers.utility.DockerImageName;
  */
 public class ClickHouseContainer extends GenericContainer<ClickHouseContainer> {
 
-    private static final String DEFAULT_IMAGE = "clickhouse/clickhouse-server";
     public static final int HTTP_PORT = 8123;
-    public static final String NETWORK_ALIAS = "clickhouse";
+
+    private static final String DEFAULT_IMAGE = "clickhouse/clickhouse-server";
+    private static final String NETWORK_ALIAS_PREFIX = "clickhouse-";
 
     /**
      * Credentials for the test container. ClickHouse 24+ restricts network access for `default`
@@ -25,14 +26,25 @@ public class ClickHouseContainer extends GenericContainer<ClickHouseContainer> {
     public static final String CLICKHOUSE_USER = "default";
     public static final String CLICKHOUSE_PASSWORD = "pxf-test";
 
+    private final String networkAlias;
+
     public ClickHouseContainer(String tag, Network network) {
         super(DockerImageName.parse(DEFAULT_IMAGE + ":" + tag));
+
+        // generate unique DNS name for this Clickhouse container:
+        this.networkAlias = NETWORK_ALIAS_PREFIX + tag.replaceAll("[-.]", "");
+
         super.withNetwork(network)
-            .withNetworkAliases(NETWORK_ALIAS)
+            .withNetworkAliases(this.networkAlias)
             .withExposedPorts(HTTP_PORT)
             .withEnv("CLICKHOUSE_USER", CLICKHOUSE_USER)
             .withEnv("CLICKHOUSE_PASSWORD", CLICKHOUSE_PASSWORD)
             .waitingFor(Wait.forHttp("/ping").forPort(HTTP_PORT));
+    }
+
+    /** Embedded DNS name of this container on the Testcontainers network (for JDBC from other containers). */
+    public String getNetworkAlias() {
+        return networkAlias;
     }
 
     /** JDBC URL over HTTP, reachable from the host (mapped `HTTP_PORT`). */
@@ -40,12 +52,13 @@ public class ClickHouseContainer extends GenericContainer<ClickHouseContainer> {
         return "jdbc:clickhouse://localhost:" + getMappedPort(HTTP_PORT) + "/default";
     }
 
-    /** JDBC URL over HTTP for PXF / other containers. */
+    /** JDBC URL over HTTP for PXF / other containers on the same Docker network. */
     public String getInternalJdbcUrl() {
-        return "jdbc:clickhouse://" + NETWORK_ALIAS + ":" + HTTP_PORT + "/default";
+        return "jdbc:clickhouse://" + networkAlias + ":" + HTTP_PORT + "/default";
     }
 
     public int getHttpMappedPort() {
         return getMappedPort(HTTP_PORT);
     }
+
 }
