@@ -99,7 +99,11 @@ MVN=mvn
 all: test
 
 check-env:
-	@if [ -z "$(PXF_HOME)" ]; then echo 'ERROR: PXF_HOME must be set'; exit 1; fi
+	@if [ -z "$(PXF_HOME)" ]; then \
+		echo 'ERROR: PXF_HOME must be set'; \
+		echo 'Example: export PXF_HOME="$(abspath ../server/build/stage)"'; \
+		exit 1; \
+	fi
 
 symlink_pxf_jars: check-env
 	@if [ -d "$(PXF_HOME)/application" ]; then \
