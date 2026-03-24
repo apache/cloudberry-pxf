@@ -83,6 +83,7 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
     public static Object[][] clickhouseVersions() {
         return new Object[][] {
                 { "24" },
+                { "26.1.4.35" },
                 { "26.2" },
         };
     }
@@ -109,52 +110,52 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
 
     @Test(groups = {"testcontainers", "jdbc-tc"})
     public void readSupportedTypes() throws Exception {
-        runReadSupportedTypes(clickhouseContainer.getJdbcUrl(), false);
+        runReadSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), false);
     }
 
     @Test(groups = {"testcontainers", "jdbc-tc"})
     public void readSupportedTypesWithProtocolCompression() throws Exception {
-        runReadSupportedTypes(clickhouseContainer.getJdbcUrl(), true);
+        runReadSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), true);
     }
 
     @Test(groups = {"testcontainers", "jdbc-tc"})
     public void readSupportedTypesWithHttpConnectionProvider() throws Exception {
-        runReadSupportedTypes(clickhouseContainer.getJdbcUrl(), false, true);
+        runReadSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), false, true);
     }
 
     @Test(groups = {"testcontainers", "jdbc-tc"})
     public void writeSupportedTypes() throws Exception {
-        runWriteSupportedTypes(clickhouseContainer.getJdbcUrl(), false);
+        runWriteSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), false);
     }
 
     @Test(groups = {"testcontainers", "jdbc-tc"})
     public void writeSupportedTypesWithProtocolCompression() throws Exception {
-        runWriteSupportedTypes(clickhouseContainer.getJdbcUrl(), true);
+        runWriteSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), true);
     }
 
     @Test(groups = {"testcontainers", "jdbc-tc"})
     public void writeSupportedTypesWithHttpConnectionProvider() throws Exception {
-        runWriteSupportedTypes(clickhouseContainer.getJdbcUrl(), false, true);
+        runWriteSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), false, true);
     }
 
     @Test(groups = {"testcontainers", "jdbc-tc"})
     public void writeSupportedTypesWithHttpConnectionProviderAndCompression() throws Exception {
-        runWriteSupportedTypes(clickhouseContainer.getJdbcUrl(), true, true);
+        runWriteSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), true, true);
     }
 
-    private void runReadSupportedTypes(String jdbcUrl, boolean enableProtocolCompression) throws Exception {
-        runReadSupportedTypes(jdbcUrl, enableProtocolCompression, false);
+    private void runReadSupportedTypes(String internalJdbcUrl, String externalJdbcUrl, boolean enableProtocolCompression) throws Exception {
+        runReadSupportedTypes(internalJdbcUrl, externalJdbcUrl, enableProtocolCompression, false);
     }
 
-    private void runReadSupportedTypes(String jdbcUrl, boolean enableProtocolCompression, boolean enableHttpConnectionProvider) throws Exception {
-        createAndSeedClickhouseReadTable(jdbcUrl);
+    private void runReadSupportedTypes(String internalJdbcUrl, String externalJdbcUrl, boolean enableProtocolCompression, boolean enableHttpConnectionProvider) throws Exception {
+        createAndSeedClickhouseReadTable(externalJdbcUrl);
 
         ExternalTable pxfRead = TableFactory.getPxfJdbcReadableTable(
                 "pxf_ch_clickhouse_read_types",
                 CLICKHOUSE_PXF_FIELDS,
                 CLICKHOUSE_TABLE_READ,
                 CLICKHOUSE_DRIVER,
-                jdbcUrl,
+                internalJdbcUrl,
                 ClickHouseContainer.CLICKHOUSE_USER,
                 "PASS=" + ClickHouseContainer.CLICKHOUSE_PASSWORD);
         pxfRead.setHost(pxfHost);
@@ -175,19 +176,19 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
         }
     }
 
-    private void runWriteSupportedTypes(String jdbcUrl, boolean enableProtocolCompression) throws Exception {
-        runWriteSupportedTypes(jdbcUrl, enableProtocolCompression, false);
+    private void runWriteSupportedTypes(String internalJdbcUrl, String externalJdbcUrl, boolean enableProtocolCompression) throws Exception {
+        runWriteSupportedTypes(internalJdbcUrl, externalJdbcUrl, enableProtocolCompression, false);
     }
 
-    private void runWriteSupportedTypes(String jdbcUrl, boolean enableProtocolCompression, boolean enableHttpConnectionProvider) throws Exception {
-        createClickhouseWriteTable(jdbcUrl);
+    private void runWriteSupportedTypes(String internalJdbcUrl, String externalJdbcUrl, boolean enableProtocolCompression, boolean enableHttpConnectionProvider) throws Exception {
+        createClickhouseWriteTable(externalJdbcUrl);
 
         ExternalTable pxfWrite = TableFactory.getPxfJdbcWritableTable(
                 "pxf_ch_clickhouse_write_types",
                 CLICKHOUSE_PXF_FIELDS,
                 CLICKHOUSE_TABLE_WRITE,
                 CLICKHOUSE_DRIVER,
-                jdbcUrl,
+                internalJdbcUrl,
                 ClickHouseContainer.CLICKHOUSE_USER,
                 "PASS=" + ClickHouseContainer.CLICKHOUSE_PASSWORD);
         pxfWrite.setHost(pxfHost);
@@ -206,7 +207,7 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
                 CLICKHOUSE_PXF_FIELDS,
                 CLICKHOUSE_TABLE_WRITE,
                 CLICKHOUSE_DRIVER,
-                jdbcUrl,
+                internalJdbcUrl,
                 ClickHouseContainer.CLICKHOUSE_USER,
                 "PASS=" + ClickHouseContainer.CLICKHOUSE_PASSWORD);
         pxfVerify.setHost(pxfHost);
@@ -235,8 +236,8 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
         }
     }
 
-    private void createClickhouseWriteTable(String jdbcUrl) throws SQLException {
-        try (Connection chConn = openClickhouseConnection(jdbcUrl)) {
+    private void createClickhouseWriteTable(String externalJdbcUrl) throws SQLException {
+        try (Connection chConn = openClickhouseConnection(externalJdbcUrl)) {
             createClickhouseServerTable(chConn, CLICKHOUSE_TABLE_WRITE);
         }
     }
@@ -268,7 +269,7 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
         String insertSql = "INSERT INTO " + CLICKHOUSE_TABLE_READ + " ("
                 + "i_int, s_small, b_big, f_float32, d_float64, b_bool, dec, t_text, bin, d_date, d_ts, d_tstz, d_uuid"
                 + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        Timestamp rowTs = Timestamp.valueOf(V_D_TS);
+
         try (PreparedStatement ps = chConn.prepareStatement(insertSql)) {
             ps.setInt(1, V_I_INT);
             ps.setShort(2, V_S_SMALL);
@@ -280,8 +281,8 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
             ps.setString(8, V_T_TEXT);
             ps.setBytes(9, V_BIN_BYTES);
             ps.setDate(10, Date.valueOf(V_D_DATE));
-            ps.setTimestamp(11, rowTs);
-            ps.setTimestamp(12, rowTs);
+            ps.setTimestamp(11, Timestamp.valueOf(V_D_TS));
+            ps.setTimestamp(12, Timestamp.valueOf(V_D_TS));
             ps.setObject(13, UUID.fromString(V_D_UUID));
             ps.executeUpdate();
         }
@@ -293,4 +294,5 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
         props.setProperty("password", ClickHouseContainer.CLICKHOUSE_PASSWORD);
         return DriverManager.getConnection(jdbcUrl, props);
     }
+
 }
