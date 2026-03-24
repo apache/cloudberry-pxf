@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -40,7 +41,10 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static org.apache.parquet.schema.LogicalTypeAnnotation.uuidType;
 
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -194,11 +198,12 @@ public class ParquetResolverTest {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetFields_UUID() throws IOException {
+    public void testSetFields_UUID_FixedLenByteArray() throws IOException {
         List<Type> typeFields = new ArrayList<>();
-        typeFields.add(new PrimitiveType(Type.Repetition.OPTIONAL, PrimitiveTypeName.BINARY, "id", org.apache.parquet.schema.OriginalType.UTF8));
-        typeFields.add(new PrimitiveType(Type.Repetition.OPTIONAL, PrimitiveTypeName.BINARY, "value", org.apache.parquet.schema.OriginalType.UTF8));
+        typeFields.add(org.apache.parquet.schema.Types.optional(PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)
+                .length(16).as(uuidType()).named("id"));
+        typeFields.add(org.apache.parquet.schema.Types.optional(PrimitiveTypeName.BINARY)
+                .as(org.apache.parquet.schema.LogicalTypeAnnotation.stringType()).named("value"));
         schema = new MessageType("hive_schema", typeFields);
         context.setMetadata(schema);
 
@@ -222,8 +227,13 @@ public class ParquetResolverTest {
         assertTrue(data instanceof Group);
         Group group = (Group) data;
 
-        // assert UUID value is stored as string in BINARY column
-        assertEquals(uuidValue, group.getString(0, 0));
+        // assert UUID value is stored as 16-byte FIXED_LEN_BYTE_ARRAY (big-endian)
+        byte[] storedBytes = group.getBinary(0, 0).getBytes();
+        assertEquals(16, storedBytes.length);
+        UUID expectedUuid = UUID.fromString(uuidValue);
+        ByteBuffer bb = ByteBuffer.wrap(storedBytes);
+        assertEquals(expectedUuid.getMostSignificantBits(), bb.getLong());
+        assertEquals(expectedUuid.getLeastSignificantBits(), bb.getLong());
         assertEquals("test", group.getString(1, 0));
 
         // assert value repetition count
@@ -233,11 +243,12 @@ public class ParquetResolverTest {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testSetFields_UUID_Null() throws IOException {
+    public void testSetFields_UUID_FixedLenByteArray_Null() throws IOException {
         List<Type> typeFields = new ArrayList<>();
-        typeFields.add(new PrimitiveType(Type.Repetition.OPTIONAL, PrimitiveTypeName.BINARY, "id", org.apache.parquet.schema.OriginalType.UTF8));
-        typeFields.add(new PrimitiveType(Type.Repetition.OPTIONAL, PrimitiveTypeName.BINARY, "value", org.apache.parquet.schema.OriginalType.UTF8));
+        typeFields.add(org.apache.parquet.schema.Types.optional(PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)
+                .length(16).as(uuidType()).named("id"));
+        typeFields.add(org.apache.parquet.schema.Types.optional(PrimitiveTypeName.BINARY)
+                .as(org.apache.parquet.schema.LogicalTypeAnnotation.stringType()).named("value"));
         schema = new MessageType("hive_schema", typeFields);
         context.setMetadata(schema);
 
@@ -263,6 +274,69 @@ public class ParquetResolverTest {
         // assert null UUID is not written (repetition count 0)
         assertEquals(0, group.getFieldRepetitionCount(0));
         assertEquals(1, group.getFieldRepetitionCount(1));
+    }
+
+    @Test
+    public void testGetFields_UUID_FixedLenByteArray() throws IOException {
+        List<Type> typeFields = new ArrayList<>();
+        typeFields.add(org.apache.parquet.schema.Types.optional(PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)
+                .length(16).as(uuidType()).named("id"));
+        typeFields.add(org.apache.parquet.schema.Types.optional(PrimitiveTypeName.BINARY)
+                .as(org.apache.parquet.schema.LogicalTypeAnnotation.stringType()).named("value"));
+        schema = new MessageType("hive_schema", typeFields);
+        context.setMetadata(schema);
+        context.setTupleDescription(getColumnDescriptorsFromSchema(schema));
+        resolver.setRequestContext(context);
+        resolver.afterPropertiesSet();
+
+        List<Group> groups = readParquetFile("uuid_types.parquet", 3, schema);
+        assertEquals(3, groups.size());
+
+        // row 0
+        List<OneField> fields = assertRow(groups, 0, 2);
+        assertField(fields, 0, "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", DataType.UUID);
+        assertField(fields, 1, "test1", DataType.TEXT);
+
+        // row 1
+        fields = assertRow(groups, 1, 2);
+        assertField(fields, 0, "b1ffcd00-0d1c-5f09-cc7e-7ccace491b22", DataType.UUID);
+        assertField(fields, 1, "test2", DataType.TEXT);
+
+        // row 2 (null UUID)
+        fields = assertRow(groups, 2, 2);
+        assertField(fields, 0, null, DataType.UUID);
+        assertField(fields, 1, "test3", DataType.TEXT);
+    }
+
+    @Test
+    public void testRoundTrip_UUID_FixedLenByteArray() throws IOException {
+        List<Type> typeFields = new ArrayList<>();
+        typeFields.add(org.apache.parquet.schema.Types.optional(PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)
+                .length(16).as(uuidType()).named("id"));
+        schema = new MessageType("hive_schema", typeFields);
+        context.setMetadata(schema);
+
+        List<ColumnDescriptor> columnDescriptors = new ArrayList<>();
+        columnDescriptors.add(new ColumnDescriptor("id", DataType.UUID.getOID(), 0, "uuid", null));
+        context.setTupleDescription(columnDescriptors);
+
+        resolver.setRequestContext(context);
+        resolver.afterPropertiesSet();
+
+        // Write
+        String uuidValue = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+        List<OneField> fields = new ArrayList<>();
+        fields.add(new OneField(DataType.TEXT.getOID(), uuidValue));
+
+        OneRow row = resolver.setFields(fields);
+        assertNotNull(row);
+        Group group = (Group) row.getData();
+
+        // Read back
+        List<Group> groups = new ArrayList<>();
+        groups.add(group);
+        List<OneField> readFields = assertRow(groups, 0, 1);
+        assertField(readFields, 0, uuidValue, DataType.UUID);
     }
 
     @Test

@@ -49,8 +49,9 @@ public class ParquetFileAccessorTest {
         assertEquals("id", result.getName());
         assertTrue(result.isPrimitive());
         PrimitiveType primitiveType = result.asPrimitiveType();
-        assertEquals(PrimitiveType.PrimitiveTypeName.BINARY, primitiveType.getPrimitiveTypeName());
-        assertEquals(LogicalTypeAnnotation.stringType(), primitiveType.getLogicalTypeAnnotation());
+        assertEquals(PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY, primitiveType.getPrimitiveTypeName());
+        assertEquals(LogicalTypeAnnotation.uuidType(), primitiveType.getLogicalTypeAnnotation());
+        assertEquals(16, primitiveType.getTypeLength());
     }
 
     @Test
@@ -64,5 +65,12 @@ public class ParquetFileAccessorTest {
         assertEquals("ids", result.getName());
         // array types are wrapped in a list group
         assertTrue(result.asGroupType().isRepetition(Type.Repetition.OPTIONAL));
+
+        Type elementType = result.asGroupType().getType(0).asGroupType().getType(0);
+        assertTrue(elementType.isPrimitive());
+        PrimitiveType elementPrimitive = elementType.asPrimitiveType();
+        assertEquals(PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY, elementPrimitive.getPrimitiveTypeName());
+        assertEquals(LogicalTypeAnnotation.uuidType(), elementPrimitive.getLogicalTypeAnnotation());
+        assertEquals(16, elementPrimitive.getTypeLength());
     }
 }

@@ -69,10 +69,10 @@ public class ParquetUtilitiesTest {
 
     @Test
     public void testParsePostgresArrayUuidArray() {
-        // GPDB UUID is a parquet BINARY primitive type with String annotation (same as text)
+        // GPDB UUID is a parquet FIXED_LEN_BYTE_ARRAY(16) with UUID logical type annotation
         String value = "{a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11,b1ffcd00-0d1c-5f09-cc7e-7ccace491b22}";
 
-        List<Object> result = parquetUtilities.parsePostgresArray(value, PrimitiveType.PrimitiveTypeName.BINARY, LogicalTypeAnnotation.StringLogicalTypeAnnotation.stringType());
+        List<Object> result = parquetUtilities.parsePostgresArray(value, PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY, LogicalTypeAnnotation.uuidType());
         assertIterableEquals(Arrays.asList("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", "b1ffcd00-0d1c-5f09-cc7e-7ccace491b22"), result);
     }
 

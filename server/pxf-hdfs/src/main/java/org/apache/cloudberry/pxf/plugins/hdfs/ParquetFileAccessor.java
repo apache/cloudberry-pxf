@@ -581,8 +581,12 @@ public class ParquetFileAccessor extends BasePlugin implements Accessor {
                 primitiveTypeName = PrimitiveTypeName.INT32;
                 logicalTypeAnnotation = LogicalTypeAnnotation.dateType();
                 break;
-            case TIME:
             case UUID:
+                primitiveTypeName = PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
+                logicalTypeAnnotation = LogicalTypeAnnotation.uuidType();
+                length = 16;
+                break;
+            case TIME:
             case VARCHAR:
             case BPCHAR:
             case TEXT:
