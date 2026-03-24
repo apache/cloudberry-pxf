@@ -89,6 +89,14 @@ build_pxf() {
   "${PXF_SCRIPTS}/build_pxf.sh"
 }
 
+# pxf_regress is copied from the host via Testcontainers; the binary may be macOS or wrong CPU.
+# Rebuild here so RegressApplication runs a Linux executable matching the container arch.
+build_pxf_regress() {
+  log "build pxf_regress (linux)"
+  export PATH="/usr/local/go/bin:${PATH}"
+  make -C "${REPO_DIR}/automation/pxf_regress" clean pxf_regress
+}
+
 configure_pxf() {
   log "configure PXF"
   source "${PXF_SCRIPTS}/pxf-env.sh"
@@ -220,6 +228,7 @@ main() {
   create_demo_cluster
   relax_pg_hba
   build_pxf
+  build_pxf_regress
   configure_pxf
   health_check
   log "entrypoint finished; environment ready for tests"

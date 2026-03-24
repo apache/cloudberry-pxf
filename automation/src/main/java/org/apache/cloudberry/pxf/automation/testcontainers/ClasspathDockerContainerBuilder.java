@@ -67,7 +67,6 @@ public class ClasspathDockerContainerBuilder {
         try {
             ProcessBuilder pb = new ProcessBuilder(
                     "docker", "build",
-                    "--cache-from", tag,
                     "-t", tag, ".")
                     .directory(contextDir)
                     .redirectErrorStream(true);

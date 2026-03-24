@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN sudo apt-get update && \
     sudo apt-get install -y --no-install-recommends \
       openjdk-11-jdk-headless \
-      curl ca-certificates git unzip maven \
+      curl ca-certificates git unzip maven make \
       wget lsb-release locales openssh-server iproute2 sudo && \
     sudo rm -rf /var/lib/apt/lists/*
 
@@ -21,6 +21,20 @@ RUN curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSIO
 RUN cd /tmp && gradle init && gradle wrapper --gradle-version ${GRADLE_VERSION} && ./gradlew javaToolchains
 RUN rm -rf /tmp/gradle /tmp/gradlew /tmp/gradlew.bat /tmp/.gradle
 ENV GRADLE_HOME="/opt/gradle-${GRADLE_VERSION}"
+
+# Go toolchain for building pxf_regress inside the container
+ARG GO_VERSION=1.21.13
+RUN ARCH=$(uname -m) && \
+    case "$ARCH" in \
+      x86_64) GARCH=amd64 ;; \
+      aarch64|arm64) GARCH=arm64 ;; \
+      *) echo "unsupported arch: $ARCH" >&2; exit 1 ;; \
+    esac && \
+    curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${GARCH}.tar.gz" -o /tmp/go.tgz && \
+    sudo rm -rf /usr/local/go && \
+    sudo tar -C /usr/local -xzf /tmp/go.tgz && \
+    rm /tmp/go.tgz
+ENV PATH="/usr/local/go/bin:${PATH}"
 
 # Env vars that scripts expect
 ENV GPHD_ROOT=/home/gpadmin/workspace/singlecluster
