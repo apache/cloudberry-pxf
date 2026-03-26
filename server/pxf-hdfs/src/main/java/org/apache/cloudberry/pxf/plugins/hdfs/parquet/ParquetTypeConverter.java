@@ -28,11 +28,13 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Base64;
+import java.util.UUID;
 
 import static org.apache.parquet.schema.LogicalTypeAnnotation.DateLogicalTypeAnnotation;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.TimestampLogicalTypeAnnotation;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.UUIDLogicalTypeAnnotation;
 
 /**
  * Converter for Parquet types and values into PXF data types and values.
@@ -205,18 +207,54 @@ public enum ParquetTypeConverter {
     FIXED_LEN_BYTE_ARRAY {
         @Override
         public DataType getDataType(Type type) {
-            return DataType.NUMERIC;
+            LogicalTypeAnnotation logicalType = type.getLogicalTypeAnnotation();
+            if (logicalType instanceof UUIDLogicalTypeAnnotation) {
+                return DataType.UUID;
+            } else if (logicalType instanceof DecimalLogicalTypeAnnotation) {
+                return DataType.NUMERIC;
+            }
+            // fallback: treat unknown/null logical types as raw bytes
+            LOG.warn("FIXED_LEN_BYTE_ARRAY with logical type {} will be read as BYTEA", logicalType);
+            return DataType.BYTEA;
         }
 
         @Override
         public Object getValue(Group group, int columnIndex, int repeatIndex, Type type) {
-            int scale = ((DecimalLogicalTypeAnnotation) type.getLogicalTypeAnnotation()).getScale();
-            return new BigDecimal(new BigInteger(group.getBinary(columnIndex, repeatIndex).getBytes()), scale);
+            LogicalTypeAnnotation logicalType = type.getLogicalTypeAnnotation();
+            if (logicalType instanceof UUIDLogicalTypeAnnotation) {
+                byte[] bytes = group.getBinary(columnIndex, repeatIndex).getBytes();
+                return uuidFromBytes(bytes);
+            } else if (logicalType instanceof DecimalLogicalTypeAnnotation) {
+                int scale = ((DecimalLogicalTypeAnnotation) logicalType).getScale();
+                return new BigDecimal(new BigInteger(
+                        group.getBinary(columnIndex, repeatIndex).getBytes()), scale);
+            }
+            return group.getBinary(columnIndex, repeatIndex).getBytes();
         }
 
         @Override
         public void addValueToJsonArray(Group group, int columnIndex, int repeatIndex, Type type, ArrayNode jsonNode) {
-            jsonNode.add((BigDecimal) getValue(group, columnIndex, repeatIndex, type));
+            LogicalTypeAnnotation logicalType = type.getLogicalTypeAnnotation();
+            if (logicalType instanceof UUIDLogicalTypeAnnotation) {
+                jsonNode.add((String) getValue(group, columnIndex, repeatIndex, type));
+            } else if (logicalType instanceof DecimalLogicalTypeAnnotation) {
+                jsonNode.add((BigDecimal) getValue(group, columnIndex, repeatIndex, type));
+            } else {
+                jsonNode.add(group.getBinary(columnIndex, repeatIndex).getBytes());
+            }
+        }
+
+        @Override
+        public String getValueFromList(Group group, int columnIndex, int repeatIndex, PrimitiveType primitiveType) {
+            Object value = getValue(group, columnIndex, repeatIndex, primitiveType);
+            LogicalTypeAnnotation logicalType = primitiveType.getLogicalTypeAnnotation();
+            if (logicalType == null) {
+                // BYTEA fallback: hex-encode raw bytes, same as BINARY does
+                ByteBuffer byteBuffer = ByteBuffer.wrap((byte[]) value);
+                return pgUtilities.encodeByteaHex(byteBuffer);
+            } else {
+                return String.valueOf(value);
+            }
         }
     },
 
@@ -383,6 +421,29 @@ public enum ParquetTypeConverter {
     // Helper method that returns a BigDecimal from the long value
     private static BigDecimal bigDecimalFromLong(DecimalLogicalTypeAnnotation decimalType, long value) {
         return new BigDecimal(BigInteger.valueOf(value), decimalType.getScale());
+    }
+
+    /**
+     * Convert 16 bytes (big-endian) to a UUID string.
+     */
+    public static String uuidFromBytes(byte[] bytes) {
+        if (bytes.length != 16) {
+            throw new PxfRuntimeException(
+                    String.format("Expected 16 bytes for UUID, but got %d", bytes.length));
+        }
+        ByteBuffer bb = ByteBuffer.wrap(bytes);
+        return new UUID(bb.getLong(), bb.getLong()).toString();
+    }
+
+    /**
+     * Convert a UUID string to 16 bytes (big-endian).
+     */
+    public static byte[] uuidToBytes(String uuidString) {
+        UUID uuid = UUID.fromString(uuidString);
+        ByteBuffer bb = ByteBuffer.allocate(16);
+        bb.putLong(uuid.getMostSignificantBits());
+        bb.putLong(uuid.getLeastSignificantBits());
+        return bb.array();
     }
 
     /**
