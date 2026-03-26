@@ -429,6 +429,17 @@ wait_for_datanode() {
       log "Attempting to restart DataNode..."
       # Stop any zombie DataNode processes
       pkill -f "proc_datanode" 2>/dev/null || true
+      pkill -f "datanode" 2>/dev/null || true
+      sleep 2
+      # Kill any process still holding DataNode ports (50010/50020/50075)
+      for port in 50010 50020 50075; do
+        local pid
+        pid=$(ss -tlnp "sport = :${port}" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | head -1)
+        if [ -n "${pid}" ]; then
+          log "Killing process ${pid} holding port ${port}"
+          kill -9 "${pid}" 2>/dev/null || true
+        fi
+      done
       sleep 2
       # Restart DataNode via the singlecluster script
       "${GPHD_ROOT}/bin/hadoop-datanode.sh" start 0 2>&1 || true

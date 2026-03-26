@@ -364,8 +364,8 @@ jobs:
         FAILED_COUNT="${{ steps.collect_artifacts.outputs.failed_count || 0 }}"
         SKIPPED_COUNT="${{ steps.collect_artifacts.outputs.skipped_count || 0 }}"
         
-        if [ "${{ steps.run_test.outcome }}" == "failure" ] || [ "$FAILED_COUNT" -gt 0 ]; then
-          echo "Test group ${{ matrix.test_group }} failed (Failures: $FAILED_COUNT, Skipped: $SKIPPED_COUNT)"
+        if [ "${{ steps.run_test.outcome }}" == "failure" ] || [ "${{ steps.run_test.outcome }}" == "skipped" ] || [ "$FAILED_COUNT" -gt 0 ]; then
+          echo "Test group ${{ matrix.test_group }} failed (outcome: ${{ steps.run_test.outcome }}, Failures: $FAILED_COUNT, Skipped: $SKIPPED_COUNT)"
           exit 1
         fi
 
@@ -536,8 +536,8 @@ jobs:
         FAILED_COUNT="${{ steps.collect_artifacts.outputs.failed_count || 0 }}"
         SKIPPED_COUNT="${{ steps.collect_artifacts.outputs.skipped_count || 0 }}"
 
-        if [ "${{ steps.run_test.outcome }}" == "failure" ] || [ "$FAILED_COUNT" -gt 0 ]; then
-          echo "Test group ${{ matrix.test_group }} (Rocky 9) failed (Failures: $FAILED_COUNT, Skipped: $SKIPPED_COUNT)"
+        if [ "${{ steps.run_test.outcome }}" == "failure" ] || [ "${{ steps.run_test.outcome }}" == "skipped" ] || [ "$FAILED_COUNT" -gt 0 ]; then
+          echo "Test group ${{ matrix.test_group }} (Rocky 9) failed (outcome: ${{ steps.run_test.outcome }}, Failures: $FAILED_COUNT, Skipped: $SKIPPED_COUNT)"
           exit 1
         fi
 

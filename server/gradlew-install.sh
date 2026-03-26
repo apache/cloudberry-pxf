@@ -58,13 +58,23 @@ if [ ! -e "${GRADLE_WRAPPER_JAR}" ]; then
   # The Gradle version extracted from the `distributionUrl` property does not contain ".0" patch
   # versions. Need to append a ".0" in that case to download the wrapper jar.
   GRADLE_VERSION="$(echo "$GRADLE_DIST_VERSION" | sed 's/^\([0-9]*[.][0-9]*\)$/\1.0/')"
-  curl --location --output "${GRADLE_WRAPPER_JAR}" https://raw.githubusercontent.com/gradle/gradle/v${GRADLE_VERSION}/gradle/wrapper/gradle-wrapper.jar || exit 1
-  JAR_CHECKSUM="$(${SHASUM} "${GRADLE_WRAPPER_JAR}" | cut -d\  -f1)"
   EXPECTED="$(cat "${GRADLE_WRAPPER_SHA256}")"
-  if [ "${JAR_CHECKSUM}" != "${EXPECTED}" ]; then
-    # If the (just downloaded) checksum and the downloaded wrapper jar do not match, something
-    # really bad is going on.
+  MAX_RETRIES=3
+  for _retry in $(seq 1 ${MAX_RETRIES}); do
+    curl --location --fail --output "${GRADLE_WRAPPER_JAR}" https://raw.githubusercontent.com/gradle/gradle/v${GRADLE_VERSION}/gradle/wrapper/gradle-wrapper.jar || {
+      echo "Download attempt ${_retry}/${MAX_RETRIES} failed (curl error)" > /dev/stderr
+      rm -f "${GRADLE_WRAPPER_JAR}"
+      if [ "${_retry}" -lt "${MAX_RETRIES}" ]; then sleep 5; continue; fi
+      exit 1
+    }
+    JAR_CHECKSUM="$(${SHASUM} "${GRADLE_WRAPPER_JAR}" | cut -d\  -f1)"
+    if [ "${JAR_CHECKSUM}" = "${EXPECTED}" ]; then
+      break
+    fi
+    echo "SHA256 mismatch on attempt ${_retry}/${MAX_RETRIES} (got ${JAR_CHECKSUM}, expected ${EXPECTED})" > /dev/stderr
+    rm -f "${GRADLE_WRAPPER_JAR}"
+    if [ "${_retry}" -lt "${MAX_RETRIES}" ]; then sleep 5; continue; fi
     echo "Expected sha256 of the downloaded gradle-wrapper.jar does not match the downloaded sha256!" > /dev/stderr
     exit 1
-  fi
+  done
 fi

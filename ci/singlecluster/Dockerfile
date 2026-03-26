@@ -50,16 +50,8 @@ ENV ZOOKEEPER_SHA512="0e5a64713abc6f36d961dd61a06f681868171a9d9228366e512a013248
 ENV     HBASE_SHA512="1032521025660daa70260cdc931f52a26c87596be444451fe1fa88b526ede55e9d6b4220e91ff6f7422bec11f30d64fa6745e95a9c36971fdb1a264a2c745693"
 ENV      TEZ_SHA512="a2d94bd9fa778d42a8bac9d9da8e263e469ddfef93968b06434716554995f490231de5607541ac236e770aa0158b64250c38bc1cd57dbfa629fea705f2ffa2f5"
 
-# faster mirror:
-ENV APACHE_MIRROR="repo.huaweicloud.com/apache"
-#ENV APACHE_MIRROR="archive.apache.org/dist/"
-#ENV APACHE_MIRROR="mirror.yandex.ru/mirrors/apache/"
-
-ENV    HADOOP_URL="https://$APACHE_MIRROR/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz"
-ENV      HIVE_URL="https://$APACHE_MIRROR/hive/hive-$HIVE_VERSION/apache-hive-$HIVE_VERSION-bin.tar.gz"
-ENV ZOOKEEPER_URL="https://$APACHE_MIRROR/zookeeper/zookeeper-$ZOOKEEPER_VERSION/apache-zookeeper-$ZOOKEEPER_VERSION-bin.tar.gz"
-ENV     HBASE_URL="https://$APACHE_MIRROR/hbase/$HBASE_VERSION/hbase-$HBASE_VERSION-bin.tar.gz"
-ENV       TEZ_URL="https://$APACHE_MIRROR/tez/$TEZ_VERSION/apache-tez-$TEZ_VERSION-bin.tar.gz"
+# Mirror list: try fast mirrors first, fall back to official archive
+ENV APACHE_MIRRORS="repo.huaweicloud.com/apache archive.apache.org/dist"
 
 ENV GPHD_ROOT=/home/gpadmin/workspace/singlecluster
 ENV HADOOP_ROOT=$GPHD_ROOT/hadoop
@@ -68,34 +60,54 @@ ENV HIVE_ROOT=$GPHD_ROOT/hive
 ENV ZOOKEEPER_ROOT=$GPHD_ROOT/zookeeper
 ENV TEZ_ROOT=$GPHD_ROOT/tez
 
+# Helper: download from first working mirror with retry
+# Usage: apache_download <relative_path> <output_file>
+RUN cat > /usr/local/bin/apache_download.sh <<'DLEOF' && chmod +x /usr/local/bin/apache_download.sh
+#!/bin/bash
+set -e
+rel_path="$1"; output="$2"
+for mirror in $APACHE_MIRRORS; do
+  url="https://${mirror}/${rel_path}"
+  echo "Trying: $url"
+  if curl -fSL --retry 2 --retry-delay 3 --connect-timeout 15 "$url" -o "$output" 2>&1; then
+    echo "Downloaded from $mirror"
+    exit 0
+  fi
+  echo "Failed from $mirror, trying next..."
+  rm -f "$output"
+done
+echo "ERROR: all mirrors failed for $rel_path"
+exit 1
+DLEOF
+
 RUN mkdir -p $HADOOP_ROOT && \
-    curl -fSL "$HADOOP_URL" -o /tmp/hadoop.tar.gz && \
+    apache_download.sh "hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz" /tmp/hadoop.tar.gz && \
     echo "$HADOOP_SHA512 /tmp/hadoop.tar.gz" | sha512sum -c && \
     tar xvf /tmp/hadoop.tar.gz -C $HADOOP_ROOT --strip-components 1  --exclude="share/doc/*" --exclude="*-sources.jar" && \
     rm /tmp/hadoop.tar.gz && \
-    curl -fSL "https://repo1.maven.org/maven2/javax/activation/javax.activation-api/1.2.0/javax.activation-api-1.2.0.jar" \
+    curl -fSL --retry 2 "https://repo1.maven.org/maven2/javax/activation/javax.activation-api/1.2.0/javax.activation-api-1.2.0.jar" \
       -o $HADOOP_ROOT/share/hadoop/common/lib/javax.activation-api-1.2.0.jar
 
 RUN mkdir -p $HIVE_ROOT && \
-    curl -fSL $HIVE_URL -o /tmp/hive.tar.gz && \
+    apache_download.sh "hive/hive-$HIVE_VERSION/apache-hive-$HIVE_VERSION-bin.tar.gz" /tmp/hive.tar.gz && \
     echo "$HIVE_SHA256 /tmp/hive.tar.gz" | sha256sum -c && \
     tar xvf /tmp/hive.tar.gz -C $HIVE_ROOT --strip-components 1 && \
     rm /tmp/hive.tar.gz
 
 RUN mkdir -p $ZOOKEEPER_ROOT && \
-    curl -fSL $ZOOKEEPER_URL -o /tmp/zookeeper.tar.gz && \
+    apache_download.sh "zookeeper/zookeeper-$ZOOKEEPER_VERSION/apache-zookeeper-$ZOOKEEPER_VERSION-bin.tar.gz" /tmp/zookeeper.tar.gz && \
     echo "$ZOOKEEPER_SHA512 /tmp/zookeeper.tar.gz" | sha512sum -c && \
     tar xvf /tmp/zookeeper.tar.gz -C $ZOOKEEPER_ROOT --strip-components 1 --exclude="docs/*" && \
     rm /tmp/zookeeper.tar.gz
 
 RUN mkdir -p $HBASE_ROOT && \
-    curl -fSL "$HBASE_URL" -o /tmp/hbase.tar.gz && \
+    apache_download.sh "hbase/$HBASE_VERSION/hbase-$HBASE_VERSION-bin.tar.gz" /tmp/hbase.tar.gz && \
     echo "$HBASE_SHA512 /tmp/hbase.tar.gz" | sha512sum -c && \
     tar xvf /tmp/hbase.tar.gz -C $HBASE_ROOT --strip-components 1 --exclude="docs/*" --exclude="lib/*-tests.jar" --exclude="lib/shaded-clients" && \
     rm /tmp/hbase.tar.gz
 
 RUN mkdir -p $TEZ_ROOT && \
-    curl -fSL "$TEZ_URL" -o /tmp/tez.tar.gz && \
+    apache_download.sh "tez/$TEZ_VERSION/apache-tez-$TEZ_VERSION-bin.tar.gz" /tmp/tez.tar.gz && \
     echo "$TEZ_SHA512 /tmp/tez.tar.gz" | sha512sum -c && \
     tar xvf /tmp/tez.tar.gz -C $TEZ_ROOT --strip-components 1 && \
     rm /tmp/tez.tar.gz
