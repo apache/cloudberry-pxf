@@ -1,3 +1,4 @@
+#!/bin/bash
 # --------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,18 +18,28 @@
 # permissions and limitations under the License.
 #
 # --------------------------------------------------------------------
-case "$(uname -m)" in
-  aarch64|arm64) JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-11-openjdk-arm64} ;;
-  x86_64|amd64)  JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-11-openjdk-amd64} ;;
-  *)             JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-11-openjdk-amd64} ;;
-esac
+# Build and install PXF — works on both Ubuntu and Rocky/RHEL
+
+# Auto-detect Java 11 path
+if [ -d /usr/lib/jvm/java-11-openjdk-amd64 ]; then
+  JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-11-openjdk-amd64}
+elif [ -d /usr/lib/jvm/java-11-openjdk-arm64 ]; then
+  JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-11-openjdk-arm64}
+else
+  JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-11-openjdk}
+fi
 export PATH=$JAVA_HOME/bin:$PATH
 export GPHOME=/usr/local/cloudberry-db
 source /usr/local/cloudberry-db/cloudberry-env.sh
 export PATH=$GPHOME/bin:$PATH
 
-sudo apt update
-sudo apt install -y openjdk-11-jdk maven
+# Install Java 11 JDK and Maven
+if command -v apt-get >/dev/null 2>&1; then
+  sudo apt update
+  sudo apt install -y openjdk-11-jdk maven
+elif command -v dnf >/dev/null 2>&1; then
+  sudo dnf install -y java-11-openjdk-devel maven
+fi
 
 cd /home/gpadmin/workspace/cloudberry-pxf
 

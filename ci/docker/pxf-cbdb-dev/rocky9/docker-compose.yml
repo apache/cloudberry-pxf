@@ -1,0 +1,46 @@
+# --------------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements. See the NOTICE file distributed
+# with this work for additional information regarding copyright
+# ownership. The ASF licenses this file to You under the Apache
+# License, Version 2.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy of the
+# License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# permissions and limitations under the License.
+#
+# --------------------------------------------------------------------
+services:
+# hadoop
+  singlecluster:
+    build:
+      context: ../../../singlecluster
+      args:
+        BASE_IMAGE: apache/incubator-cloudberry:cbdb-build-rocky9-latest
+    image: pxf/singlecluster-rocky9:3
+    container_name: pxf_singlecluster_rocky9
+    hostname: cdw
+
+  pxf-cbdb-dev:
+    image: pxf/singlecluster-rocky9:3
+    container_name: pxf-cbdb-dev
+    hostname: mdw
+    depends_on:
+      - singlecluster
+    ports:
+      - "2222:22"
+    volumes:
+      - ../../../../../cloudberry-pxf:/home/gpadmin/workspace/cloudberry-pxf
+      - ../../../../../cloudberry:/home/gpadmin/workspace/cloudberry
+    command: ["tail", "-f", "/dev/null"]
+
+networks:
+  default:
+    name: pxf-cbdb-ci

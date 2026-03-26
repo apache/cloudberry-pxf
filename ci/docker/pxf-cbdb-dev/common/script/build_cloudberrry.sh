@@ -1,3 +1,4 @@
+#!/bin/bash
 # --------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,8 +18,14 @@
 # permissions and limitations under the License.
 #
 # --------------------------------------------------------------------
+# Build Cloudberry from source — works on both Ubuntu and Rocky/RHEL
+
 # Install sudo & git
-sudo apt update && sudo apt install -y sudo git
+if command -v apt-get >/dev/null 2>&1; then
+  sudo apt update && sudo apt install -y sudo git
+elif command -v dnf >/dev/null 2>&1; then
+  sudo dnf install -y sudo git
+fi
 
 # Required configuration
 ## Add Cloudberry environment setup to .bashrc
@@ -57,44 +64,85 @@ EOF
 ulimit -a
 
 # Install basic system packages
-sudo apt update
-sudo apt install -y bison \
-  bzip2 \
-  cmake \
-  curl \
-  flex \
-  gcc \
-  g++ \
-  iproute2 \
-  iputils-ping \
-  language-pack-en \
-  locales \
-  libapr1-dev \
-  libbz2-dev \
-  libcurl4-gnutls-dev \
-  libevent-dev \
-  libkrb5-dev \
-  libipc-run-perl \
-  libldap2-dev \
-  libpam0g-dev \
-  libprotobuf-dev \
-  libreadline-dev \
-  libssl-dev \
-  libuv1-dev \
-  liblz4-dev \
-  libxerces-c-dev \
-  libxml2-dev \
-  libyaml-dev \
-  libzstd-dev \
-  libperl-dev \
-  make \
-  pkg-config \
-  protobuf-compiler \
-  python3-dev \
-  python3-pip \
-  python3-setuptools \
-  rsync \
-  libsnappy-dev
+if command -v apt-get >/dev/null 2>&1; then
+  sudo apt update
+  sudo apt install -y bison \
+    bzip2 \
+    cmake \
+    curl \
+    flex \
+    gcc \
+    g++ \
+    iproute2 \
+    iputils-ping \
+    language-pack-en \
+    locales \
+    libapr1-dev \
+    libbz2-dev \
+    libcurl4-gnutls-dev \
+    libevent-dev \
+    libkrb5-dev \
+    libipc-run-perl \
+    libldap2-dev \
+    libpam0g-dev \
+    libprotobuf-dev \
+    libreadline-dev \
+    libssl-dev \
+    libuv1-dev \
+    liblz4-dev \
+    libxerces-c-dev \
+    libxml2-dev \
+    libyaml-dev \
+    libzstd-dev \
+    libperl-dev \
+    make \
+    pkg-config \
+    protobuf-compiler \
+    python3-dev \
+    python3-pip \
+    python3-setuptools \
+    rsync \
+    libsnappy-dev
+elif command -v dnf >/dev/null 2>&1; then
+  sudo dnf install -y \
+    bison \
+    bzip2 \
+    cmake \
+    curl \
+    flex \
+    gcc \
+    gcc-c++ \
+    iproute \
+    iputils \
+    glibc-langpack-en \
+    glibc-locale-source \
+    apr-devel \
+    bzip2-devel \
+    libcurl-devel \
+    libevent-devel \
+    krb5-devel \
+    perl-IPC-Run \
+    openldap-devel \
+    pam-devel \
+    protobuf-devel \
+    readline-devel \
+    openssl-devel \
+    libuv-devel \
+    lz4-devel \
+    xerces-c-devel \
+    libxml2-devel \
+    libyaml-devel \
+    libzstd-devel \
+    perl-devel \
+    make \
+    pkgconfig \
+    protobuf-compiler \
+    python3-devel \
+    python3-pip \
+    python3-setuptools \
+    rsync \
+    snappy-devel
+fi
 
 # Continue as gpadmin user
 

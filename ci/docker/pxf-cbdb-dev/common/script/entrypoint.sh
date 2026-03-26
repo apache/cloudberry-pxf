@@ -26,41 +26,66 @@ die() { log "ERROR $*"; exit 1; }
 ROOT_DIR=/home/gpadmin/workspace
 REPO_DIR=${ROOT_DIR}/cloudberry-pxf
 GPHD_ROOT=${ROOT_DIR}/singlecluster
-PXF_SCRIPTS=${REPO_DIR}/ci/docker/pxf-cbdb-dev/ubuntu/script
-source "${PXF_SCRIPTS}/utils.sh"
+COMMON_SCRIPTS=${REPO_DIR}/ci/docker/pxf-cbdb-dev/common/script
+source "${COMMON_SCRIPTS}/utils.sh"
 
 HADOOP_ROOT=${GPHD_ROOT}/hadoop
 HIVE_ROOT=${GPHD_ROOT}/hive
 HBASE_ROOT=${GPHD_ROOT}/hbase
 ZOOKEEPER_ROOT=${GPHD_ROOT}/zookeeper
 
-JAVA_11_ARM=/usr/lib/jvm/java-11-openjdk-arm64
-JAVA_11_AMD=/usr/lib/jvm/java-11-openjdk-amd64
-JAVA_8_ARM=/usr/lib/jvm/java-8-openjdk-arm64
-JAVA_8_AMD=/usr/lib/jvm/java-8-openjdk-amd64
+# --------------------------------------------------------------------
+# OS detection: "deb" (Ubuntu/Debian) or "rpm" (Rocky/RHEL/CentOS)
+# --------------------------------------------------------------------
+if command -v apt-get >/dev/null 2>&1; then
+  OS_FAMILY="deb"
+else
+  OS_FAMILY="rpm"
+fi
 
 detect_java_paths() {
-  case "$(uname -m)" in
-    aarch64|arm64) JAVA_BUILD=${JAVA_11_ARM}; JAVA_HADOOP=${JAVA_8_ARM} ;;
-    x86_64|amd64)  JAVA_BUILD=${JAVA_11_AMD}; JAVA_HADOOP=${JAVA_8_AMD} ;;
-    *)             JAVA_BUILD=${JAVA_11_ARM}; JAVA_HADOOP=${JAVA_8_ARM} ;;
-  esac
+  if [ "$OS_FAMILY" = "deb" ]; then
+    case "$(uname -m)" in
+      aarch64|arm64) JAVA_BUILD=/usr/lib/jvm/java-11-openjdk-arm64;  JAVA_HADOOP=/usr/lib/jvm/java-8-openjdk-arm64 ;;
+      *)             JAVA_BUILD=/usr/lib/jvm/java-11-openjdk-amd64;  JAVA_HADOOP=/usr/lib/jvm/java-8-openjdk-amd64 ;;
+    esac
+  else
+    JAVA_BUILD=/usr/lib/jvm/java-11-openjdk
+    JAVA_HADOOP=/usr/lib/jvm/java-1.8.0-openjdk
+  fi
   export JAVA_BUILD JAVA_HADOOP
 }
 
 setup_locale_and_packages() {
   log "install base packages and locales"
-  sudo apt-get update
-  sudo apt-get install -y wget lsb-release locales maven unzip openssh-server iproute2 sudo \
-    openjdk-11-jre-headless openjdk-8-jre-headless
-  sudo locale-gen en_US.UTF-8 ru_RU.CP1251 ru_RU.UTF-8
-  sudo update-locale LANG=en_US.UTF-8
+  if [ "$OS_FAMILY" = "deb" ]; then
+    sudo apt-get update
+    sudo apt-get install -y wget lsb-release locales maven unzip openssh-server iproute2 sudo \
+      openjdk-11-jre-headless openjdk-8-jre-headless
+    sudo locale-gen en_US.UTF-8 ru_RU.CP1251 ru_RU.UTF-8
+    sudo update-locale LANG=en_US.UTF-8
+  else
+    sudo dnf install -y wget maven unzip openssh-server iproute sudo \
+      java-11-openjdk-headless java-1.8.0-openjdk-headless \
+      glibc-langpack-en glibc-locale-source
+    sudo localedef -c -i en_US -f UTF-8 en_US.UTF-8 || true
+    sudo localedef -c -i ru_RU -f UTF-8 ru_RU.UTF-8 || true
+  fi
   sudo localedef -c -i ru_RU -f CP1251 ru_RU.CP1251 || true
   export LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
 }
 
 setup_ssh() {
   log "configure ssh"
+  # Rocky 9 / RHEL 9 enforces system-wide crypto-policies that override sshd_config
+  # settings for algorithm negotiation.  The automation test framework uses the
+  # Ganymed SSH-2 (ch.ethz.ssh2) library which only supports older KEX algorithms
+  # (diffie-hellman-group-exchange-sha1, diffie-hellman-group14-sha1, etc.).
+  # Downgrade to the LEGACY crypto policy so sshd accepts these algorithms.
+  if [ "$OS_FAMILY" = "rpm" ] && command -v update-crypto-policies >/dev/null 2>&1; then
+    log "setting LEGACY crypto policy for SSH compatibility"
+    sudo update-crypto-policies --set LEGACY 2>/dev/null || true
+  fi
   sudo ssh-keygen -A
   sudo bash -c 'echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config'
   sudo mkdir -p /etc/ssh/sshd_config.d
@@ -69,7 +94,11 @@ KexAlgorithms +diffie-hellman-group-exchange-sha1,diffie-hellman-group14-sha1,di
 HostKeyAlgorithms +ssh-rsa,ssh-dss
 PubkeyAcceptedAlgorithms +ssh-rsa,ssh-dss
 EOF'
-  sudo usermod -a -G sudo gpadmin
+  if [ "$OS_FAMILY" = "deb" ]; then
+    sudo usermod -a -G sudo gpadmin
+  else
+    sudo usermod -a -G wheel gpadmin 2>/dev/null || true
+  fi
   echo "gpadmin:cbdb@123" | sudo chpasswd
   echo "gpadmin        ALL=(ALL)       NOPASSWD: ALL" | sudo tee -a /etc/sudoers >/dev/null
   echo "root           ALL=(ALL)       NOPASSWD: ALL" | sudo tee -a /etc/sudoers >/dev/null
@@ -84,7 +113,21 @@ EOF'
   ssh-keyscan -t rsa mdw cdw localhost 2>/dev/null > /home/gpadmin/.ssh/known_hosts || true
   sudo rm -rf /run/nologin
   sudo mkdir -p /var/run/sshd && sudo chmod 0755 /var/run/sshd
-  sudo /usr/sbin/sshd || die "Failed to start sshd"
+  # Ensure privilege separation user exists (required by Rocky 9 sshd)
+  id sshd &>/dev/null || sudo useradd -r -d /var/empty/sshd -s /sbin/nologin sshd 2>/dev/null || true
+  sudo mkdir -p /var/empty/sshd && sudo chmod 0755 /var/empty/sshd
+  sudo /usr/sbin/sshd -E /tmp/sshd.log || die "Failed to start sshd, check /tmp/sshd.log"
+  sleep 1
+  if ! ss -tlnp | grep -q ':22 '; then
+    log "ERROR: sshd is not listening on port 22"
+    cat /tmp/sshd.log 2>/dev/null || true
+    sudo /usr/sbin/sshd -D -e &
+    sleep 1
+    if ! ss -tlnp | grep -q ':22 '; then
+      die "sshd failed to bind to port 22"
+    fi
+  fi
+  log "sshd is running on port 22"
 }
 
 relax_pg_hba() {
@@ -101,105 +144,81 @@ EOF
   fi
 }
 
-install_cloudberry_from_deb() {
-  log "installing Cloudberry from .deb package"
-  local deb_file=$(find /tmp -name "apache-cloudberry-db*.deb" 2>/dev/null | head -1)
-  if [ -z "$deb_file" ]; then
-    die "No .deb package found in /tmp"
+install_build_deps() {
+  if [ "$OS_FAMILY" = "deb" ]; then
+    sudo apt update && sudo apt install -y sudo git
+    sudo apt update
+    sudo apt install -y bison bzip2 cmake curl flex gcc g++ iproute2 iputils-ping \
+      language-pack-en locales libapr1-dev libbz2-dev libcurl4-gnutls-dev libevent-dev \
+      libkrb5-dev libipc-run-perl libldap2-dev libpam0g-dev libprotobuf-dev libreadline-dev \
+      libssl-dev libuv1-dev liblz4-dev libxerces-c-dev libxml2-dev libyaml-dev libzstd-dev \
+      libperl-dev make pkg-config protobuf-compiler python3-dev python3-pip python3-setuptools \
+      rsync libsnappy-dev
+  else
+    sudo dnf install -y sudo git
+    sudo dnf install -y --allowerasing bison bzip2 cmake curl flex gcc gcc-c++ iproute iputils \
+      glibc-langpack-en glibc-locale-source apr-devel bzip2-devel libcurl-devel libevent-devel \
+      krb5-devel perl-IPC-Run openldap-devel pam-devel protobuf-devel readline-devel \
+      openssl-devel libuv-devel lz4-devel libxml2-devel libyaml-devel \
+      libzstd-devel perl-devel make pkgconfig protobuf-compiler python3-devel python3-pip \
+      python3-setuptools rsync snappy-devel
+  fi
+}
+
+install_cloudberry_from_package() {
+  log "installing Cloudberry from package"
+
+  local pkg_file=""
+  if [ "$OS_FAMILY" = "deb" ]; then
+    pkg_file=$(find /tmp -name "apache-cloudberry-db*.deb" 2>/dev/null | head -1)
+    [ -z "$pkg_file" ] && die "No .deb package found in /tmp"
+  else
+    pkg_file=$(find /tmp -name "apache-cloudberry-db*.rpm" 2>/dev/null | head -1)
+    [ -z "$pkg_file" ] && die "No .rpm package found in /tmp"
   fi
 
-  # Install sudo & git
-  sudo apt update && sudo apt install -y sudo git
+  install_build_deps
 
   # Required configuration
-  ## Add Cloudberry environment setup to .bashrc
   echo -e '\n# Add Cloudberry entries
   if [ -f /usr/local/cloudberry-db/cloudberry-env.sh ]; then
     source /usr/local/cloudberry-db/cloudberry-env.sh
   fi
-  ## US English with UTF-8 character encoding
   export LANG=en_US.UTF-8
   ' >> /home/gpadmin/.bashrc
-  ## Set up SSH for passwordless access
+
   mkdir -p /home/gpadmin/.ssh
   if [ ! -f /home/gpadmin/.ssh/id_rsa ]; then
     ssh-keygen -t rsa -b 2048 -C 'apache-cloudberry-dev' -f /home/gpadmin/.ssh/id_rsa -N ""
   fi
   cat /home/gpadmin/.ssh/id_rsa.pub >> /home/gpadmin/.ssh/authorized_keys
-  ## Set proper SSH directory permissions
   chmod 700 /home/gpadmin/.ssh
   chmod 600 /home/gpadmin/.ssh/authorized_keys
   chmod 644 /home/gpadmin/.ssh/id_rsa.pub
 
-# Configure system settings
 sudo tee /etc/security/limits.d/90-db-limits.conf << 'EOF'
-## Core dump file size limits for gpadmin
 gpadmin soft core unlimited
 gpadmin hard core unlimited
-## Open file limits for gpadmin
 gpadmin soft nofile 524288
 gpadmin hard nofile 524288
-## Process limits for gpadmin
 gpadmin soft nproc 131072
 gpadmin hard nproc 131072
 EOF
 
-  # Verify resource limits
   ulimit -a
 
-  # Install basic system packages
-  sudo apt update
-  sudo apt install -y bison \
-    bzip2 \
-    cmake \
-    curl \
-    flex \
-    gcc \
-    g++ \
-    iproute2 \
-    iputils-ping \
-    language-pack-en \
-    locales \
-    libapr1-dev \
-    libbz2-dev \
-    libcurl4-gnutls-dev \
-    libevent-dev \
-    libkrb5-dev \
-    libipc-run-perl \
-    libldap2-dev \
-    libpam0g-dev \
-    libprotobuf-dev \
-    libreadline-dev \
-    libssl-dev \
-    libuv1-dev \
-    liblz4-dev \
-    libxerces-c-dev \
-    libxml2-dev \
-    libyaml-dev \
-    libzstd-dev \
-    libperl-dev \
-    make \
-    pkg-config \
-    protobuf-compiler \
-    python3-dev \
-    python3-pip \
-    python3-setuptools \
-    rsync \
-    libsnappy-dev
-
-
-  # Continue as gpadmin user
-
-
-  # Prepare the build environment for Apache Cloudberry
   sudo rm -rf /usr/local/cloudberry-db
   sudo chmod a+w /usr/local
   mkdir -p /usr/local/cloudberry-db
   sudo chown -R gpadmin:gpadmin /usr/local/cloudberry-db
 
-  sudo dpkg -i "$deb_file" || sudo apt-get install -f -y
-  log "Cloudberry installed from $deb_file"
-  
+  if [ "$OS_FAMILY" = "deb" ]; then
+    sudo dpkg -i "$pkg_file" || sudo apt-get install -f -y
+  else
+    sudo rpm -Uvh --force "$pkg_file" || sudo dnf install -y "$pkg_file"
+  fi
+  log "Cloudberry installed from $pkg_file"
+
   # Initialize and start Cloudberry cluster
   source /usr/local/cloudberry-db/cloudberry-env.sh
   make create-demo-cluster -C ~/workspace/cloudberry || {
@@ -219,30 +238,30 @@ build_cloudberry() {
   rm -rf /home/gpadmin/workspace/cloudberry/gpAux/gpdemo/datadirs
   rm -f /tmp/.s.PGSQL.700*
   find "${ROOT_DIR}" -not -path '*/.git/*' -exec sudo chown gpadmin:gpadmin {} + 2>/dev/null || true
-  "${PXF_SCRIPTS}/build_cloudberrry.sh"
+  "${COMMON_SCRIPTS}/build_cloudberrry.sh"
 }
 
 setup_cloudberry() {
-  # Auto-detect: if deb exists, install it; otherwise build from source
-  if [ -f /tmp/apache-cloudberry-db*.deb ]; then
-    log "detected .deb package, using fast install"
-    install_cloudberry_from_deb
-  elif [ "${CLOUDBERRY_USE_DEB:-}" = "true" ]; then
-    die "CLOUDBERRY_USE_DEB=true but no .deb found in /tmp"
+  # Auto-detect: if package exists, install it; otherwise build from source
+  if ls /tmp/apache-cloudberry-db*.deb 1>/dev/null 2>&1 || ls /tmp/apache-cloudberry-db*.rpm 1>/dev/null 2>&1; then
+    log "detected package, using fast install"
+    install_cloudberry_from_package
+  elif [ "${CLOUDBERRY_USE_PKG:-}" = "true" ]; then
+    die "CLOUDBERRY_USE_PKG=true but no .deb/.rpm found in /tmp"
   else
-    log "no .deb found, building from source (local dev mode)"
+    log "no package found, building from source (local dev mode)"
     build_cloudberry
   fi
 }
 
 build_pxf() {
   log "build PXF"
-  "${PXF_SCRIPTS}/build_pxf.sh"
+  "${COMMON_SCRIPTS}/build_pxf.sh"
 }
 
 configure_pxf() {
   log "configure PXF"
-  source "${PXF_SCRIPTS}/pxf-env.sh"
+  source "${COMMON_SCRIPTS}/pxf-env.sh"
   export PATH="$PXF_HOME/bin:$PATH"
   export PXF_JVM_OPTS="-Xmx512m -Xms256m"
   export PXF_HOST=localhost
@@ -318,7 +337,7 @@ EOF
 
   # Configure S3 settings
   mkdir -p "$PXF_BASE/servers/s3" "$PXF_HOME/servers/s3"
-  
+
   for s3_site in "$PXF_BASE/servers/s3/s3-site.xml" "$PXF_BASE/servers/default/s3-site.xml" "$PXF_HOME/servers/s3/s3-site.xml"; do
     mkdir -p "$(dirname "$s3_site")"
     cat > "$s3_site" <<'EOF'
@@ -364,6 +383,63 @@ EOF
 
 }
 
+wait_for_datanode() {
+  log "waiting for HDFS DataNode to become available..."
+  local max_attempts=2
+  for _attempt in $(seq 1 ${max_attempts}); do
+    local dn_ready=false
+    # Wait up to 90s (45 tries * 2s) for DataNode to register
+    for _dn_try in $(seq 1 45); do
+      if hdfs dfsadmin -report 2>/dev/null | grep -q "Live datanodes.*[1-9]"; then
+        dn_ready=true
+        break
+      fi
+      sleep 2
+    done
+
+    if [ "${dn_ready}" = "true" ]; then
+      log "HDFS DataNode is available"
+      return 0
+    fi
+
+    # DataNode didn't come up; diagnose and attempt restart
+    log "DataNode not available after 90s (attempt ${_attempt}/${max_attempts})"
+    log "--- DataNode diagnostic info ---"
+    # Check if DataNode process is alive
+    if command -v jps >/dev/null 2>&1; then
+      log "JPS output: $(jps 2>&1)"
+    fi
+    if pgrep -f "proc_datanode" >/dev/null 2>&1 || pgrep -f "datanode" >/dev/null 2>&1; then
+      log "DataNode process exists but not yet registered with NameNode"
+    else
+      log "DataNode process is NOT running"
+    fi
+    # Show DataNode logs if available
+    local dn_log
+    dn_log=$(ls -t "${GPHD_ROOT}"/storage/logs/*datanode*.log 2>/dev/null | head -1)
+    if [ -n "${dn_log}" ]; then
+      log "Last 30 lines of DataNode log (${dn_log}):"
+      tail -30 "${dn_log}" 2>/dev/null || true
+    fi
+    log "HDFS report:"
+    hdfs dfsadmin -report 2>&1 | head -20 || true
+    log "--- end diagnostic ---"
+
+    if [ "${_attempt}" -lt "${max_attempts}" ]; then
+      log "Attempting to restart DataNode..."
+      # Stop any zombie DataNode processes
+      pkill -f "proc_datanode" 2>/dev/null || true
+      sleep 2
+      # Restart DataNode via the singlecluster script
+      "${GPHD_ROOT}/bin/hadoop-datanode.sh" start 0 2>&1 || true
+      "${HADOOP_ROOT}/sbin/hadoop-daemon.sh" --config "${GPHD_ROOT}/storage/hadoop/datanode0/etc/hadoop" start datanode 2>&1 || true
+      log "DataNode restart issued, waiting again..."
+    fi
+  done
+
+  die "HDFS DataNode failed to start after ${max_attempts} attempts. Tez upload will fail without a running DataNode."
+}
+
 prepare_hadoop_stack() {
   log "prepare Hadoop/Hive/HBase stack"
   export JAVA_HOME="${JAVA_HADOOP}"
@@ -386,12 +462,19 @@ prepare_hadoop_stack() {
   if pgrep -f HiveServer2 >/dev/null 2>&1; then
     "${GPHD_ROOT}/bin/hive-service.sh" hiveserver2 stop || true
   fi
+  log "JAVA_HOME=${JAVA_HOME} JAVA_HADOOP=${JAVA_HADOOP}"
+  log "java check: $(ls -la ${JAVA_HOME}/bin/java 2>&1)"
   if [ ! -d "${GPHD_ROOT}/storage/hadoop/dfs/name/current" ]; then
-    ${GPHD_ROOT}/bin/init-gphd.sh
+    log "initializing HDFS namenode..."
+    ${GPHD_ROOT}/bin/init-gphd.sh 2>&1 || log "init-gphd.sh failed with exit code $?"
   fi
-  if ! ${GPHD_ROOT}/bin/start-gphd.sh; then
+  log "starting HDFS/YARN/HBase via start-gphd.sh..."
+  if ! ${GPHD_ROOT}/bin/start-gphd.sh 2>&1; then
     log "start-gphd.sh returned non-zero (services may already be running), continue"
   fi
+  # Wait for HDFS DataNode to be ready before proceeding; Tez upload in
+  # start_hive_services will fail if no DataNode is accepting writes.
+  wait_for_datanode
   if ! ${GPHD_ROOT}/bin/start-zookeeper.sh; then
     log "start-zookeeper.sh returned non-zero (may already be running)"
   fi
@@ -487,7 +570,7 @@ start_hive_services() {
 
 deploy_minio() {
   log "deploying MinIO"
-  bash "${PXF_SCRIPTS}/start_minio.bash"
+  bash "${COMMON_SCRIPTS}/start_minio.bash"
 }
 
 main() {
