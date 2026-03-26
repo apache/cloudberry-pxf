@@ -17,15 +17,24 @@
 # permissions and limitations under the License.
 #
 # --------------------------------------------------------------------
-FROM apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest
+ARG BASE_IMAGE=apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest
+FROM ${BASE_IMAGE}
 
-ENV DEBIAN_FRONTEND noninteractive
-
-RUN sudo apt-get update &&  \
-    sudo apt-get install -y --no-install-recommends \
-      curl ca-certificates \
-      openjdk-8-jdk-headless \
-      openjdk-11-jdk-headless
+# Install Java 8 & 11: auto-detect OS package manager
+RUN if command -v apt-get >/dev/null 2>&1; then \
+      export DEBIAN_FRONTEND=noninteractive && \
+      sudo apt-get update && \
+      sudo apt-get install -y --no-install-recommends \
+        curl ca-certificates \
+        openjdk-8-jdk-headless \
+        openjdk-11-jdk-headless; \
+    elif command -v dnf >/dev/null 2>&1; then \
+      sudo dnf install -y --allowerasing \
+        curl ca-certificates \
+        java-1.8.0-openjdk-devel \
+        java-11-openjdk-devel && \
+      sudo dnf clean all; \
+    fi
 
 # TODO: update hive to support java 11+
 ENV    HADOOP_VERSION=3.1.2
@@ -60,36 +69,36 @@ ENV ZOOKEEPER_ROOT=$GPHD_ROOT/zookeeper
 ENV TEZ_ROOT=$GPHD_ROOT/tez
 
 RUN mkdir -p $HADOOP_ROOT && \
-    curl -fSL "$HADOOP_URL" -o hadoop.tar.gz && \
-    echo "$HADOOP_SHA512 hadoop.tar.gz" | sha512sum -c && \
-    tar xvf hadoop.tar.gz -C $HADOOP_ROOT --strip-components 1  --exclude="share/doc/*" --exclude="*-sources.jar" && \
-    rm hadoop.tar.gz && \
+    curl -fSL "$HADOOP_URL" -o /tmp/hadoop.tar.gz && \
+    echo "$HADOOP_SHA512 /tmp/hadoop.tar.gz" | sha512sum -c && \
+    tar xvf /tmp/hadoop.tar.gz -C $HADOOP_ROOT --strip-components 1  --exclude="share/doc/*" --exclude="*-sources.jar" && \
+    rm /tmp/hadoop.tar.gz && \
     curl -fSL "https://repo1.maven.org/maven2/javax/activation/javax.activation-api/1.2.0/javax.activation-api-1.2.0.jar" \
       -o $HADOOP_ROOT/share/hadoop/common/lib/javax.activation-api-1.2.0.jar
 
 RUN mkdir -p $HIVE_ROOT && \
-    curl -fSL $HIVE_URL -o hive.tar.gz && \
-    echo "$HIVE_SHA256 hive.tar.gz" | sha256sum -c && \
-    tar xvf hive.tar.gz -C $HIVE_ROOT --strip-components 1 && \
-    rm hive.tar.gz
+    curl -fSL $HIVE_URL -o /tmp/hive.tar.gz && \
+    echo "$HIVE_SHA256 /tmp/hive.tar.gz" | sha256sum -c && \
+    tar xvf /tmp/hive.tar.gz -C $HIVE_ROOT --strip-components 1 && \
+    rm /tmp/hive.tar.gz
 
 RUN mkdir -p $ZOOKEEPER_ROOT && \
-    curl -fSL $ZOOKEEPER_URL -o zookeeper.tar.gz && \
-    echo "$ZOOKEEPER_SHA512 zookeeper.tar.gz" | sha512sum -c && \
-    tar xvf zookeeper.tar.gz -C $ZOOKEEPER_ROOT --strip-components 1 --exclude="docs/*" && \
-    rm zookeeper.tar.gz
+    curl -fSL $ZOOKEEPER_URL -o /tmp/zookeeper.tar.gz && \
+    echo "$ZOOKEEPER_SHA512 /tmp/zookeeper.tar.gz" | sha512sum -c && \
+    tar xvf /tmp/zookeeper.tar.gz -C $ZOOKEEPER_ROOT --strip-components 1 --exclude="docs/*" && \
+    rm /tmp/zookeeper.tar.gz
 
 RUN mkdir -p $HBASE_ROOT && \
-    curl -fSL "$HBASE_URL" -o hbase.tar.gz && \
-    echo "$HBASE_SHA512 hbase.tar.gz" | sha512sum -c && \
-    tar xvf hbase.tar.gz -C $HBASE_ROOT --strip-components 1 --exclude="docs/*" --exclude="lib/*-tests.jar" --exclude="lib/shaded-clients" && \
-    rm hbase.tar.gz
+    curl -fSL "$HBASE_URL" -o /tmp/hbase.tar.gz && \
+    echo "$HBASE_SHA512 /tmp/hbase.tar.gz" | sha512sum -c && \
+    tar xvf /tmp/hbase.tar.gz -C $HBASE_ROOT --strip-components 1 --exclude="docs/*" --exclude="lib/*-tests.jar" --exclude="lib/shaded-clients" && \
+    rm /tmp/hbase.tar.gz
 
 RUN mkdir -p $TEZ_ROOT && \
-    curl -fSL "$TEZ_URL" -o tez.tar.gz && \
-    echo "$TEZ_SHA512 tez.tar.gz" | sha512sum -c && \
-    tar xvf tez.tar.gz -C $TEZ_ROOT --strip-components 1 && \
-    rm tez.tar.gz
+    curl -fSL "$TEZ_URL" -o /tmp/tez.tar.gz && \
+    echo "$TEZ_SHA512 /tmp/tez.tar.gz" | sha512sum -c && \
+    tar xvf /tmp/tez.tar.gz -C $TEZ_ROOT --strip-components 1 && \
+    rm /tmp/tez.tar.gz
 
 # Install Go (required by PXF). Pick archive based on architecture (amd64/arm64).
 ARG TARGETARCH

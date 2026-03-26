@@ -20,14 +20,14 @@
 # --------------------------------------------------------------------
 set -euo pipefail
 
-# Cloudberry DEB Package Build Script for Ubuntu 22.04
+# Cloudberry RPM Package Build Script for Rocky 9
 CLOUDBERRY_VERSION="${CLOUDBERRY_VERSION:-99.0.0}"
 CLOUDBERRY_BUILD="${CLOUDBERRY_BUILD:-1}"
 INSTALL_PREFIX="${INSTALL_PREFIX:-/usr/local/cloudberry-db}"
 WORKSPACE="${WORKSPACE:-$HOME/workspace}"
 CLOUDBERRY_SRC="${WORKSPACE}/cloudberry"
 
-echo "=== Cloudberry DEB Package Build ==="
+echo "=== Cloudberry RPM Package Build ==="
 echo "Version: ${CLOUDBERRY_VERSION}"
 echo "Build: ${CLOUDBERRY_BUILD}"
 echo "Install Prefix: ${INSTALL_PREFIX}"
@@ -37,8 +37,16 @@ echo "Source: ${CLOUDBERRY_SRC}"
 rm -rf "${INSTALL_PREFIX}"
 mkdir -p "${INSTALL_PREFIX}"
 
+# Copy xerces-c shared libraries required by ORCA
+mkdir -p "${INSTALL_PREFIX}/lib"
+cp -v /usr/local/xerces-c/lib/libxerces-c.so \
+      /usr/local/xerces-c/lib/libxerces-c-3.*.so \
+      "${INSTALL_PREFIX}/lib/"
+
 # Build Cloudberry using official build scripts
 export SRC_DIR="${CLOUDBERRY_SRC}"
+export CPPFLAGS="${CPPFLAGS:-} -I/usr/local/xerces-c/include"
+export LDFLAGS="${LDFLAGS:-} -L${INSTALL_PREFIX}/lib"
 mkdir -p "${SRC_DIR}/build-logs"
 cd "${CLOUDBERRY_SRC}"
 ./devops/build/automation/cloudberry/scripts/configure-cloudberry.sh
@@ -47,48 +55,56 @@ cd "${CLOUDBERRY_SRC}"
 # Copy LICENSE
 cp LICENSE "${INSTALL_PREFIX}/"
 
-# Create deb package structure
-DEB_BUILD_DIR="${WORKSPACE}/cloudberry-deb"
-DEB_PKG_DIR="${DEB_BUILD_DIR}/apache-cloudberry-db_${CLOUDBERRY_VERSION}-${CLOUDBERRY_BUILD}_amd64"
-mkdir -p "${DEB_PKG_DIR}/DEBIAN"
-mkdir -p "${DEB_PKG_DIR}${INSTALL_PREFIX}"
+# Create RPM build structure
+RPM_BUILD_DIR="${WORKSPACE}/cloudberry-rpm"
+mkdir -p "${RPM_BUILD_DIR}"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+RPM_INSTALL_ROOT="${RPM_BUILD_DIR}/BUILDROOT/apache-cloudberry-db-${CLOUDBERRY_VERSION}-${CLOUDBERRY_BUILD}.x86_64"
+mkdir -p "${RPM_INSTALL_ROOT}${INSTALL_PREFIX}"
 
 # Copy installed files
-cp -a "${INSTALL_PREFIX}"/* "${DEB_PKG_DIR}${INSTALL_PREFIX}/"
+cp -a "${INSTALL_PREFIX}"/* "${RPM_INSTALL_ROOT}${INSTALL_PREFIX}/"
 
-# Create control file
-cat > "${DEB_PKG_DIR}/DEBIAN/control" << EOF
-Package: apache-cloudberry-db
-Version: ${CLOUDBERRY_VERSION}-${CLOUDBERRY_BUILD}
-Section: database
-Priority: optional
-Architecture: amd64
-Maintainer: Apache Cloudberry <dev@cloudberry.apache.org>
-Description: Apache Cloudberry Database
- Apache Cloudberry is a massively parallel processing (MPP) database
- built on PostgreSQL for analytics and data warehousing.
-Depends: libc6, libssl3, libreadline8, libxml2, libxerces-c3.2, liblz4-1, libzstd1, libapr1, libcurl4, libevent-2.1-7, libkrb5-3, libldap-2.5-0, libpam0g, libuv1, libyaml-0-2
-EOF
+# Create spec file
+cat > "${RPM_BUILD_DIR}/SPECS/cloudberry-db.spec" << EOF
+Name: apache-cloudberry-db
+Version: ${CLOUDBERRY_VERSION}
+Release: ${CLOUDBERRY_BUILD}%{?dist}
+Summary: Apache Cloudberry Database
+License: Apache-2.0
+Group: Applications/Databases
+AutoReqProv: no
 
-# Create postinst script
-cat > "${DEB_PKG_DIR}/DEBIAN/postinst" << 'EOF'
-#!/bin/bash
-set -e
+%description
+Apache Cloudberry is a massively parallel processing (MPP) database
+built on PostgreSQL for analytics and data warehousing.
+
+%install
+mkdir -p %{buildroot}${INSTALL_PREFIX}
+cp -a ${RPM_INSTALL_ROOT}${INSTALL_PREFIX}/* %{buildroot}${INSTALL_PREFIX}/
+
+%files
+${INSTALL_PREFIX}
+
+%post
 if ! id -u gpadmin >/dev/null 2>&1; then
     useradd -m -s /bin/bash gpadmin
 fi
-chown -R gpadmin:gpadmin /usr/local/cloudberry-db
+chown -R gpadmin:gpadmin ${INSTALL_PREFIX}
 echo "Apache Cloudberry Database installed successfully"
+
+%clean
+rm -rf %{buildroot}
 EOF
 
-chmod 755 "${DEB_PKG_DIR}/DEBIAN/postinst"
+# Build RPM package
+rpmbuild --define "_topdir ${RPM_BUILD_DIR}" -bb "${RPM_BUILD_DIR}/SPECS/cloudberry-db.spec"
 
-# Build deb package
-cd "${DEB_BUILD_DIR}"
-dpkg-deb --build "$(basename ${DEB_PKG_DIR})"
+RPM_FILE=$(find "${RPM_BUILD_DIR}/RPMS" -name "*.rpm" | head -1)
+echo "=== RPM Package Created ==="
+ls -lh "${RPM_FILE}"
+rpm -qpi "${RPM_FILE}"
 
-DEB_FILE="${DEB_BUILD_DIR}/apache-cloudberry-db_${CLOUDBERRY_VERSION}-${CLOUDBERRY_BUILD}_amd64.deb"
-echo "=== DEB Package Created ==="
-ls -lh "${DEB_FILE}"
-dpkg-deb -I "${DEB_FILE}"
+# Copy RPM to output directory
+cp "${RPM_FILE}" "${RPM_BUILD_DIR}/"
+
 echo "=== Build Complete ==="
