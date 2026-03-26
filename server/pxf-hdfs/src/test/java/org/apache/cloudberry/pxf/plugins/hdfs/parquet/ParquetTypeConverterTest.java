@@ -1,15 +1,23 @@
 package org.apache.cloudberry.pxf.plugins.hdfs.parquet;
 
 import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.Type;
+import org.apache.parquet.schema.Types;
 import org.apache.cloudberry.pxf.api.GreenplumDateTime;
+import org.apache.cloudberry.pxf.api.error.UnsupportedTypeException;
+import org.apache.cloudberry.pxf.api.io.DataType;
 import org.junit.jupiter.api.Test;
 
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -92,6 +100,49 @@ public class ParquetTypeConverterTest {
         String convertedTimestamp2 = ParquetTypeConverter.bytesToTimestamp(binary2.getBytes());
 
         assertEquals(expectedTimestampInSystemTimeZone2, convertedTimestamp2);
+    }
+
+    @Test
+    public void testUuidBytesRoundTrip() {
+        String uuidString = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+        byte[] bytes = ParquetTypeConverter.uuidToBytes(uuidString);
+        assertEquals(16, bytes.length);
+        String result = ParquetTypeConverter.uuidFromBytes(bytes);
+        assertEquals(uuidString, result);
+    }
+
+    @Test
+    public void testUuidFromKnownBytes() {
+        UUID uuid = UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11");
+        ByteBuffer bb = ByteBuffer.allocate(16);
+        bb.putLong(uuid.getMostSignificantBits());
+        bb.putLong(uuid.getLeastSignificantBits());
+        String result = ParquetTypeConverter.uuidFromBytes(bb.array());
+        assertEquals("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", result);
+    }
+
+    @Test
+    public void testUuidToKnownBytes() {
+        byte[] bytes = ParquetTypeConverter.uuidToBytes("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11");
+        UUID uuid = UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11");
+        ByteBuffer bb = ByteBuffer.wrap(bytes);
+        assertEquals(uuid.getMostSignificantBits(), bb.getLong());
+        assertEquals(uuid.getLeastSignificantBits(), bb.getLong());
+    }
+
+    @Test
+    public void testFixedLenByteArray_NullLogicalType_FallbackToBytea() {
+        // FIXED_LEN_BYTE_ARRAY with no logical type should fallback to BYTEA
+        Type type = Types.optional(PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)
+                .length(16).named("unknown");
+        assertEquals(DataType.BYTEA, ParquetTypeConverter.FIXED_LEN_BYTE_ARRAY.getDataType(type));
+    }
+
+    @Test
+    public void testFixedLenByteArray_UUIDLogicalType_ReturnsUUID() {
+        Type type = Types.optional(PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)
+                .length(16).as(LogicalTypeAnnotation.uuidType()).named("uuid_col");
+        assertEquals(DataType.UUID, ParquetTypeConverter.FIXED_LEN_BYTE_ARRAY.getDataType(type));
     }
 
     // Helper function

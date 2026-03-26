@@ -54,6 +54,7 @@ import static org.apache.parquet.schema.LogicalTypeAnnotation.DateLogicalTypeAnn
 import static org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.IntLogicalTypeAnnotation;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.StringLogicalTypeAnnotation;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.UUIDLogicalTypeAnnotation;
 import static org.apache.parquet.schema.Type.Repetition.REPEATED;
 
 public class ParquetResolver extends BasePlugin implements Resolver {
@@ -241,11 +242,21 @@ public class ParquetResolver extends BasePlugin implements Resolver {
                 group.add(columnIndex, (Float) fieldValue);
                 break;
             case FIXED_LEN_BYTE_ARRAY:
-                byte[] fixedLenByteArray = getFixedLenByteArray((String) fieldValue, primitiveType, columnDescriptors.get(columnIndex).columnName());
-                if (fixedLenByteArray == null) {
-                    return;
+                if (logicalTypeAnnotation instanceof UUIDLogicalTypeAnnotation) {
+                    byte[] uuidBytes = ParquetTypeConverter.uuidToBytes((String) fieldValue);
+                    group.add(columnIndex, Binary.fromReusedByteArray(uuidBytes));
+                } else if (logicalTypeAnnotation instanceof DecimalLogicalTypeAnnotation) {
+                    byte[] fixedLenByteArray = getFixedLenByteArray((String) fieldValue,
+                            primitiveType, columnDescriptors.get(columnIndex).columnName());
+                    if (fixedLenByteArray == null) {
+                        return;
+                    }
+                    group.add(columnIndex, Binary.fromReusedByteArray(fixedLenByteArray));
+                } else {
+                    throw new UnsupportedTypeException(
+                            "Writing FIXED_LEN_BYTE_ARRAY with logical type " + logicalTypeAnnotation
+                                    + " is not supported. Supported: UUID, DECIMAL");
                 }
-                group.add(columnIndex, Binary.fromReusedByteArray(fixedLenByteArray));
                 break;
             case INT96:  // SQL standard timestamp string value with or without time zone literals: https://www.postgresql.org/docs/9.4/datatype-datetime.html
                 String timestamp = (String) fieldValue;
