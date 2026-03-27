@@ -90,6 +90,28 @@ health_check_with_retry() {
   fi
 }
 
+mvn_with_retry() {
+  local max_attempts=3
+  for attempt in $(seq 1 ${max_attempts}); do
+    if mvn "$@"; then
+      return 0
+    fi
+    if [ "${attempt}" -lt "${max_attempts}" ]; then
+      echo "[run_tests] Maven failed (attempt ${attempt}/${max_attempts}), retrying in 10s..."
+      sleep 10
+    fi
+  done
+  echo "[run_tests] Maven failed after ${max_attempts} attempts"
+  return 1
+}
+
+resolve_maven_dependencies() {
+  echo "[run_tests] Pre-resolving Maven dependencies..."
+  pushd "${REPO_ROOT}/automation" >/dev/null
+  mvn_with_retry -B -q dependency:resolve -DskipTests 2>&1 || echo "[warn] Maven dependency resolution failed, tests may fail"
+  popd >/dev/null
+}
+
 cleanup_hdfs_test_data() {
   hdfs dfs -rm -r -f /gpdb-ud-scratch/tmp/pxf_automation_data >/dev/null 2>&1 || true
 }
@@ -526,7 +548,7 @@ ensure_testplugin_jar() {
   export PXF_HOME=${PXF_HOME:-/usr/local/pxf}
   if [ ! -f "${PXF_BASE}/lib/pxf-automation-test.jar" ]; then
     pushd "${REPO_ROOT}/automation" >/dev/null
-    mvn -q -DskipTests test-compile
+    mvn_with_retry -q -DskipTests test-compile
     jar cf "${PXF_BASE}/lib/pxf-automation-test.jar" -C target/classes org/apache/cloudberry/pxf/automation/testplugin
     popd >/dev/null
     JAVA_HOME="${JAVA_BUILD}" "${PXF_HOME}/bin/pxf" restart >/dev/null || true
@@ -853,10 +875,13 @@ generate_test_summary() {
 run_single_group() {
   local group="$1"
   echo "[run_tests] Running single test group: $group"
-  
+
+  # Pre-resolve Maven dependencies with retry for transient network failures
+  resolve_maven_dependencies
+
   # Run health check first
   health_check_with_retry
-  
+
   ensure_testuser_pg_hba
   export PGHOST=127.0.0.1
   export PATH="${GPHOME}/bin:${PATH}"

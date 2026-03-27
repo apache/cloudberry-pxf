@@ -435,8 +435,8 @@ wait_for_datanode() {
       pkill -f "proc_datanode" 2>/dev/null || true
       pkill -f "datanode" 2>/dev/null || true
       sleep 2
-      # Kill any process still holding DataNode ports (50010/50020/50075)
-      for port in 50010 50020 50075; do
+      # Kill any process still holding DataNode ports (50010/50020/50075/50080)
+      for port in 50010 50020 50075 50080; do
         local pid
         pid=$(ss -tlnp "sport = :${port}" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | head -1)
         if [ -n "${pid}" ]; then
@@ -446,7 +446,7 @@ wait_for_datanode() {
       done
       sleep 5
       # Verify ports are actually released before restarting
-      for port in 50010 50020 50075; do
+      for port in 50010 50020 50075 50080; do
         if ss -tlnp "sport = :${port}" 2>/dev/null | grep -q "LISTEN"; then
           log "Port ${port} still in use, waiting..."
           sleep 5
