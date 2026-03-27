@@ -65,6 +65,10 @@ setup_locale_and_packages() {
     sudo locale-gen en_US.UTF-8 ru_RU.CP1251 ru_RU.UTF-8
     sudo update-locale LANG=en_US.UTF-8
   else
+    # Disable broken repos that may exist in the base image (e.g. hpc-common)
+    for repo in hpc-common; do
+      sudo dnf config-manager --set-disabled "$repo" 2>/dev/null || true
+    done
     sudo dnf install -y wget maven unzip openssh-server iproute sudo \
       java-11-openjdk-headless java-1.8.0-openjdk-headless \
       glibc-langpack-en glibc-locale-source
@@ -440,7 +444,15 @@ wait_for_datanode() {
           kill -9 "${pid}" 2>/dev/null || true
         fi
       done
-      sleep 2
+      sleep 5
+      # Verify ports are actually released before restarting
+      for port in 50010 50020 50075; do
+        if ss -tlnp "sport = :${port}" 2>/dev/null | grep -q "LISTEN"; then
+          log "Port ${port} still in use, waiting..."
+          sleep 5
+          break
+        fi
+      done
       # Restart DataNode via the singlecluster script
       "${GPHD_ROOT}/bin/hadoop-datanode.sh" start 0 2>&1 || true
       "${HADOOP_ROOT}/sbin/hadoop-daemon.sh" --config "${GPHD_ROOT}/storage/hadoop/datanode0/etc/hadoop" start datanode 2>&1 || true
