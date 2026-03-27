@@ -451,6 +451,31 @@ wait_for_datanode() {
   die "HDFS DataNode failed to start after ${max_attempts} attempts. Tez upload will fail without a running DataNode."
 }
 
+wait_for_hbase() {
+  log "waiting for HBase RegionServer to become available..."
+  local max_wait=60
+  for i in $(seq 1 ${max_wait}); do
+    if pgrep -f HRegionServer >/dev/null 2>&1; then
+      log "HBase RegionServer is running (after ${i}s)"
+      return 0
+    fi
+    sleep 1
+  done
+  # RegionServer didn't come up; try restarting HBase once
+  log "HBase RegionServer not found after ${max_wait}s, attempting restart..."
+  ${GPHD_ROOT}/bin/stop-hbase.sh 2>/dev/null || true
+  sleep 2
+  ${GPHD_ROOT}/bin/start-hbase.sh 2>/dev/null || true
+  for i in $(seq 1 60); do
+    if pgrep -f HRegionServer >/dev/null 2>&1; then
+      log "HBase RegionServer is running after restart (after ${i}s)"
+      return 0
+    fi
+    sleep 1
+  done
+  die "HBase RegionServer failed to start after restart"
+}
+
 prepare_hadoop_stack() {
   log "prepare Hadoop/Hive/HBase stack"
   export JAVA_HOME="${JAVA_HADOOP}"
@@ -493,6 +518,7 @@ prepare_hadoop_stack() {
   if ! ${GPHD_ROOT}/bin/start-hbase.sh; then
     log "start-hbase.sh returned non-zero (services may already be running), continue"
   fi
+  wait_for_hbase
   start_hive_services
 }
 
