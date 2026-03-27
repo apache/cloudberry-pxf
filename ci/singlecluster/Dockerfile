@@ -62,7 +62,7 @@ ENV TEZ_ROOT=$GPHD_ROOT/tez
 
 # Helper: download from first working mirror with retry
 # Usage: apache_download <relative_path> <output_file>
-RUN cat > /usr/local/bin/apache_download.sh <<'DLEOF' && chmod +x /usr/local/bin/apache_download.sh
+RUN sudo tee /usr/local/bin/apache_download.sh > /dev/null <<'DLEOF' && sudo chmod +x /usr/local/bin/apache_download.sh
 #!/bin/bash
 set -e
 rel_path="$1"; output="$2"
