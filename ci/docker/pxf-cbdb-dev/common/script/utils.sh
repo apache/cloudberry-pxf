@@ -56,7 +56,20 @@ check_hbase() {
     die "HBase HMaster not running"
   fi
 
-  if ! echo "$jps_out" | grep -q HRegionServer && ! pgrep -f HRegionServer >/dev/null 2>&1; then
+  # Retry RegionServer check: it may still be initializing after a recent start
+  local rs_ok=false
+  for _ in 1 2 3; do
+    if echo "$jps_out" | grep -q HRegionServer || pgrep -f HRegionServer >/dev/null 2>&1; then
+      rs_ok=true
+      break
+    fi
+    sleep 5
+    # Refresh jps output for retry
+    if command -v jps >/dev/null 2>&1; then
+      jps_out=$(jps)
+    fi
+  done
+  if [ "${rs_ok}" != "true" ]; then
     die "HBase RegionServer not running"
   fi
 

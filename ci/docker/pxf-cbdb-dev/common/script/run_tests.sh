@@ -20,6 +20,9 @@
 # --------------------------------------------------------------------
 set -euo pipefail
 
+# Ensure UTC timezone (see entrypoint.sh for rationale)
+export TZ=UTC
+
 # Run automation tests only (assumes build/env already prepared)
 
 # Use a unique var name to avoid clobbering by sourced env scripts

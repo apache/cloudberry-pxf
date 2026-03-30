@@ -20,6 +20,12 @@
 # --------------------------------------------------------------------
 set -euo pipefail
 
+# Force UTC timezone for the entire container session.  PXF's Parquet INT96
+# converter uses ZoneId.systemDefault() (ParquetTypeConverter.java) which
+# returns the OS timezone.  Rocky 9 base images may ship with a non-UTC
+# default, causing timestamp regressions in Parquet read/write tests.
+export TZ=UTC
+
 log() { echo "[entrypoint][$(date '+%F %T')] $*"; }
 die() { log "ERROR $*"; exit 1; }
 
@@ -267,7 +273,7 @@ configure_pxf() {
   log "configure PXF"
   source "${COMMON_SCRIPTS}/pxf-env.sh"
   export PATH="$PXF_HOME/bin:$PATH"
-  export PXF_JVM_OPTS="-Xmx512m -Xms256m"
+  export PXF_JVM_OPTS="-Xmx512m -Xms256m -Duser.timezone=UTC"
   export PXF_HOST=localhost
   echo "JAVA_HOME=${JAVA_BUILD}" >> "$PXF_BASE/conf/pxf-env.sh"
   sed -i 's/# server.address=localhost/server.address=0.0.0.0/' "$PXF_BASE/conf/pxf-application.properties"
@@ -465,27 +471,72 @@ wait_for_datanode() {
 
 wait_for_hbase() {
   log "waiting for HBase RegionServer to become available..."
-  local max_wait=60
-  for i in $(seq 1 ${max_wait}); do
+  local max_attempts=2
+  for attempt in $(seq 1 ${max_attempts}); do
+    # Wait for the process to appear (up to 60s)
+    local found=false
+    for i in $(seq 1 60); do
+      if pgrep -f HRegionServer >/dev/null 2>&1; then
+        found=true
+        break
+      fi
+      sleep 1
+    done
+    if [ "${found}" != "true" ]; then
+      log "HBase RegionServer process not found (attempt ${attempt}/${max_attempts})"
+      if [ "${attempt}" -lt "${max_attempts}" ]; then
+        log "Restarting HBase..."
+        ${GPHD_ROOT}/bin/stop-hbase.sh 2>/dev/null || true
+        sleep 2
+        ${GPHD_ROOT}/bin/start-hbase.sh 2>/dev/null || true
+        continue
+      fi
+      die "HBase RegionServer failed to start after ${max_attempts} attempts"
+    fi
+    # Process exists; wait for port 16020 and verify it stays alive for 5s.
+    # The RegionServer can crash shortly after startup on resource-constrained
+    # CI runners, so a simple pgrep is not enough.
+    log "HBase RegionServer process detected, waiting for port 16020..."
+    local port_ready=false
+    for i in $(seq 1 30); do
+      if (echo >/dev/tcp/localhost/16020) >/dev/null 2>&1; then
+        port_ready=true
+        break
+      fi
+      # Verify process is still alive while waiting for port
+      if ! pgrep -f HRegionServer >/dev/null 2>&1; then
+        log "HBase RegionServer crashed during startup"
+        break
+      fi
+      sleep 1
+    done
+    if [ "${port_ready}" != "true" ]; then
+      log "HBase RegionServer port 16020 not ready (attempt ${attempt}/${max_attempts})"
+      if [ "${attempt}" -lt "${max_attempts}" ]; then
+        log "Restarting HBase..."
+        ${GPHD_ROOT}/bin/stop-hbase.sh 2>/dev/null || true
+        sleep 2
+        ${GPHD_ROOT}/bin/start-hbase.sh 2>/dev/null || true
+        continue
+      fi
+      die "HBase RegionServer port 16020 not available after ${max_attempts} attempts"
+    fi
+    # Stabilization check: verify process survives for 5 more seconds
+    log "HBase RegionServer port is up, verifying stability..."
+    sleep 5
     if pgrep -f HRegionServer >/dev/null 2>&1; then
-      log "HBase RegionServer is running (after ${i}s)"
+      log "HBase RegionServer is stable and ready"
       return 0
     fi
-    sleep 1
-  done
-  # RegionServer didn't come up; try restarting HBase once
-  log "HBase RegionServer not found after ${max_wait}s, attempting restart..."
-  ${GPHD_ROOT}/bin/stop-hbase.sh 2>/dev/null || true
-  sleep 2
-  ${GPHD_ROOT}/bin/start-hbase.sh 2>/dev/null || true
-  for i in $(seq 1 60); do
-    if pgrep -f HRegionServer >/dev/null 2>&1; then
-      log "HBase RegionServer is running after restart (after ${i}s)"
-      return 0
+    log "HBase RegionServer died during stabilization (attempt ${attempt}/${max_attempts})"
+    if [ "${attempt}" -lt "${max_attempts}" ]; then
+      log "Restarting HBase..."
+      ${GPHD_ROOT}/bin/stop-hbase.sh 2>/dev/null || true
+      sleep 2
+      ${GPHD_ROOT}/bin/start-hbase.sh 2>/dev/null || true
     fi
-    sleep 1
   done
-  die "HBase RegionServer failed to start after restart"
+  die "HBase RegionServer failed to stabilize after ${max_attempts} attempts"
 }
 
 prepare_hadoop_stack() {
@@ -516,6 +567,24 @@ prepare_hadoop_stack() {
     log "initializing HDFS namenode..."
     ${GPHD_ROOT}/bin/init-gphd.sh 2>&1 || log "init-gphd.sh failed with exit code $?"
   fi
+  # Kill stale Hadoop/HBase processes to prevent BindException on DataNode
+  # ports (50010/50020/50075/50080) when start-gphd.sh launches new ones.
+  log "cleaning up stale Hadoop processes..."
+  pkill -f "proc_datanode" 2>/dev/null || true
+  pkill -f "proc_namenode" 2>/dev/null || true
+  pkill -f "proc_nodemanager" 2>/dev/null || true
+  pkill -f "proc_resourcemanager" 2>/dev/null || true
+  sleep 2
+  # Release DataNode ports held by zombie processes
+  for port in 50010 50020 50075 50080; do
+    local pid
+    pid=$(ss -tlnp "sport = :${port}" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | head -1) || true
+    if [ -n "${pid}" ]; then
+      log "Killing stale process ${pid} on port ${port}"
+      kill -9 "${pid}" 2>/dev/null || true
+    fi
+  done
+  sleep 2
   log "starting HDFS/YARN/HBase via start-gphd.sh..."
   if ! ${GPHD_ROOT}/bin/start-gphd.sh 2>&1; then
     log "start-gphd.sh returned non-zero (services may already be running), continue"
