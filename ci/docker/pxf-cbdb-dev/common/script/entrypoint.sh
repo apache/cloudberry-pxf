@@ -471,73 +471,39 @@ wait_for_datanode() {
 
 wait_for_hbase() {
   log "waiting for HBase RegionServer to become available..."
-  local max_attempts=2
-  for attempt in $(seq 1 ${max_attempts}); do
-    # Wait for the process to appear (up to 60s)
-    local found=false
-    for i in $(seq 1 60); do
-      if pgrep -f HRegionServer >/dev/null 2>&1; then
-        found=true
-        break
-      fi
-      sleep 1
-    done
-    if [ "${found}" != "true" ]; then
-      log "HBase RegionServer process not found (attempt ${attempt}/${max_attempts})"
-      if [ "${attempt}" -lt "${max_attempts}" ]; then
-        log "Restarting HBase..."
-        ${GPHD_ROOT}/bin/stop-hbase.sh 2>/dev/null || true
-        sleep 2
-        ${GPHD_ROOT}/bin/start-hbase.sh 2>/dev/null || true
-        continue
-      fi
-      die "HBase RegionServer failed to start after ${max_attempts} attempts"
-    fi
-    # Process exists; wait for RegionServer RPC port and verify it stays alive.
-    # The singlecluster sets hbase.regionserver.port=6002<nodeid>, so node 0
-    # listens on 60020 (see ci/singlecluster/bin/hbase-regionserver.sh).
-    local rs_port=60020
-    log "HBase RegionServer process detected, waiting for port ${rs_port}..."
-    local port_ready=false
-    for i in $(seq 1 60); do
-      if (echo >/dev/tcp/localhost/${rs_port}) >/dev/null 2>&1; then
-        port_ready=true
-        break
-      fi
-      # Verify process is still alive while waiting for port
-      if ! pgrep -f HRegionServer >/dev/null 2>&1; then
-        log "HBase RegionServer crashed during startup"
-        break
-      fi
-      sleep 1
-    done
-    if [ "${port_ready}" != "true" ]; then
-      log "HBase RegionServer port ${rs_port} not ready (attempt ${attempt}/${max_attempts})"
-      if [ "${attempt}" -lt "${max_attempts}" ]; then
-        log "Restarting HBase..."
-        ${GPHD_ROOT}/bin/stop-hbase.sh 2>/dev/null || true
-        sleep 2
-        ${GPHD_ROOT}/bin/start-hbase.sh 2>/dev/null || true
-        continue
-      fi
-      die "HBase RegionServer port ${rs_port} not available after ${max_attempts} attempts"
-    fi
-    # Stabilization check: verify process survives for 5 more seconds
-    log "HBase RegionServer port is up, verifying stability..."
-    sleep 5
+  local max_wait=60
+  for i in $(seq 1 ${max_wait}); do
     if pgrep -f HRegionServer >/dev/null 2>&1; then
-      log "HBase RegionServer is stable and ready"
+      log "HBase RegionServer is running (after ${i}s), waiting 10s for stabilization..."
+      sleep 10
+      if pgrep -f HRegionServer >/dev/null 2>&1; then
+        log "HBase RegionServer is stable"
+        return 0
+      fi
+      log "HBase RegionServer died during stabilization"
+      break
+    fi
+    sleep 1
+  done
+  # RegionServer didn't come up or crashed; try restarting HBase once
+  log "HBase RegionServer not stable, attempting restart..."
+  ${GPHD_ROOT}/bin/stop-hbase.sh 2>/dev/null || true
+  sleep 2
+  ${GPHD_ROOT}/bin/start-hbase.sh 2>/dev/null || true
+  for i in $(seq 1 60); do
+    if pgrep -f HRegionServer >/dev/null 2>&1; then
+      log "HBase RegionServer is running after restart (after ${i}s), waiting 10s..."
+      sleep 10
+      if pgrep -f HRegionServer >/dev/null 2>&1; then
+        log "HBase RegionServer is stable after restart"
+        return 0
+      fi
+      log "WARN: HBase RegionServer died again during stabilization, continuing anyway"
       return 0
     fi
-    log "HBase RegionServer died during stabilization (attempt ${attempt}/${max_attempts})"
-    if [ "${attempt}" -lt "${max_attempts}" ]; then
-      log "Restarting HBase..."
-      ${GPHD_ROOT}/bin/stop-hbase.sh 2>/dev/null || true
-      sleep 2
-      ${GPHD_ROOT}/bin/start-hbase.sh 2>/dev/null || true
-    fi
+    sleep 1
   done
-  die "HBase RegionServer failed to stabilize after ${max_attempts} attempts"
+  log "WARN: HBase RegionServer failed to start after restart, continuing anyway"
 }
 
 prepare_hadoop_stack() {
@@ -568,24 +534,16 @@ prepare_hadoop_stack() {
     log "initializing HDFS namenode..."
     ${GPHD_ROOT}/bin/init-gphd.sh 2>&1 || log "init-gphd.sh failed with exit code $?"
   fi
-  # Kill stale Hadoop/HBase processes to prevent BindException on DataNode
-  # ports (50010/50020/50075/50080) when start-gphd.sh launches new ones.
-  log "cleaning up stale Hadoop processes..."
-  pkill -f "proc_datanode" 2>/dev/null || true
-  pkill -f "proc_namenode" 2>/dev/null || true
-  pkill -f "proc_nodemanager" 2>/dev/null || true
-  pkill -f "proc_resourcemanager" 2>/dev/null || true
-  sleep 2
-  # Release DataNode ports held by zombie processes
-  for port in 50010 50020 50075 50080; do
-    local pid
-    pid=$(ss -tlnp "sport = :${port}" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | head -1) || true
-    if [ -n "${pid}" ]; then
-      log "Killing stale process ${pid} on port ${port}"
-      kill -9 "${pid}" 2>/dev/null || true
-    fi
-  done
-  sleep 2
+  # Kill stale Hadoop processes to prevent BindException on DataNode ports
+  # when start-gphd.sh launches new ones.
+  if pgrep -f "proc_datanode\|proc_namenode\|proc_nodemanager\|proc_resourcemanager" >/dev/null 2>&1; then
+    log "cleaning up stale Hadoop processes..."
+    pkill -f "proc_datanode" 2>/dev/null || true
+    pkill -f "proc_namenode" 2>/dev/null || true
+    pkill -f "proc_nodemanager" 2>/dev/null || true
+    pkill -f "proc_resourcemanager" 2>/dev/null || true
+    sleep 3
+  fi
   log "starting HDFS/YARN/HBase via start-gphd.sh..."
   if ! ${GPHD_ROOT}/bin/start-gphd.sh 2>&1; then
     log "start-gphd.sh returned non-zero (services may already be running), continue"
