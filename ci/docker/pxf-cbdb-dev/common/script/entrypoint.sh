@@ -493,13 +493,14 @@ wait_for_hbase() {
       fi
       die "HBase RegionServer failed to start after ${max_attempts} attempts"
     fi
-    # Process exists; wait for port 16020 and verify it stays alive for 5s.
-    # The RegionServer can crash shortly after startup on resource-constrained
-    # CI runners, so a simple pgrep is not enough.
-    log "HBase RegionServer process detected, waiting for port 16020..."
+    # Process exists; wait for RegionServer RPC port and verify it stays alive.
+    # The singlecluster sets hbase.regionserver.port=6002<nodeid>, so node 0
+    # listens on 60020 (see ci/singlecluster/bin/hbase-regionserver.sh).
+    local rs_port=60020
+    log "HBase RegionServer process detected, waiting for port ${rs_port}..."
     local port_ready=false
-    for i in $(seq 1 30); do
-      if (echo >/dev/tcp/localhost/16020) >/dev/null 2>&1; then
+    for i in $(seq 1 60); do
+      if (echo >/dev/tcp/localhost/${rs_port}) >/dev/null 2>&1; then
         port_ready=true
         break
       fi
@@ -511,7 +512,7 @@ wait_for_hbase() {
       sleep 1
     done
     if [ "${port_ready}" != "true" ]; then
-      log "HBase RegionServer port 16020 not ready (attempt ${attempt}/${max_attempts})"
+      log "HBase RegionServer port ${rs_port} not ready (attempt ${attempt}/${max_attempts})"
       if [ "${attempt}" -lt "${max_attempts}" ]; then
         log "Restarting HBase..."
         ${GPHD_ROOT}/bin/stop-hbase.sh 2>/dev/null || true
@@ -519,7 +520,7 @@ wait_for_hbase() {
         ${GPHD_ROOT}/bin/start-hbase.sh 2>/dev/null || true
         continue
       fi
-      die "HBase RegionServer port 16020 not available after ${max_attempts} attempts"
+      die "HBase RegionServer port ${rs_port} not available after ${max_attempts} attempts"
     fi
     # Stabilization check: verify process survives for 5 more seconds
     log "HBase RegionServer port is up, verifying stability..."
