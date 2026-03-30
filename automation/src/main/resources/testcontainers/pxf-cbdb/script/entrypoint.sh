@@ -29,25 +29,52 @@ REPO_DIR=${ROOT_DIR}/cloudberry-pxf
 PXF_SCRIPTS=${REPO_DIR}/automation/src/main/resources/testcontainers/pxf-cbdb/script
 source "${PXF_SCRIPTS}/utils.sh"
 
+# --------------------------------------------------------------------
+# OS detection: "deb" (Ubuntu/Debian) or "rpm" (Rocky/RHEL/CentOS)
+# --------------------------------------------------------------------
+if command -v apt-get >/dev/null 2>&1; then
+  OS_FAMILY="deb"
+else
+  OS_FAMILY="rpm"
+fi
+
 detect_java_paths() {
-  case "$(uname -m)" in
-    aarch64|arm64) JAVA_BUILD=/usr/lib/jvm/java-11-openjdk-arm64 ;;
-    x86_64|amd64)  JAVA_BUILD=/usr/lib/jvm/java-11-openjdk-amd64 ;;
-    *)             JAVA_BUILD=/usr/lib/jvm/java-11-openjdk-amd64 ;;
-  esac
+  if [ "$OS_FAMILY" = "deb" ]; then
+    case "$(uname -m)" in
+      aarch64|arm64) JAVA_BUILD=/usr/lib/jvm/java-11-openjdk-arm64; ;;
+      *)             JAVA_BUILD=/usr/lib/jvm/java-11-openjdk-amd64; ;;
+    esac
+  else
+    JAVA_BUILD=/usr/lib/jvm/java-11-openjdk
+  fi
   export JAVA_BUILD
 }
 
 setup_locale_and_packages() {
   log "install locales"
-  sudo locale-gen en_US.UTF-8 ru_RU.CP1251 ru_RU.UTF-8
-  sudo update-locale LANG=en_US.UTF-8
+  log "install base packages and locales"
+  if [ "$OS_FAMILY" = "deb" ]; then
+    sudo locale-gen en_US.UTF-8 ru_RU.CP1251 ru_RU.UTF-8
+    sudo update-locale LANG=en_US.UTF-8
+  else
+    sudo localedef -c -i en_US -f UTF-8 en_US.UTF-8 || true
+    sudo localedef -c -i ru_RU -f UTF-8 ru_RU.UTF-8 || true
+  fi
   sudo localedef -c -i ru_RU -f CP1251 ru_RU.CP1251 || true
   export LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
 }
 
 setup_ssh() {
   log "configure ssh"
+  # Rocky 9 / RHEL 9 enforces system-wide crypto-policies that override sshd_config
+  # settings for algorithm negotiation.  The automation test framework uses the
+  # Ganymed SSH-2 (ch.ethz.ssh2) library which only supports older KEX algorithms
+  # (diffie-hellman-group-exchange-sha1, diffie-hellman-group14-sha1, etc.).
+  # Downgrade to the LEGACY crypto policy so sshd accepts these algorithms.
+  if [ "$OS_FAMILY" = "rpm" ] && command -v update-crypto-policies >/dev/null 2>&1; then
+    log "setting LEGACY crypto policy for SSH compatibility"
+    sudo update-crypto-policies --set LEGACY 2>/dev/null || true
+  fi
   sudo ssh-keygen -A
   sudo bash -c 'echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config'
   sudo mkdir -p /etc/ssh/sshd_config.d
@@ -56,7 +83,11 @@ KexAlgorithms +diffie-hellman-group-exchange-sha1,diffie-hellman-group14-sha1,di
 HostKeyAlgorithms +ssh-rsa,ssh-dss
 PubkeyAcceptedAlgorithms +ssh-rsa,ssh-dss
 EOF'
-  sudo usermod -a -G sudo gpadmin
+  if [ "$OS_FAMILY" = "deb" ]; then
+    sudo usermod -a -G sudo gpadmin
+  else
+    sudo usermod -a -G wheel gpadmin 2>/dev/null || true
+  fi
   echo "gpadmin:cbdb@123" | sudo chpasswd
   echo "gpadmin        ALL=(ALL)       NOPASSWD: ALL" | sudo tee -a /etc/sudoers >/dev/null
   echo "root           ALL=(ALL)       NOPASSWD: ALL" | sudo tee -a /etc/sudoers >/dev/null
@@ -71,7 +102,21 @@ EOF'
   ssh-keyscan -t rsa mdw cdw localhost 2>/dev/null > /home/gpadmin/.ssh/known_hosts || true
   sudo rm -rf /run/nologin
   sudo mkdir -p /var/run/sshd && sudo chmod 0755 /var/run/sshd
-  sudo /usr/sbin/sshd || die "Failed to start sshd"
+  # Ensure privilege separation user exists (required by Rocky 9 sshd)
+  id sshd &>/dev/null || sudo useradd -r -d /var/empty/sshd -s /sbin/nologin sshd 2>/dev/null || true
+  sudo mkdir -p /var/empty/sshd && sudo chmod 0755 /var/empty/sshd
+  sudo /usr/sbin/sshd -E /tmp/sshd.log || die "Failed to start sshd, check /tmp/sshd.log"
+  sleep 1
+  if ! ss -tlnp | grep -q ':22 '; then
+    log "ERROR: sshd is not listening on port 22"
+    cat /tmp/sshd.log 2>/dev/null || true
+    sudo /usr/sbin/sshd -D -e &
+    sleep 1
+    if ! ss -tlnp | grep -q ':22 '; then
+      die "sshd failed to bind to port 22"
+    fi
+  fi
+  log "sshd is running on port 22"
 }
 
 relax_pg_hba() {
@@ -108,8 +153,6 @@ build_pxf() {
   "${PXF_SCRIPTS}/build_pxf.sh"
 }
 
-# pxf_regress is copied from the host via Testcontainers; the binary may be macOS or wrong CPU.
-# Rebuild here so RegressApplication runs a Linux executable matching the container arch.
 build_pxf_regress() {
   log "build pxf_regress (linux)"
   export PATH="/usr/local/go/bin:${PATH}"

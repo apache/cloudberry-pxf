@@ -253,12 +253,14 @@ endif
 
 # Run Testcontainers-based tests.
 # Usage:
-#   make test-tc                          => run all testcontainers tests
+#   make test-tc                          => run all testcontainers tests (Ubuntu)
 #   make test-tc TC_GROUP=pxf-jdbc        => run only pxf-jdbc group
+#   make test-tc DISTRO=rocky9            => run with Rocky Linux 9 base image
 .PHONY: test-tc
 test-tc: check-env symlink_pxf_jars pxf_regress
 	$(MVN) -B -e -Djava.awt.headless=true -Duser.timezone=UTC \
 		-DuseFDW=$(USE_FDW) \
+		-Dpxf.test.distro=$(or $(DISTRO),$(PXF_TEST_DISTRO),ubuntu) \
 		-Dgroups=$(or $(TC_GROUP),testcontainers) \
 		-DexcludedGroups= \
 		test

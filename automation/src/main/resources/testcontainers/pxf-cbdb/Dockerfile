@@ -17,17 +17,23 @@
 # permissions and limitations under the License.
 #
 # --------------------------------------------------------------------
-FROM apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest
+ARG BASE_IMAGE=apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest
+FROM ${BASE_IMAGE}
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-# bake in java 11 into image
-RUN sudo apt-get update && \
-    sudo apt-get install -y --no-install-recommends \
-      openjdk-11-jdk-headless \
-      curl ca-certificates git unzip maven make \
-      wget lsb-release locales openssh-server iproute2 sudo && \
-    sudo rm -rf /var/lib/apt/lists/*
+# Install Java 8 & 11: auto-detect OS package manager
+RUN if command -v apt-get >/dev/null 2>&1; then \
+      export DEBIAN_FRONTEND=noninteractive && \
+      sudo apt-get update && \
+      sudo apt-get install -y --no-install-recommends \
+        curl ca-certificates git unzip maven make \
+        locales wget lsb-release openssh-server iproute2 sudo \
+        openjdk-11-jdk-headless; \
+    elif command -v dnf >/dev/null 2>&1; then \
+      sudo dnf install -y --allowerasing \
+        curl ca-certificates wget maven unzip openssh-server iproute sudo glibc-langpack-en glibc-locale-source \
+        java-11-openjdk-devel && \
+      sudo dnf clean all; \
+    fi
 
 # Install Gradle and warm wrapper cache (it will download GRADLE_VERSION again)
 # (version must match server/gradle/wrapper/gradle-wrapper.properties)

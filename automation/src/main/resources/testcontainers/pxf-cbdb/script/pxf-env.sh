@@ -19,22 +19,25 @@
 #
 # --------------------------------------------------------------------
 
-# Centralized environment for Cloudberry + PXF + Hadoop stack
+# Centralized environment for Cloudberry + PXF
 
 # --------------------------------------------------------------------
-# Architecture-aware Java selections
+# Architecture-aware Java selections (auto-detect OS)
 # --------------------------------------------------------------------
-case "$(uname -m)" in
-  aarch64|arm64)
-    JAVA_BUILD=${JAVA_BUILD:-/usr/lib/jvm/java-11-openjdk-arm64}
-    ;;
-  x86_64|amd64)
-    JAVA_BUILD=${JAVA_BUILD:-/usr/lib/jvm/java-11-openjdk-amd64}
-    ;;
-  *)
-    JAVA_BUILD=${JAVA_BUILD:-/usr/lib/jvm/java-11-openjdk}
-    ;;
-esac
+if [ -d /usr/lib/jvm/java-11-openjdk-amd64 ] || [ -d /usr/lib/jvm/java-11-openjdk-arm64 ]; then
+  # Debian/Ubuntu: paths include architecture suffix
+  case "$(uname -m)" in
+    aarch64|arm64)
+      JAVA_BUILD=${JAVA_BUILD:-/usr/lib/jvm/java-11-openjdk-arm64}
+      ;;
+    *)
+      JAVA_BUILD=${JAVA_BUILD:-/usr/lib/jvm/java-11-openjdk-amd64}
+      ;;
+  esac
+else
+  # RHEL/Rocky: architecture-independent symlinks
+  JAVA_BUILD=${JAVA_BUILD:-/usr/lib/jvm/java-11-openjdk}
+fi
 
 # --------------------------------------------------------------------
 # Core paths

@@ -58,8 +58,8 @@ public class AbstractTestcontainersTest {
 
             cloudberry = new CloudberryApplication(container);
             cloudberry.connect();
-            cloudberry.createExtension("pxf", true);
-            cloudberry.createExtension("pxf_fdw", true);
+            cloudberry.createExtension("pxf", false);
+            cloudberry.createExtension("pxf_fdw", false);
 
             if (!sharedEnvironmentInitialized) {
                 // Ensure PXF JDBC server configs exist for SERVER=database/db-session-params tests.

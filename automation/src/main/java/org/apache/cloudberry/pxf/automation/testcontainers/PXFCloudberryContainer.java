@@ -40,6 +40,8 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * PXF + Cloudberry colocated testcontainer.
@@ -53,7 +55,12 @@ import java.time.Duration;
  */
 public class PXFCloudberryContainer extends GenericContainer<PXFCloudberryContainer> {
 
-    private static final String IMAGE_NAME = "pxf/cbdb-testcontainer:1";
+    private static final Map<String, String> BASE_IMAGES = new HashMap<>();
+    static {
+        BASE_IMAGES.put("ubuntu", "apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest");
+        BASE_IMAGES.put("rocky9", "apache/incubator-cloudberry:cbdb-build-rocky9-latest");
+    }
+
     public static final int CLOUDBERRY_PORT = 7000;
     public static final int PXF_PORT = 5888;
     public static final String CLOUDBERRY_USER = "gpadmin";
@@ -69,8 +76,8 @@ public class PXFCloudberryContainer extends GenericContainer<PXFCloudberryContai
     private static final Network network = Network.newNetwork();
     private static PXFCloudberryContainer instance;
 
-    private PXFCloudberryContainer(String repoPath) {
-        super(DockerImageName.parse(IMAGE_NAME));
+    private PXFCloudberryContainer(String imageName, String repoPath) {
+        super(DockerImageName.parse(imageName));
         Path root = Paths.get(repoPath).toAbsolutePath().normalize();
 
         withNetwork(network)
@@ -86,7 +93,6 @@ public class PXFCloudberryContainer extends GenericContainer<PXFCloudberryContai
                 }
             })
             .withStartupTimeout(Duration.ofMinutes(25))
-            .withPrivilegedMode(true)
             // Copy directories to the container at runtime:
             .withCopyToContainer(
                     MountableFile.forHostPath(root.resolve("external-table").toString()),
@@ -116,6 +122,14 @@ public class PXFCloudberryContainer extends GenericContainer<PXFCloudberryContai
         }
     }
 
+    private static String resolveDistro() {
+        String prop = System.getProperty("pxf.test.distro");
+        if (prop != null && !prop.isEmpty()) return prop;
+        String env = System.getenv("PXF_TEST_DISTRO");
+        if (env != null && !env.isEmpty()) return env;
+        return "ubuntu";
+    }
+
     /**
      * Returns a singleton container, starting it and running the environment
      * setup on first access. Thread-safe.
@@ -123,16 +137,20 @@ public class PXFCloudberryContainer extends GenericContainer<PXFCloudberryContai
     public static synchronized PXFCloudberryContainer getInstance() {
         if (instance == null) {
             String repo = resolveProperty("pxf.test.repo.path", findRepoPath());
+            String distro = resolveDistro();
+            String imageName = "pxf/cbdb-testcontainer-" + distro + ":1";
+            String baseImage = BASE_IMAGES.getOrDefault(distro, BASE_IMAGES.get("ubuntu"));
 
             ClasspathDockerContainerBuilder.ensureImageExists(
-                    IMAGE_NAME,
+                    imageName,
                     "testcontainers/pxf-cbdb/",
-                   new String[]{
+                    new String[]{
                             "Dockerfile",
                             "script/build_cloudberrry.sh"
-                    });
+                    },
+                    new String[]{"BASE_IMAGE=" + baseImage});
 
-            instance = new PXFCloudberryContainer(repo);
+            instance = new PXFCloudberryContainer(imageName, repo);
             instance.start();
             Runtime.getRuntime().addShutdownHook(new Thread(instance::stop));
 

@@ -17,8 +17,14 @@
 # permissions and limitations under the License.
 #
 # --------------------------------------------------------------------
+# Build Cloudberry from source — works on both Ubuntu and Rocky/RHEL
+
 # Install sudo & git
-sudo apt update && sudo apt install -y sudo git
+if command -v apt-get >/dev/null 2>&1; then
+  sudo apt update && sudo apt install -y sudo git
+elif command -v dnf >/dev/null 2>&1; then
+  sudo dnf install -y sudo git
+fi
 
 # Required configuration
 ## Add Cloudberry environment setup to .bashrc
@@ -57,44 +63,85 @@ EOF
 ulimit -a
 
 # Install basic system packages
-sudo apt update
-sudo apt install -y bison \
-  bzip2 \
-  cmake \
-  curl \
-  flex \
-  gcc \
-  g++ \
-  iproute2 \
-  iputils-ping \
-  language-pack-en \
-  locales \
-  libapr1-dev \
-  libbz2-dev \
-  libcurl4-gnutls-dev \
-  libevent-dev \
-  libkrb5-dev \
-  libipc-run-perl \
-  libldap2-dev \
-  libpam0g-dev \
-  libprotobuf-dev \
-  libreadline-dev \
-  libssl-dev \
-  libuv1-dev \
-  liblz4-dev \
-  libxerces-c-dev \
-  libxml2-dev \
-  libyaml-dev \
-  libzstd-dev \
-  libperl-dev \
-  make \
-  pkg-config \
-  protobuf-compiler \
-  python3-dev \
-  python3-pip \
-  python3-setuptools \
-  rsync \
-  libsnappy-dev
+if command -v apt-get >/dev/null 2>&1; then
+  sudo apt update
+  sudo apt install -y bison \
+    bzip2 \
+    cmake \
+    curl \
+    flex \
+    gcc \
+    g++ \
+    iproute2 \
+    iputils-ping \
+    language-pack-en \
+    locales \
+    libapr1-dev \
+    libbz2-dev \
+    libcurl4-gnutls-dev \
+    libevent-dev \
+    libkrb5-dev \
+    libipc-run-perl \
+    libldap2-dev \
+    libpam0g-dev \
+    libprotobuf-dev \
+    libreadline-dev \
+    libssl-dev \
+    libuv1-dev \
+    liblz4-dev \
+    libxerces-c-dev \
+    libxml2-dev \
+    libyaml-dev \
+    libzstd-dev \
+    libperl-dev \
+    make \
+    pkg-config \
+    protobuf-compiler \
+    python3-dev \
+    python3-pip \
+    python3-setuptools \
+    rsync \
+    libsnappy-dev
+elif command -v dnf >/dev/null 2>&1; then
+  sudo dnf install -y \
+    bison \
+    bzip2 \
+    cmake \
+    curl \
+    flex \
+    gcc \
+    gcc-c++ \
+    iproute \
+    iputils \
+    glibc-langpack-en \
+    glibc-locale-source \
+    apr-devel \
+    bzip2-devel \
+    libcurl-devel \
+    libevent-devel \
+    krb5-devel \
+    perl-IPC-Run \
+    openldap-devel \
+    pam-devel \
+    protobuf-devel \
+    readline-devel \
+    openssl-devel \
+    libuv-devel \
+    lz4-devel \
+    xerces-c-devel \
+    libxml2-devel \
+    libyaml-devel \
+    libzstd-devel \
+    perl-devel \
+    make \
+    pkgconfig \
+    protobuf-compiler \
+    python3-devel \
+    python3-pip \
+    python3-setuptools \
+    rsync \
+    snappy-devel
+fi
 
 # Continue as gpadmin user
 
@@ -105,10 +152,32 @@ sudo chmod a+w /usr/local
 mkdir -p /usr/local/cloudberry-db
 sudo chown -R gpadmin:gpadmin /usr/local/cloudberry-db
 
+# Set up xerces-c paths:
+# - Ubuntu: installed via libxerces-c-dev into /usr/include/xercesc
+# - Rocky9: pre-built in the base image at /usr/local/xerces-c/
+if command -v apt-get >/dev/null 2>&1; then
+  XERCES_INCLUDES=/usr/include/xercesc
+else
+  XERCES_INCLUDES=/usr/local/xerces-c/include
+  # Copy shared libs so the installed cloudberry-db can find them at runtime
+  mkdir -p /usr/local/cloudberry-db/lib
+  cp -v /usr/local/xerces-c/lib/libxerces-c.so \
+        /usr/local/xerces-c/lib/libxerces-c-3.*.so \
+        /usr/local/cloudberry-db/lib/
+  # Register the lib path so configure test programs can load the .so at runtime
+  echo /usr/local/cloudberry-db/lib | sudo tee /etc/ld.so.conf.d/cloudberry-xerces.conf
+  sudo ldconfig
+  export CPPFLAGS="${CPPFLAGS:-} -I/usr/local/xerces-c/include"
+  export LDFLAGS="${LDFLAGS:-} -L/usr/local/cloudberry-db/lib"
+fi
+
 # Run configure
 cd ~/workspace/cloudberry
 ./configure --prefix=/usr/local/cloudberry-db \
             --disable-external-fts \
+            --enable-debug \
+            --enable-cassert \
+            --enable-debug-extensions \
             --enable-gpcloud \
             --enable-ic-proxy \
             --enable-mapreduce \

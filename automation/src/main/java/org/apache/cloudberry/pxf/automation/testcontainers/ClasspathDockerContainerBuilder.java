@@ -28,6 +28,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  *
@@ -45,6 +48,19 @@ public class ClasspathDockerContainerBuilder {
      * @param resources - list of files to copy (relative to resourceDirectory)
      */
     public static void ensureImageExists(String imageName, String resourceDirectory, String[] resources) {
+        ensureImageExists(imageName, resourceDirectory, resources, new String[0]);
+    }
+
+    /**
+     * Builds named Docker image from resources in the classpath with optional build arguments.
+     *
+     * @param imageName - name of the image to build
+     * @param resourceDirectory - resource path to Dockerfile's folder
+     * @param resources - list of files to copy (relative to resourceDirectory)
+     * @param buildArgs - docker --build-arg values in "KEY=VALUE" format
+     */
+    public static void ensureImageExists(String imageName, String resourceDirectory,
+                                         String[] resources, String[] buildArgs) {
         if (imageExists(imageName)) {
             System.out.println("=== Image '" + imageName + "' already exists locally, skip build ===");
             return;
@@ -63,7 +79,7 @@ public class ClasspathDockerContainerBuilder {
                     Files.copy(is, target, StandardCopyOption.REPLACE_EXISTING);
                 }
             }
-            dockerBuild(contextDir.toFile(), imageName);
+            dockerBuild(contextDir.toFile(), imageName, buildArgs);
         } catch (IOException e) {
             throw new RuntimeException("Failed to prepare Docker build context from classpath", e);
         }
@@ -81,12 +97,16 @@ public class ClasspathDockerContainerBuilder {
         }
     }
 
-    private static void dockerBuild(File contextDir, String tag) {
+    private static void dockerBuild(File contextDir, String tag, String[] buildArgs) {
         System.out.println("=== docker build -t " + tag + " " + contextDir + " ===");
         try {
-            ProcessBuilder pb = new ProcessBuilder(
-                    "docker", "build",
-                    "-t", tag, ".")
+            List<String> cmd = new ArrayList<>(Arrays.asList("docker", "build", "-t", tag));
+            for (String arg : buildArgs) {
+                cmd.add("--build-arg");
+                cmd.add(arg);
+            }
+            cmd.add(".");
+            ProcessBuilder pb = new ProcessBuilder(cmd)
                     .directory(contextDir)
                     .redirectErrorStream(true);
             Process process = pb.start();

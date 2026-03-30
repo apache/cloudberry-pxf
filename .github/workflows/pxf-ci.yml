@@ -198,9 +198,18 @@ jobs:
         path: /tmp/singlecluster-rocky9-image.tar
         retention-days: 1
 
-  build-pxf-testcontainer-image:
-    name: Build PXF Testcontainer Image
+  build-pxf-cbdb-testcontainer-image:
+    name: Build PXF-CBDB Testcontainer Image (${{ matrix.distro }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - distro: ubuntu
+            base_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest
+            image_tag: pxf/cbdb-testcontainer:1
+          - distro: rocky9
+            base_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest
+            image_tag: pxf/cbdb-testcontainer-rocky9:1
     steps:
       - name: Checkout PXF source
         uses: actions/checkout@v4
@@ -210,15 +219,16 @@ jobs:
       - name: Build pxf-cbdb testcontainer image
         run: |
           docker build \
-            -t pxf/cbdb-testcontainer:1 \
+            --build-arg BASE_IMAGE=${{ matrix.base_image }} \
+            -t ${{ matrix.image_tag }} \
             automation/src/main/resources/testcontainers/pxf-cbdb
-          docker save pxf/cbdb-testcontainer:1 > /tmp/pxf-cbdb-testcontainer-image.tar
+          docker save ${{ matrix.image_tag }} > /tmp/pxf-cbdb-testcontainer-${{ matrix.distro }}.tar
 
       - name: Upload pxf-cbdb testcontainer image
         uses: actions/upload-artifact@v4
         with:
-          name: pxf-cbdb-testcontainer-image
-          path: /tmp/pxf-cbdb-testcontainer-image.tar
+          name: pxf-cbdb-testcontainer-image-${{ matrix.distro }}
+          path: /tmp/pxf-cbdb-testcontainer-${{ matrix.distro }}.tar
           retention-days: 1
 
   # Stage 2: Parallel test jobs using matrix strategy
@@ -567,19 +577,27 @@ jobs:
 
   # Stage 2c: Testcontainers-based tests
   pxf-testcontainer-test:
-    name: "TC Test - ${{ matrix.tc_group }} (${{ matrix.test_mode }})"
-    needs: [build-pxf-testcontainer-image]
+    name: "TC Test - ${{ matrix.tc_group }} (${{ matrix.use_fdw == 'true' && 'fdw' || 'external-table' }}, ${{ matrix.distro }})"
+    needs: [build-pxf-cbdb-testcontainer-image]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
           - tc_group: pxf-jdbc
+            use_fdw: "false"
+            distro: ubuntu
+          - tc_group: pxf-jdbc
+            use_fdw: "true"
+            distro: ubuntu
+          - tc_group: pxf-jdbc
             test_mode: external-table
             use_fdw: "false"
+            distro: rocky9
           - tc_group: pxf-jdbc
             test_mode: fdw
             use_fdw: "true"
+            distro: rocky9
     steps:
       - name: Checkout PXF source
         uses: actions/checkout@v4
@@ -596,18 +614,18 @@ jobs:
       - name: Download pxf-cbdb testcontainer image
         uses: actions/download-artifact@v4
         with:
-          name: pxf-cbdb-testcontainer-image
+          name: pxf-cbdb-testcontainer-image-${{ matrix.distro }}
           path: /tmp
 
       - name: Load pxf-cbdb testcontainer image
         run: |
-          docker load < /tmp/pxf-cbdb-testcontainer-image.tar
+          docker load < /tmp/pxf-cbdb-testcontainer-${{ matrix.distro }}.tar
 
       - name: Build PXF stage artifacts (no unit tests)
         run: |
           make -C server stage-notest
 
-      - name: Run Testcontainers tests - ${{ matrix.tc_group }} (${{ matrix.test_mode }})
+      - name: Run Testcontainers tests - ${{ matrix.tc_group }} (${{ matrix.use_fdw == 'true' && 'fdw' || 'external-table' }}, ${{ matrix.distro }})
         id: run_test
         continue-on-error: true
         timeout-minutes: 120
@@ -615,7 +633,7 @@ jobs:
         env:
           PXF_HOME: ${{ github.workspace }}/server/build/stage
         run: |
-          make test-tc TC_GROUP=${{ matrix.tc_group }} USE_FDW=${{ matrix.use_fdw }}
+          make test-tc TC_GROUP=${{ matrix.tc_group }} USE_FDW=${{ matrix.use_fdw }} DISTRO=${{ matrix.distro }}
 
       - name: Collect artifacts and generate stats
         if: always()
@@ -623,9 +641,9 @@ jobs:
         run: |
           mkdir -p artifacts/logs
           TC_GROUP="${{ matrix.tc_group }}"
-          TEST_MODE="${{ matrix.test_mode }}"
+          TEST_MODE="${{ matrix.use_fdw == 'true' && 'fdw' || 'external-table' }}"
           TEST_RESULT="${{ steps.run_test.outcome }}"
-          
+
           # Copy test artifacts
           cp -r automation/automation_logs/* artifacts/ 2>/dev/null || true
 
@@ -642,10 +660,10 @@ jobs:
             fi
           done
           PASSED=$((TOTAL - FAILED - SKIPPED))
-          
+
           cat > artifacts/test_stats.json <<EOF
           {
-            "group": "$TC_GROUP:$TEST_MODE",
+            "group": "$TC_GROUP:$TEST_MODE:${{ matrix.distro }}",
             "result": "$TEST_RESULT",
             "total": $TOTAL,
             "passed": $PASSED,
@@ -653,16 +671,16 @@ jobs:
             "skipped": $SKIPPED
           }
           EOF
-          
+
           echo "failed_count=$FAILED" >> $GITHUB_OUTPUT
           echo "skipped_count=$SKIPPED" >> $GITHUB_OUTPUT
-          echo "Test stats for tc:$TC_GROUP ($TEST_MODE): total=$TOTAL, passed=$PASSED, failed=$FAILED, skipped=$SKIPPED"
+          echo "Test stats for tc:$TC_GROUP ($TEST_MODE, ${{ matrix.distro }}): total=$TOTAL, passed=$PASSED, failed=$FAILED, skipped=$SKIPPED"
 
       - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-tc-${{ matrix.tc_group }}-${{ matrix.test_mode }}
+          name: test-results-tc-${{ matrix.tc_group }}-${{ matrix.use_fdw == 'true' && 'fdw' || 'external-table' }}-${{ matrix.distro }}
           path: artifacts/**
           if-no-files-found: ignore
           retention-days: 7
@@ -672,7 +690,7 @@ jobs:
         run: |
           FAILED_COUNT="${{ steps.collect_artifacts.outputs.failed_count || 0 }}"
           if [ "${{ steps.run_test.outcome }}" == "failure" ] || [ "$FAILED_COUNT" -gt 0 ]; then
-            echo "Testcontainer test group ${{ matrix.tc_group }} (${{ matrix.test_mode }}) failed (Failures: $FAILED_COUNT)"
+            echo "Testcontainer test ${{ matrix.tc_group }} (${{ matrix.test_mode }}, ${{ matrix.distro }}) failed (Failures: $FAILED_COUNT)"
             exit 1
           fi
 
