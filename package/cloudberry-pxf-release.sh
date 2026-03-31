@@ -519,17 +519,17 @@ section "Staging release: $TAG"
   export COPY_EXTENDED_ATTRIBUTES_DISABLE=1
 
   # Keep -rcN in the artifact filename for RC voting, but keep the extracted
-  # top-level directory name as the main version (without -rcN).
-  git archive --format=tar --prefix="apache-cloudberry-pxf-${VERSION_FILE}/" "$TAG" | tar -x -C "$TMP_DIR"
+  # top-level directory name as the main version with -incubating (without -rcN).
+  git archive --format=tar --prefix="apache-cloudberry-pxf-${VERSION_FILE}-incubating/" "$TAG" | tar -x -C "$TMP_DIR"
 
   # Archive submodules if any
   if [ -s .gitmodules ]; then
     git submodule foreach --recursive --quiet "
       echo \"Archiving submodule: \$sm_path\"
       fullpath=\"\$toplevel/\$sm_path\"
-      destpath=\"$TMP_DIR/apache-cloudberry-pxf-${VERSION_FILE}/\$sm_path\"
+      destpath=\"$TMP_DIR/apache-cloudberry-pxf-${VERSION_FILE}-incubating/\$sm_path\"
       mkdir -p \"\$destpath\"
-      git -C \"\$fullpath\" archive --format=tar --prefix=\"\$sm_path/\" HEAD | tar -x -C \"$TMP_DIR/apache-cloudberry-pxf-${VERSION_FILE}\"
+      git -C \"\$fullpath\" archive --format=tar --prefix=\"\$sm_path/\" HEAD | tar -x -C \"$TMP_DIR/apache-cloudberry-pxf-${VERSION_FILE}-incubating\"
     "
   fi
 
@@ -538,25 +538,25 @@ section "Staging release: $TAG"
     echo "Cleaning macOS extended attributes from extracted files..."
     # Remove all extended attributes recursively
     if command -v xattr >/dev/null 2>&1; then
-      find "$TMP_DIR/apache-cloudberry-pxf-${VERSION_FILE}" -type f -exec xattr -c {} \; 2>/dev/null || true
+      find "$TMP_DIR/apache-cloudberry-pxf-${VERSION_FILE}-incubating" -type f -exec xattr -c {} \; 2>/dev/null || true
       echo "[OK] Extended attributes cleaned using xattr"
     fi
     
     # Remove any ._* files that might have been created
-    find "$TMP_DIR/apache-cloudberry-pxf-${VERSION_FILE}" -name '._*' -delete 2>/dev/null || true
-    find "$TMP_DIR/apache-cloudberry-pxf-${VERSION_FILE}" -name '.DS_Store' -delete 2>/dev/null || true
-    find "$TMP_DIR/apache-cloudberry-pxf-${VERSION_FILE}" -name '__MACOSX' -type d -exec rm -rf {} \; 2>/dev/null || true
+    find "$TMP_DIR/apache-cloudberry-pxf-${VERSION_FILE}-incubating" -name '._*' -delete 2>/dev/null || true
+    find "$TMP_DIR/apache-cloudberry-pxf-${VERSION_FILE}-incubating" -name '.DS_Store' -delete 2>/dev/null || true
+    find "$TMP_DIR/apache-cloudberry-pxf-${VERSION_FILE}-incubating" -name '__MACOSX' -type d -exec rm -rf {} \; 2>/dev/null || true
     echo "[OK] macOS-specific files removed"
   fi
 
   # Create tarball using the detected tar tool
   if [[ "$DETECTED_PLATFORM" == "macOS" ]]; then
     echo "Using GNU tar for cross-platform compatibility..."
-    $DETECTED_TAR_TOOL --exclude='._*' --exclude='.DS_Store' --exclude='__MACOSX' -czf "$TAR_NAME" -C "$TMP_DIR" "apache-cloudberry-pxf-${VERSION_FILE}"
+    $DETECTED_TAR_TOOL --exclude='._*' --exclude='.DS_Store' --exclude='__MACOSX' -czf "$TAR_NAME" -C "$TMP_DIR" "apache-cloudberry-pxf-${VERSION_FILE}-incubating"
     echo "INFO: macOS detected - applied extended attribute cleanup and GNU tar"
   else
     # On other platforms, use standard tar
-    $DETECTED_TAR_TOOL -czf "$TAR_NAME" -C "$TMP_DIR" "apache-cloudberry-pxf-${VERSION_FILE}"
+    $DETECTED_TAR_TOOL -czf "$TAR_NAME" -C "$TMP_DIR" "apache-cloudberry-pxf-${VERSION_FILE}-incubating"
   fi
   
   rm -rf "$TMP_DIR"
