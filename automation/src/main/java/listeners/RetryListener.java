@@ -18,8 +18,9 @@ public class RetryListener implements IAnnotationTransformer {
     @Override
     public void transform(ITestAnnotation annotation, Class testClass,
                           Constructor testConstructor, Method testMethod) {
-        if (annotation.getRetryAnalyzerClass() == null
-                || annotation.getRetryAnalyzerClass() == Object.class) {
+        // TestNG 6.x API: getRetryAnalyzer() returns Class
+        Class<?> existing = annotation.getRetryAnalyzer();
+        if (existing == null) {
             annotation.setRetryAnalyzer(RetryAnalyzer.class);
         }
     }
