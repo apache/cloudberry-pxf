@@ -439,29 +439,14 @@ wait_for_datanode() {
       log "Attempting to restart DataNode..."
       # Stop any zombie DataNode processes
       pkill -f "proc_datanode" 2>/dev/null || true
-      pkill -f "datanode" 2>/dev/null || true
       sleep 2
-      # Kill any process still holding DataNode ports (50010/50020/50075/50080)
+      # Force-release DataNode ports
       for port in 50010 50020 50075 50080; do
-        local pid
-        pid=$(ss -tlnp "sport = :${port}" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | head -1)
-        if [ -n "${pid}" ]; then
-          log "Killing process ${pid} holding port ${port}"
-          kill -9 "${pid}" 2>/dev/null || true
-        fi
+        fuser -k ${port}/tcp 2>/dev/null || true
       done
-      sleep 5
-      # Verify ports are actually released before restarting
-      for port in 50010 50020 50075 50080; do
-        if ss -tlnp "sport = :${port}" 2>/dev/null | grep -q "LISTEN"; then
-          log "Port ${port} still in use, waiting..."
-          sleep 5
-          break
-        fi
-      done
+      sleep 3
       # Restart DataNode via the singlecluster script
       "${GPHD_ROOT}/bin/hadoop-datanode.sh" start 0 2>&1 || true
-      "${HADOOP_ROOT}/sbin/hadoop-daemon.sh" --config "${GPHD_ROOT}/storage/hadoop/datanode0/etc/hadoop" start datanode 2>&1 || true
       log "DataNode restart issued, waiting again..."
     fi
   done
@@ -534,16 +519,13 @@ prepare_hadoop_stack() {
     log "initializing HDFS namenode..."
     ${GPHD_ROOT}/bin/init-gphd.sh 2>&1 || log "init-gphd.sh failed with exit code $?"
   fi
-  # Kill stale Hadoop processes to prevent BindException on DataNode ports
-  # when start-gphd.sh launches new ones.
-  if pgrep -f "proc_datanode\|proc_namenode\|proc_nodemanager\|proc_resourcemanager" >/dev/null 2>&1; then
-    log "cleaning up stale Hadoop processes..."
-    pkill -f "proc_datanode" 2>/dev/null || true
-    pkill -f "proc_namenode" 2>/dev/null || true
-    pkill -f "proc_nodemanager" 2>/dev/null || true
-    pkill -f "proc_resourcemanager" 2>/dev/null || true
-    sleep 3
-  fi
+  # Force-release DataNode ports before starting HDFS to prevent BindException.
+  # On CI re-runs or slow runners, stale sockets/processes may hold these ports.
+  log "ensuring DataNode ports are free..."
+  for port in 50010 50020 50075 50080; do
+    fuser -k ${port}/tcp 2>/dev/null || true
+  done
+  sleep 1
   log "starting HDFS/YARN/HBase via start-gphd.sh..."
   if ! ${GPHD_ROOT}/bin/start-gphd.sh 2>&1; then
     log "start-gphd.sh returned non-zero (services may already be running), continue"

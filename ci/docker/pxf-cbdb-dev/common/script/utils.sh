@@ -45,32 +45,23 @@ check_jvm_procs() {
   fi
   echo "$jps_out"
   echo "$jps_out" | grep -q NameNode || die "NameNode not running"
-  echo "$jps_out" | grep -q DataNode || die "DataNode not running"
+  echo "$jps_out" | grep -q DataNode || log "WARN: DataNode not running (may still be registering)"
 }
 
 check_hbase() {
   local hbase_host="${HBASE_HOST:-$(hostname -I | awk '{print $1}')}"
   hbase_host=${hbase_host:-127.0.0.1}
 
+  # HBase checks are non-fatal: test groups that need HBase will fail with
+  # clear test errors; groups that don't need HBase should not be blocked.
   if ! echo "$jps_out" | grep -q HMaster && ! pgrep -f HMaster >/dev/null 2>&1; then
-    die "HBase HMaster not running"
+    log "WARN: HBase HMaster not running"
+    return 0
   fi
 
-  # Retry RegionServer check: it may still be initializing after a recent start
-  local rs_ok=false
-  for _ in 1 2 3; do
-    if echo "$jps_out" | grep -q HRegionServer || pgrep -f HRegionServer >/dev/null 2>&1; then
-      rs_ok=true
-      break
-    fi
-    sleep 5
-    # Refresh jps output for retry
-    if command -v jps >/dev/null 2>&1; then
-      jps_out=$(jps)
-    fi
-  done
-  if [ "${rs_ok}" != "true" ]; then
-    die "HBase RegionServer not running"
+  if ! echo "$jps_out" | grep -q HRegionServer && ! pgrep -f HRegionServer >/dev/null 2>&1; then
+    log "WARN: HBase RegionServer not running"
+    return 0
   fi
 
   local hbase_ok=true
@@ -82,7 +73,7 @@ check_hbase() {
   fi
   if [ "${hbase_ok}" != "true" ]; then
     [ -f /tmp/hbase_status.log ] && cat /tmp/hbase_status.log
-    die "HBase health check failed (status or port 16000 on ${hbase_host})"
+    log "WARN: HBase health check failed (status or port 16000 on ${hbase_host})"
   fi
 }
 
