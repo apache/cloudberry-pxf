@@ -66,7 +66,7 @@ setup_locale_and_packages() {
   log "install base packages and locales"
   if [ "$OS_FAMILY" = "deb" ]; then
     sudo apt-get update
-    sudo apt-get install -y wget lsb-release locales maven unzip openssh-server iproute2 sudo \
+    sudo apt-get install -y wget lsb-release locales maven unzip openssh-server iproute2 sudo psmisc \
       openjdk-11-jre-headless openjdk-8-jre-headless
     sudo locale-gen en_US.UTF-8 ru_RU.CP1251 ru_RU.UTF-8
     sudo update-locale LANG=en_US.UTF-8
@@ -75,7 +75,7 @@ setup_locale_and_packages() {
     for repo in hpc-common; do
       sudo dnf config-manager --set-disabled "$repo" 2>/dev/null || true
     done
-    sudo dnf install -y wget maven unzip openssh-server iproute sudo \
+    sudo dnf install -y wget maven unzip openssh-server iproute sudo psmisc \
       java-11-openjdk-headless java-1.8.0-openjdk-headless \
       glibc-langpack-en glibc-locale-source
     sudo localedef -c -i en_US -f UTF-8 en_US.UTF-8 || true
