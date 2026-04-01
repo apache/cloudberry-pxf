@@ -146,7 +146,15 @@ jobs:
       with:
         path: cloudberry-pxf
 
+    - name: Cache singlecluster image
+      id: cache-image
+      uses: actions/cache@v4
+      with:
+        path: /tmp/singlecluster-image.tar
+        key: singlecluster-ubuntu-${{ hashFiles('ci/singlecluster/**') }}
+
     - name: Build singlecluster image
+      if: steps.cache-image.outputs.cache-hit != 'true'
       run: |
         cd cloudberry-pxf/ci/singlecluster
         docker build -t pxf/singlecluster:3 .
@@ -185,7 +193,15 @@ jobs:
       with:
         path: cloudberry-pxf
 
+    - name: Cache singlecluster Rocky 9 image
+      id: cache-image-rocky9
+      uses: actions/cache@v4
+      with:
+        path: /tmp/singlecluster-rocky9-image.tar
+        key: singlecluster-rocky9-${{ hashFiles('ci/singlecluster/**') }}
+
     - name: Build singlecluster Rocky 9 image
+      if: steps.cache-image-rocky9.outputs.cache-hit != 'true'
       run: |
         cd cloudberry-pxf/ci/singlecluster
         docker build --build-arg BASE_IMAGE=apache/incubator-cloudberry:cbdb-build-rocky9-latest -t pxf/singlecluster-rocky9:3 .

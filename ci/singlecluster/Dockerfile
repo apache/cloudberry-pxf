@@ -51,7 +51,7 @@ ENV     HBASE_SHA512="1032521025660daa70260cdc931f52a26c87596be444451fe1fa88b526
 ENV      TEZ_SHA512="a2d94bd9fa778d42a8bac9d9da8e263e469ddfef93968b06434716554995f490231de5607541ac236e770aa0158b64250c38bc1cd57dbfa629fea705f2ffa2f5"
 
 # Mirror list: try fast mirrors first, fall back to official archive
-ENV APACHE_MIRRORS="repo.huaweicloud.com/apache archive.apache.org/dist"
+ENV APACHE_MIRRORS="dlcdn.apache.org archive.apache.org/dist"
 
 ENV GPHD_ROOT=/home/gpadmin/workspace/singlecluster
 ENV HADOOP_ROOT=$GPHD_ROOT/hadoop
