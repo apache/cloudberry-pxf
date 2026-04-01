@@ -583,19 +583,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - tc_group: pxf-jdbc
-            use_fdw: "false"
-            distro: ubuntu
-          - tc_group: pxf-jdbc
-            use_fdw: "true"
-            distro: ubuntu
-          - tc_group: pxf-jdbc
-            use_fdw: "false"
-            distro: rocky9
-          - tc_group: pxf-jdbc
-            use_fdw: "true"
-            distro: rocky9
+        tc_group:
+          - 'pxf-jdbc'
+        use_fdw:
+          - 'false'
+          - 'true'
+        distro:
+          - 'ubuntu'
+          - 'rocky9'
     steps:
       - name: Checkout PXF source
         uses: actions/checkout@v4
