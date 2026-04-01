@@ -75,5 +75,5 @@ RUN git clone --depth 1 -b ${CLOUDBERRY_BRANCH} \
       ${CLOUDBERRY_REPO} /home/gpadmin/workspace/cloudberry
 
 # Copy and run the build script (demo cluster is created at runtime)
-COPY script/build_cloudberrry.sh /tmp/build_cloudberrry.sh
-RUN bash /tmp/build_cloudberrry.sh
+COPY script/build_cloudberry.sh /tmp/build_cloudberry.sh
+RUN bash /tmp/build_cloudberry.sh

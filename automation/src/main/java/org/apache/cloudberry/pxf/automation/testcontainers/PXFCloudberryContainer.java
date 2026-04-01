@@ -146,7 +146,7 @@ public class PXFCloudberryContainer extends GenericContainer<PXFCloudberryContai
                     "testcontainers/pxf-cbdb/",
                     new String[]{
                             "Dockerfile",
-                            "script/build_cloudberrry.sh"
+                            "script/build_cloudberry.sh"
                     },
                     new String[]{"BASE_IMAGE=" + baseImage});
 

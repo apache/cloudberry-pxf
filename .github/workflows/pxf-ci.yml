@@ -591,11 +591,9 @@ jobs:
             use_fdw: "true"
             distro: ubuntu
           - tc_group: pxf-jdbc
-            test_mode: external-table
             use_fdw: "false"
             distro: rocky9
           - tc_group: pxf-jdbc
-            test_mode: fdw
             use_fdw: "true"
             distro: rocky9
     steps:
