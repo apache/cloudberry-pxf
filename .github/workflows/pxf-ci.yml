@@ -246,6 +246,7 @@ jobs:
     - name: Prepare build context
       run: |
         docker load < /tmp/singlecluster-image.tar
+        mkdir -p cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu/cloudberry-source
         tar xzf /tmp/cloudberry-source.tar.gz -C cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu/cloudberry-source/
         ls -la cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu/cloudberry-package/
         ls -la cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu/cloudberry-source/
@@ -294,6 +295,7 @@ jobs:
     - name: Prepare build context
       run: |
         docker load < /tmp/singlecluster-rocky9-image.tar
+        mkdir -p cloudberry-pxf/ci/docker/pxf-cbdb-dev/rocky9/cloudberry-source
         tar xzf /tmp/cloudberry-source-rocky9.tar.gz -C cloudberry-pxf/ci/docker/pxf-cbdb-dev/rocky9/cloudberry-source/
         ls -la cloudberry-pxf/ci/docker/pxf-cbdb-dev/rocky9/cloudberry-package/
         ls -la cloudberry-pxf/ci/docker/pxf-cbdb-dev/rocky9/cloudberry-source/
