@@ -29,25 +29,22 @@ FROM pxf/singlecluster-rocky9:3
 ENV TZ=UTC
 ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
 
-# ---- setup_locale_and_packages() ----
+# ---- setup_locale_and_packages() + install_build_deps() ----
 RUN for repo in hpc-common; do \
       dnf config-manager --set-disabled "$repo" 2>/dev/null || true; \
     done && \
     dnf install -y wget maven unzip openssh-server iproute sudo psmisc \
       java-11-openjdk-headless java-1.8.0-openjdk-headless java-11-openjdk-devel \
-      glibc-langpack-en glibc-locale-source && \
-    localedef -c -i en_US -f UTF-8 en_US.UTF-8 || true && \
-    localedef -c -i ru_RU -f UTF-8 ru_RU.UTF-8 || true && \
-    localedef -c -i ru_RU -f CP1251 ru_RU.CP1251 || true
-
-# ---- install_build_deps() ----
-RUN dnf install -y sudo git && \
-    dnf install -y --allowerasing bison bzip2 cmake curl flex gcc gcc-c++ iproute iputils \
-      glibc-langpack-en glibc-locale-source apr-devel bzip2-devel libcurl-devel libevent-devel \
+      glibc-langpack-en glibc-locale-source \
+      sudo git bison bzip2 cmake curl flex gcc gcc-c++ iputils \
+      apr-devel bzip2-devel libcurl-devel libevent-devel \
       krb5-devel perl-IPC-Run openldap-devel pam-devel protobuf-devel readline-devel \
       openssl-devel libuv-devel lz4-devel libxml2-devel libyaml-devel \
       libzstd-devel perl-devel make pkgconfig protobuf-compiler python3-devel python3-pip \
       python3-setuptools rsync snappy-devel && \
+    (localedef -c -i en_US -f UTF-8 en_US.UTF-8 || true) && \
+    (localedef -c -i ru_RU -f UTF-8 ru_RU.UTF-8 || true) && \
+    (localedef -c -i ru_RU -f CP1251 ru_RU.CP1251 || true) && \
     dnf clean all
 
 # ---- setup_ssh() static parts + LEGACY crypto policy ----

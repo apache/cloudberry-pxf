@@ -30,23 +30,22 @@ ENV TZ=UTC
 ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
 
-# ---- setup_locale_and_packages() ----
+# ---- setup_locale_and_packages() + install_build_deps() ----
+# Single RUN to avoid apt cache invalidation between layers
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+    apt-get install -y \
       wget lsb-release locales maven unzip openssh-server iproute2 sudo psmisc \
-      openjdk-11-jre-headless openjdk-8-jre-headless openjdk-11-jdk maven && \
-    locale-gen en_US.UTF-8 ru_RU.CP1251 ru_RU.UTF-8 && \
-    update-locale LANG=en_US.UTF-8 && \
-    localedef -c -i ru_RU -f CP1251 ru_RU.CP1251 || true
-
-# ---- install_build_deps() ----
-RUN apt-get update && \
-    apt-get install -y sudo git bison bzip2 cmake curl flex gcc g++ iproute2 iputils-ping \
-      language-pack-en locales libapr1-dev libbz2-dev libcurl4-gnutls-dev libevent-dev \
+      openjdk-11-jre-headless openjdk-8-jre-headless openjdk-11-jdk \
+      sudo git bison bzip2 cmake curl flex gcc g++ iputils-ping \
+      language-pack-en libapr1-dev libbz2-dev libcurl4-gnutls-dev libevent-dev \
       libkrb5-dev libipc-run-perl libldap2-dev libpam0g-dev libprotobuf-dev libreadline-dev \
-      libssl-dev libuv1-dev liblz4-dev libxerces-c-dev libxml2-dev libyaml-dev libzstd-dev \
+      libssl-dev libuv1-dev liblz4-dev libxml2-dev libyaml-dev libzstd-dev \
       libperl-dev make pkg-config protobuf-compiler python3-dev python3-pip python3-setuptools \
       rsync libsnappy-dev && \
+    (apt-get install -y libxerces-c-dev || true) && \
+    locale-gen en_US.UTF-8 ru_RU.CP1251 ru_RU.UTF-8 && \
+    update-locale LANG=en_US.UTF-8 && \
+    (localedef -c -i ru_RU -f CP1251 ru_RU.CP1251 || true) && \
     rm -rf /var/lib/apt/lists/*
 
 # ---- setup_ssh() static parts (sshd started at runtime) ----
