@@ -75,10 +75,20 @@ detect_java_paths() {
 
 start_sshd() {
   log "starting sshd"
-  # Host keys already generated in image; just regenerate for this container
+  # Regenerate host keys for this container instance
   sudo ssh-keygen -A 2>/dev/null || true
-  ssh-keyscan -t rsa mdw cdw localhost 2>/dev/null > /home/gpadmin/.ssh/known_hosts || true
+  sudo rm -rf /run/nologin
+  sudo mkdir -p /var/run/sshd && sudo chmod 0755 /var/run/sshd
   sudo /usr/sbin/sshd -E /tmp/sshd.log || die "Failed to start sshd"
+  sleep 1
+  # Rescan host keys AFTER sshd is running so known_hosts matches
+  ssh-keyscan -t rsa,ecdsa,ed25519 mdw cdw localhost 127.0.0.1 2>/dev/null > /home/gpadmin/.ssh/known_hosts || true
+  # Verify sshd is listening
+  if ! ss -tlnp | grep -q ':22 '; then
+    log "WARN: sshd not on port 22, trying foreground mode"
+    sudo /usr/sbin/sshd -D -e &
+    sleep 1
+  fi
   log "sshd is running"
 }
 
