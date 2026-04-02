@@ -275,7 +275,12 @@ configure_pxf() {
   export PATH="$PXF_HOME/bin:$PATH"
   export PXF_JVM_OPTS="-Xmx512m -Xms256m -Duser.timezone=UTC"
   export PXF_HOST=localhost
-  echo "JAVA_HOME=${JAVA_BUILD}" >> "$PXF_BASE/conf/pxf-env.sh"
+  # Persist settings into pxf-env.sh so they survive `pxf restart`
+  cat >> "$PXF_BASE/conf/pxf-env.sh" <<EOF
+export JAVA_HOME=${JAVA_BUILD}
+export PXF_JVM_OPTS="-Xmx512m -Xms256m -Duser.timezone=UTC"
+export TZ=UTC
+EOF
   sed -i 's/# server.address=localhost/server.address=0.0.0.0/' "$PXF_BASE/conf/pxf-application.properties"
   echo -e "\npxf.profile.dynamic.regex=test:.*" >> "$PXF_BASE/conf/pxf-application.properties"
   cp -v "$PXF_HOME"/templates/{hdfs,mapred,yarn,core,hbase,hive}-site.xml "$PXF_BASE/servers/default"
