@@ -74,22 +74,32 @@ detect_java_paths() {
 }
 
 start_sshd() {
-  log "starting sshd"
-  # Regenerate host keys for this container instance
+  log "configuring and starting sshd"
+  # Rocky 9 crypto-policies (pre-baked but re-apply to be safe)
+  if [ "$OS_FAMILY" = "rpm" ] && command -v update-crypto-policies >/dev/null 2>&1; then
+    sudo update-crypto-policies --set LEGACY 2>/dev/null || true
+  fi
   sudo ssh-keygen -A 2>/dev/null || true
+  # Ensure password auth is enabled (use sed to guarantee first-match wins)
+  sudo sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+  if ! grep -q '^PasswordAuthentication yes' /etc/ssh/sshd_config; then
+    echo "PasswordAuthentication yes" | sudo tee -a /etc/ssh/sshd_config >/dev/null
+  fi
+  # Re-set password in case chpasswd didn't persist from Docker build
+  echo "gpadmin:cbdb@123" | sudo chpasswd
   sudo rm -rf /run/nologin
   sudo mkdir -p /var/run/sshd && sudo chmod 0755 /var/run/sshd
+  sudo mkdir -p /var/empty/sshd && sudo chmod 0755 /var/empty/sshd
+  id sshd &>/dev/null || sudo useradd -r -d /var/empty/sshd -s /sbin/nologin sshd 2>/dev/null || true
   sudo /usr/sbin/sshd -E /tmp/sshd.log || die "Failed to start sshd"
   sleep 1
-  # Rescan host keys AFTER sshd is running so known_hosts matches
   ssh-keyscan -t rsa,ecdsa,ed25519 mdw cdw localhost 127.0.0.1 2>/dev/null > /home/gpadmin/.ssh/known_hosts || true
-  # Verify sshd is listening
   if ! ss -tlnp | grep -q ':22 '; then
     log "WARN: sshd not on port 22, trying foreground mode"
     sudo /usr/sbin/sshd -D -e &
     sleep 1
   fi
-  log "sshd is running"
+  log "sshd is running on port 22"
 }
 
 start_cloudberry() {
