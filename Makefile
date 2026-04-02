@@ -115,6 +115,7 @@ endif
 	cp -a server/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
 	echo $$(git rev-parse --verify HEAD) > build/stage/$${PXF_PACKAGE_NAME}/commit.sha ;\
 	cp package/install_binary build/stage/$${PXF_PACKAGE_NAME}/install_component ;\
+	cp NOTICE DISCLAIMER LICENSE build/stage/$${PXF_PACKAGE_NAME}/ ;\
 	echo "===> PXF staging is complete <==="
 
 tar: stage
