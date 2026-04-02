@@ -214,10 +214,107 @@ jobs:
         path: /tmp/singlecluster-rocky9-image.tar
         retention-days: 1
 
+  # Stage 1.5: Build test-ready images (Cloudberry + packages pre-installed)
+  build-test-image:
+    name: Build Test-Ready Image (Ubuntu)
+    needs: [build-cloudberry-deb, build-docker-images]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout PXF source
+      uses: actions/checkout@v4
+      with:
+        path: cloudberry-pxf
+
+    - name: Download singlecluster image
+      uses: actions/download-artifact@v4
+      with:
+        name: singlecluster-image
+        path: /tmp
+
+    - name: Download Cloudberry DEB
+      uses: actions/download-artifact@v4
+      with:
+        name: cloudberry-deb
+        path: cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu/cloudberry-package/
+
+    - name: Download Cloudberry source
+      uses: actions/download-artifact@v4
+      with:
+        name: cloudberry-source
+        path: /tmp
+
+    - name: Prepare build context
+      run: |
+        docker load < /tmp/singlecluster-image.tar
+        tar xzf /tmp/cloudberry-source.tar.gz -C cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu/cloudberry-source/
+        ls -la cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu/cloudberry-package/
+        ls -la cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu/cloudberry-source/
+
+    - name: Build test-ready image
+      run: |
+        cd cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu
+        docker build -f Dockerfile.test-ready -t pxf/test-ready-ubuntu:latest .
+        docker save pxf/test-ready-ubuntu:latest > /tmp/test-ready-ubuntu.tar
+
+    - name: Upload test-ready image
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-ready-ubuntu-image
+        path: /tmp/test-ready-ubuntu.tar
+        retention-days: 1
+
+  build-test-image-rocky9:
+    name: Build Test-Ready Image (Rocky 9)
+    needs: [build-cloudberry-rpm, build-docker-images-rocky9]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout PXF source
+      uses: actions/checkout@v4
+      with:
+        path: cloudberry-pxf
+
+    - name: Download singlecluster Rocky 9 image
+      uses: actions/download-artifact@v4
+      with:
+        name: singlecluster-rocky9-image
+        path: /tmp
+
+    - name: Download Cloudberry RPM
+      uses: actions/download-artifact@v4
+      with:
+        name: cloudberry-rpm
+        path: cloudberry-pxf/ci/docker/pxf-cbdb-dev/rocky9/cloudberry-package/
+
+    - name: Download Cloudberry source (Rocky 9)
+      uses: actions/download-artifact@v4
+      with:
+        name: cloudberry-source-rocky9
+        path: /tmp
+
+    - name: Prepare build context
+      run: |
+        docker load < /tmp/singlecluster-rocky9-image.tar
+        tar xzf /tmp/cloudberry-source-rocky9.tar.gz -C cloudberry-pxf/ci/docker/pxf-cbdb-dev/rocky9/cloudberry-source/
+        ls -la cloudberry-pxf/ci/docker/pxf-cbdb-dev/rocky9/cloudberry-package/
+        ls -la cloudberry-pxf/ci/docker/pxf-cbdb-dev/rocky9/cloudberry-source/
+
+    - name: Build test-ready image
+      run: |
+        cd cloudberry-pxf/ci/docker/pxf-cbdb-dev/rocky9
+        docker build -f Dockerfile.test-ready -t pxf/test-ready-rocky9:latest .
+        docker save pxf/test-ready-rocky9:latest > /tmp/test-ready-rocky9.tar
+
+    - name: Upload test-ready image
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-ready-rocky9-image
+        path: /tmp/test-ready-rocky9.tar
+        retention-days: 1
+
   # Stage 2: Parallel test jobs using matrix strategy
   pxf-test:
     name: Test PXF - ${{ matrix.test_group }}
-    needs: [build-cloudberry-deb, build-docker-images]
+    needs: [build-test-image]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -261,44 +358,22 @@ jobs:
         path: cloudberry-pxf
         submodules: true
 
-    - name: Download Cloudberry DEB
+    - name: Download test-ready image
       uses: actions/download-artifact@v4
       with:
-        name: cloudberry-deb
+        name: test-ready-ubuntu-image
         path: /tmp
 
-    - name: Download Cloudberry source
-      uses: actions/download-artifact@v4
-      with:
-        name: cloudberry-source
-        path: /tmp
-
-    - name: Download singlecluster image
-      uses: actions/download-artifact@v4
-      with:
-        name: singlecluster-image
-        path: /tmp
-
-    - name: Load singlecluster image
-      run: |
-        docker load < /tmp/singlecluster-image.tar
-
-    - name: Prepare Cloudberry source
-      run: |
-        tar xzf /tmp/cloudberry-source.tar.gz
-        chmod -R u+rwX,go+rX cloudberry
+    - name: Load test-ready image
+      run: docker load < /tmp/test-ready-ubuntu.tar
 
     - name: Start Services
       id: start_services
       run: |
         cd cloudberry-pxf
         docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v || true
-        docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml build
         docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml up -d
-        docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry
-        docker cp /tmp/*.deb pxf-cbdb-dev:/tmp/
-        docker exec pxf-cbdb-dev sudo chown gpadmin:gpadmin /tmp/*.deb
-        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf && ./ci/docker/pxf-cbdb-dev/common/script/entrypoint.sh"
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf && ./ci/docker/pxf-cbdb-dev/common/script/entrypoint_fast.sh"
 
     - name: Run Test - ${{ matrix.test_group }}
       id: run_test
@@ -388,7 +463,7 @@ jobs:
   # Stage 2b: Rocky 9 parallel test jobs
   pxf-test-rocky9:
     name: Test PXF Rocky9 - ${{ matrix.test_group }}
-    needs: [build-cloudberry-rpm, build-docker-images-rocky9]
+    needs: [build-test-image-rocky9]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -433,44 +508,22 @@ jobs:
         path: cloudberry-pxf
         submodules: true
 
-    - name: Download Cloudberry RPM
+    - name: Download test-ready Rocky 9 image
       uses: actions/download-artifact@v4
       with:
-        name: cloudberry-rpm
+        name: test-ready-rocky9-image
         path: /tmp
 
-    - name: Download Cloudberry source (Rocky 9)
-      uses: actions/download-artifact@v4
-      with:
-        name: cloudberry-source-rocky9
-        path: /tmp
-
-    - name: Download singlecluster Rocky 9 image
-      uses: actions/download-artifact@v4
-      with:
-        name: singlecluster-rocky9-image
-        path: /tmp
-
-    - name: Load singlecluster Rocky 9 image
-      run: |
-        docker load < /tmp/singlecluster-rocky9-image.tar
-
-    - name: Prepare Cloudberry source
-      run: |
-        tar xzf /tmp/cloudberry-source-rocky9.tar.gz
-        chmod -R u+rwX,go+rX cloudberry
+    - name: Load test-ready Rocky 9 image
+      run: docker load < /tmp/test-ready-rocky9.tar
 
     - name: Start Services
       id: start_services
       run: |
         cd cloudberry-pxf
         docker compose -f ci/docker/pxf-cbdb-dev/rocky9/docker-compose.yml down -v || true
-        docker compose -f ci/docker/pxf-cbdb-dev/rocky9/docker-compose.yml build
         docker compose -f ci/docker/pxf-cbdb-dev/rocky9/docker-compose.yml up -d
-        docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry
-        docker cp /tmp/*.rpm pxf-cbdb-dev:/tmp/
-        docker exec pxf-cbdb-dev sudo chown gpadmin:gpadmin /tmp/*.rpm
-        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf && ./ci/docker/pxf-cbdb-dev/common/script/entrypoint.sh"
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf && ./ci/docker/pxf-cbdb-dev/common/script/entrypoint_fast.sh"
 
     - name: Run Test - ${{ matrix.test_group }}
       id: run_test

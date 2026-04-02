@@ -20,15 +20,12 @@
 services:
 # hadoop
   singlecluster:
-    build:
-      dockerfile: Dockerfile
-      context: ../../../singlecluster
-    image: pxf/singlecluster:3
+    image: pxf/test-ready-ubuntu:latest
     container_name: pxf_singlecluster
     hostname: cdw
 
   pxf-cbdb-dev:
-    image: pxf/singlecluster:3
+    image: pxf/test-ready-ubuntu:latest
     container_name: pxf-cbdb-dev
     hostname: mdw
     depends_on:
@@ -37,7 +34,6 @@ services:
       - "2222:22"
     volumes:
       - ../../../../../cloudberry-pxf:/home/gpadmin/workspace/cloudberry-pxf
-      - ../../../../../cloudberry:/home/gpadmin/workspace/cloudberry
     command: ["tail", "-f", "/dev/null"]
 
 networks:

@@ -1,0 +1,120 @@
+# --------------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements. See the NOTICE file distributed
+# with this work for additional information regarding copyright
+# ownership. The ASF licenses this file to You under the Apache
+# License, Version 2.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy of the
+# License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# permissions and limitations under the License.
+#
+# --------------------------------------------------------------------
+# Test-ready image for Ubuntu: pre-bakes all static CI setup so each
+# test job only needs to compile PXF and start services (~8 min vs ~25 min).
+#
+# Build context must contain:
+#   cloudberry-package/*.deb   -- Cloudberry DEB from build-cloudberry-deb job
+#   cloudberry-source/         -- Cloudberry source tree (for make create-demo-cluster)
+# --------------------------------------------------------------------
+FROM pxf/singlecluster:3
+
+ENV TZ=UTC
+ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
+
+# ---- setup_locale_and_packages() ----
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      wget lsb-release locales maven unzip openssh-server iproute2 sudo psmisc \
+      openjdk-11-jre-headless openjdk-8-jre-headless openjdk-11-jdk maven && \
+    locale-gen en_US.UTF-8 ru_RU.CP1251 ru_RU.UTF-8 && \
+    update-locale LANG=en_US.UTF-8 && \
+    localedef -c -i ru_RU -f CP1251 ru_RU.CP1251 || true
+
+# ---- install_build_deps() ----
+RUN apt-get update && \
+    apt-get install -y sudo git bison bzip2 cmake curl flex gcc g++ iproute2 iputils-ping \
+      language-pack-en locales libapr1-dev libbz2-dev libcurl4-gnutls-dev libevent-dev \
+      libkrb5-dev libipc-run-perl libldap2-dev libpam0g-dev libprotobuf-dev libreadline-dev \
+      libssl-dev libuv1-dev liblz4-dev libxerces-c-dev libxml2-dev libyaml-dev libzstd-dev \
+      libperl-dev make pkg-config protobuf-compiler python3-dev python3-pip python3-setuptools \
+      rsync libsnappy-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# ---- setup_ssh() static parts (sshd started at runtime) ----
+RUN ssh-keygen -A && \
+    echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config && \
+    mkdir -p /etc/ssh/sshd_config.d && \
+    cat >/etc/ssh/sshd_config.d/pxf-automation.conf <<'SSHEOF'
+KexAlgorithms +diffie-hellman-group-exchange-sha1,diffie-hellman-group14-sha1,diffie-hellman-group1-sha1
+HostKeyAlgorithms +ssh-rsa,ssh-dss
+PubkeyAcceptedAlgorithms +ssh-rsa,ssh-dss
+SSHEOF
+
+RUN usermod -a -G sudo gpadmin && \
+    echo "gpadmin:cbdb@123" | chpasswd && \
+    echo "gpadmin        ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers && \
+    echo "root           ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers && \
+    mkdir -p /home/gpadmin/.ssh && \
+    chown -R gpadmin:gpadmin /home/gpadmin/.ssh && \
+    sudo -u gpadmin ssh-keygen -q -t rsa -b 4096 -m PEM -C gpadmin -f /home/gpadmin/.ssh/id_rsa -N "" && \
+    cat /home/gpadmin/.ssh/id_rsa.pub >> /home/gpadmin/.ssh/authorized_keys && \
+    chmod 0600 /home/gpadmin/.ssh/authorized_keys && \
+    rm -rf /run/nologin && \
+    mkdir -p /var/run/sshd && chmod 0755 /var/run/sshd && \
+    mkdir -p /var/empty/sshd && chmod 0755 /var/empty/sshd
+
+# ---- System limits ----
+RUN tee /etc/security/limits.d/90-db-limits.conf <<'EOF'
+gpadmin soft core unlimited
+gpadmin hard core unlimited
+gpadmin soft nofile 524288
+gpadmin hard nofile 524288
+gpadmin soft nproc 131072
+gpadmin hard nproc 131072
+EOF
+
+# ---- Install Cloudberry from package ----
+COPY cloudberry-package/ /tmp/cloudberry-package/
+RUN pkg=$(find /tmp/cloudberry-package -name "apache-cloudberry-db*.deb" | head -1) && \
+    rm -rf /usr/local/cloudberry-db && \
+    chmod a+w /usr/local && \
+    mkdir -p /usr/local/cloudberry-db && \
+    chown -R gpadmin:gpadmin /usr/local/cloudberry-db && \
+    dpkg -i "$pkg" || apt-get install -f -y && \
+    rm -rf /tmp/cloudberry-package && \
+    echo '\n# Add Cloudberry entries\nif [ -f /usr/local/cloudberry-db/cloudberry-env.sh ]; then\n  source /usr/local/cloudberry-db/cloudberry-env.sh\nfi\nexport LANG=en_US.UTF-8\n' >> /home/gpadmin/.bashrc
+
+# ---- Create demo cluster (start → verify → stop) ----
+COPY cloudberry-source/ /home/gpadmin/workspace/cloudberry/
+RUN chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry
+RUN sudo -u gpadmin bash -lc '\
+    source /usr/local/cloudberry-db/cloudberry-env.sh && \
+    make create-demo-cluster -C ~/workspace/cloudberry || true && \
+    source ~/workspace/cloudberry/gpAux/gpdemo/gpdemo-env.sh && \
+    psql -P pager=off template1 -c "SELECT version()" && \
+    gpstop -a -M fast || true'
+
+# ---- HDFS namenode pre-format ----
+RUN sudo -u gpadmin bash -c '\
+    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 && \
+    source /home/gpadmin/workspace/singlecluster/bin/gphd-env.sh && \
+    /home/gpadmin/workspace/singlecluster/bin/init-gphd.sh' || true
+
+# ---- Pre-create PXF directories ----
+RUN mkdir -p /usr/local/pxf /home/gpadmin/pxf-base && \
+    chown -R gpadmin:gpadmin /usr/local/pxf /home/gpadmin/pxf-base
+
+# Mark as test-ready image
+RUN touch /etc/pxf-test-ready
+
+USER gpadmin
+WORKDIR /home/gpadmin
