@@ -94,15 +94,9 @@ RUN pkg=$(find /tmp/cloudberry-package -name "apache-cloudberry-db*.deb" | head 
     rm -rf /tmp/cloudberry-package && \
     echo '\n# Add Cloudberry entries\nif [ -f /usr/local/cloudberry-db/cloudberry-env.sh ]; then\n  source /usr/local/cloudberry-db/cloudberry-env.sh\nfi\nexport LANG=en_US.UTF-8\n' >> /home/gpadmin/.bashrc
 
-# ---- Create demo cluster (start → verify → stop) ----
+# ---- Copy Cloudberry source (demo cluster created at runtime due to hostname) ----
 COPY cloudberry-source/ /home/gpadmin/workspace/cloudberry/
 RUN chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry
-RUN sudo -u gpadmin bash -lc '\
-    source /usr/local/cloudberry-db/cloudberry-env.sh && \
-    make create-demo-cluster -C ~/workspace/cloudberry || true && \
-    source ~/workspace/cloudberry/gpAux/gpdemo/gpdemo-env.sh && \
-    psql -P pager=off template1 -c "SELECT version()" && \
-    gpstop -a -M fast || true'
 
 # ---- HDFS namenode pre-format ----
 RUN sudo -u gpadmin bash -c '\

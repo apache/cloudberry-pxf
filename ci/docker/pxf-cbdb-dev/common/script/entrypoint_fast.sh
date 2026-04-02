@@ -85,16 +85,31 @@ start_sshd() {
 start_cloudberry() {
   log "starting Cloudberry cluster"
   source /usr/local/cloudberry-db/cloudberry-env.sh
-  source ~/workspace/cloudberry/gpAux/gpdemo/gpdemo-env.sh
-  # Cluster was initialized at image build time; just start it
-  gpstart -a || {
-    log "gpstart failed, trying to re-create demo cluster"
-    rm -rf ~/workspace/cloudberry/gpAux/gpdemo/datadirs
-    rm -f /tmp/.s.PGSQL.700*
-    make create-demo-cluster -C ~/workspace/cloudberry || true
+  # Demo cluster cannot be pre-baked in Docker image (hostname mismatch
+  # between build-time 'buildkitsandbox' and runtime 'mdw').
+  # Create it at first run; subsequent runs just gpstart.
+  if [ -f ~/workspace/cloudberry/gpAux/gpdemo/gpdemo-env.sh ]; then
     source ~/workspace/cloudberry/gpAux/gpdemo/gpdemo-env.sh
-  }
+    gpstart -a || {
+      log "gpstart failed, re-creating demo cluster"
+      rm -rf ~/workspace/cloudberry/gpAux/gpdemo/datadirs
+      rm -f /tmp/.s.PGSQL.700*
+      make create-demo-cluster -C ~/workspace/cloudberry
+      source ~/workspace/cloudberry/gpAux/gpdemo/gpdemo-env.sh
+    }
+  else
+    log "demo cluster not found, creating..."
+    rm -f /tmp/.s.PGSQL.700*
+    make create-demo-cluster -C ~/workspace/cloudberry || {
+      log "create-demo-cluster failed, trying manual setup"
+      cd ~/workspace/cloudberry
+      ./configure --prefix=/usr/local/cloudberry-db --enable-debug --with-perl --with-python --with-libxml --enable-depend
+      make create-demo-cluster
+    }
+    source ~/workspace/cloudberry/gpAux/gpdemo/gpdemo-env.sh
+  fi
   psql -P pager=off template1 -c 'SELECT * from gp_segment_configuration' || true
+  psql template1 -c 'SELECT version()' || true
 }
 
 relax_pg_hba() {
