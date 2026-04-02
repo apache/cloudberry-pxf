@@ -73,31 +73,52 @@ detect_java_paths() {
   export JAVA_BUILD JAVA_HADOOP
 }
 
-start_sshd() {
-  log "configuring and starting sshd"
-  # Rocky 9 crypto-policies (pre-baked but re-apply to be safe)
+setup_ssh() {
+  log "configure ssh"
+  # Reuse the full SSH setup from the original entrypoint — only takes 2-3s
+  # and avoids subtle issues with pre-baked SSH config (key mismatches, etc.)
   if [ "$OS_FAMILY" = "rpm" ] && command -v update-crypto-policies >/dev/null 2>&1; then
+    log "setting LEGACY crypto policy for SSH compatibility"
     sudo update-crypto-policies --set LEGACY 2>/dev/null || true
   fi
-  sudo ssh-keygen -A 2>/dev/null || true
-  # Ensure password auth is enabled (use sed to guarantee first-match wins)
-  sudo sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config
-  if ! grep -q '^PasswordAuthentication yes' /etc/ssh/sshd_config; then
-    echo "PasswordAuthentication yes" | sudo tee -a /etc/ssh/sshd_config >/dev/null
+  sudo ssh-keygen -A
+  sudo bash -c 'echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config'
+  sudo mkdir -p /etc/ssh/sshd_config.d
+  sudo bash -c 'cat >/etc/ssh/sshd_config.d/pxf-automation.conf <<EOF
+KexAlgorithms +diffie-hellman-group-exchange-sha1,diffie-hellman-group14-sha1,diffie-hellman-group1-sha1
+HostKeyAlgorithms +ssh-rsa,ssh-dss
+PubkeyAcceptedAlgorithms +ssh-rsa,ssh-dss
+EOF'
+  if [ "$OS_FAMILY" = "deb" ]; then
+    sudo usermod -a -G sudo gpadmin
+  else
+    sudo usermod -a -G wheel gpadmin 2>/dev/null || true
   fi
-  # Re-set password in case chpasswd didn't persist from Docker build
   echo "gpadmin:cbdb@123" | sudo chpasswd
+  echo "gpadmin        ALL=(ALL)       NOPASSWD: ALL" | sudo tee -a /etc/sudoers >/dev/null
+  echo "root           ALL=(ALL)       NOPASSWD: ALL" | sudo tee -a /etc/sudoers >/dev/null
+  mkdir -p /home/gpadmin/.ssh
+  sudo chown -R gpadmin:gpadmin /home/gpadmin/.ssh
+  if [ ! -f /home/gpadmin/.ssh/id_rsa ]; then
+    sudo -u gpadmin ssh-keygen -q -t rsa -b 4096 -m PEM -C gpadmin -f /home/gpadmin/.ssh/id_rsa -N ""
+  fi
+  sudo -u gpadmin bash -lc 'cat /home/gpadmin/.ssh/id_rsa.pub >> /home/gpadmin/.ssh/authorized_keys'
+  sudo -u gpadmin chmod 0600 /home/gpadmin/.ssh/authorized_keys
+  ssh-keyscan -t rsa mdw cdw localhost 2>/dev/null > /home/gpadmin/.ssh/known_hosts || true
   sudo rm -rf /run/nologin
   sudo mkdir -p /var/run/sshd && sudo chmod 0755 /var/run/sshd
-  sudo mkdir -p /var/empty/sshd && sudo chmod 0755 /var/empty/sshd
   id sshd &>/dev/null || sudo useradd -r -d /var/empty/sshd -s /sbin/nologin sshd 2>/dev/null || true
-  sudo /usr/sbin/sshd -E /tmp/sshd.log || die "Failed to start sshd"
+  sudo mkdir -p /var/empty/sshd && sudo chmod 0755 /var/empty/sshd
+  sudo /usr/sbin/sshd -E /tmp/sshd.log || die "Failed to start sshd, check /tmp/sshd.log"
   sleep 1
-  ssh-keyscan -t rsa,ecdsa,ed25519 mdw cdw localhost 127.0.0.1 2>/dev/null > /home/gpadmin/.ssh/known_hosts || true
   if ! ss -tlnp | grep -q ':22 '; then
-    log "WARN: sshd not on port 22, trying foreground mode"
+    log "ERROR: sshd is not listening on port 22"
+    cat /tmp/sshd.log 2>/dev/null || true
     sudo /usr/sbin/sshd -D -e &
     sleep 1
+    if ! ss -tlnp | grep -q ':22 '; then
+      die "sshd failed to bind to port 22"
+    fi
   fi
   log "sshd is running on port 22"
 }
@@ -343,7 +364,7 @@ deploy_minio() {
 
 main() {
   detect_java_paths
-  start_sshd
+  setup_ssh
   start_cloudberry
   relax_pg_hba
   build_pxf
