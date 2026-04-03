@@ -95,7 +95,7 @@ jobs:
         tar czf cloudberry-source.tar.gz cloudberry/
 
     - name: Save DEB cache
-      if: steps.cache-deb.outputs.cache-hit != 'true'
+      if: steps.cache-deb.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
       uses: actions/cache/save@v4
       with:
         path: |
@@ -167,7 +167,7 @@ jobs:
         tar czf cloudberry-source-rocky9.tar.gz cloudberry/
 
     - name: Save RPM cache
-      if: steps.cache-rpm.outputs.cache-hit != 'true'
+      if: steps.cache-rpm.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
       uses: actions/cache/save@v4
       with:
         path: |
