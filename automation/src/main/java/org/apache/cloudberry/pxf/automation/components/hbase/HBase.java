@@ -96,6 +96,7 @@ public class HBase extends BaseSystemObject implements IDbFunctionality {
         while (attemptsLeft > 0) {
             try {
                 HBaseAdmin.checkHBaseAvailable(config);
+                return;
             } catch (ZooKeeperConnectionException e) {
                 Thread.sleep(500);
                 attemptsLeft--;
