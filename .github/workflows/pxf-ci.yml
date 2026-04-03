@@ -52,7 +52,21 @@ jobs:
       image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest
       options: --user root
     steps:
+    - name: Get month number
+      id: get-month
+      run: echo "month=$(/bin/date -u '+%Y-%m')" >> "$GITHUB_OUTPUT"
+
+    - name: Restore DEB cache
+      id: cache-deb
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          workspace/cloudberry-deb
+          workspace/cloudberry-source.tar.gz
+        key: cloudberry-deb-${{ runner.os }}-${{ steps.get-month.outputs.month }}
+
     - name: Checkout Cloudberry source
+      if: steps.cache-deb.outputs.cache-hit != 'true'
       uses: actions/checkout@v4
       with:
         repository: apache/cloudberry
@@ -61,11 +75,13 @@ jobs:
         submodules: true
 
     - name: Checkout PXF source (for build script)
+      if: steps.cache-deb.outputs.cache-hit != 'true'
       uses: actions/checkout@v4
       with:
         path: cloudberry-pxf
 
     - name: Build Cloudberry DEB
+      if: steps.cache-deb.outputs.cache-hit != 'true'
       run: |
         export WORKSPACE=$PWD/workspace
         export CLOUDBERRY_VERSION=99.0.0
@@ -73,9 +89,20 @@ jobs:
         bash cloudberry-pxf/ci/docker/pxf-cbdb-dev/ubuntu/script/build_cloudberry_deb.sh
 
     - name: Package Cloudberry source
+      if: steps.cache-deb.outputs.cache-hit != 'true'
       run: |
         cd workspace
         tar czf cloudberry-source.tar.gz cloudberry/
+
+    - name: Save DEB cache
+      # save cache from default branch only (this cache can be reused between PRs)
+      if: steps.cache-deb.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          workspace/cloudberry-deb
+          workspace/cloudberry-source.tar.gz
+        key: cloudberry-deb-${{ runner.os }}-${{ steps.get-month.outputs.month }}
 
     - name: Upload DEB artifact
       uses: actions/upload-artifact@v4
@@ -98,7 +125,21 @@ jobs:
       image: apache/incubator-cloudberry:cbdb-build-rocky9-latest
       options: --user root
     steps:
+    - name: Get month number
+      id: get-month
+      run: echo "month=$(/bin/date -u '+%Y-%m')" >> "$GITHUB_OUTPUT"
+
+    - name: Restore RPM cache
+      id: cache-rpm
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          workspace/cloudberry-rpm
+          workspace/cloudberry-source-rocky9.tar.gz
+        key: cloudberry-rpm-${{ runner.os }}-${{ steps.get-month.outputs.month }}
+
     - name: Checkout Cloudberry source
+      if: steps.cache-rpm.outputs.cache-hit != 'true'
       uses: actions/checkout@v4
       with:
         repository: apache/cloudberry
@@ -107,11 +148,13 @@ jobs:
         submodules: true
 
     - name: Checkout PXF source (for build script)
+      if: steps.cache-rpm.outputs.cache-hit != 'true'
       uses: actions/checkout@v4
       with:
         path: cloudberry-pxf
 
     - name: Build Cloudberry RPM
+      if: steps.cache-rpm.outputs.cache-hit != 'true'
       run: |
         export WORKSPACE=$PWD/workspace
         export CLOUDBERRY_VERSION=99.0.0
@@ -119,9 +162,20 @@ jobs:
         bash cloudberry-pxf/ci/docker/pxf-cbdb-dev/rocky9/script/build_cloudberry_rpm.sh
 
     - name: Package Cloudberry source
+      if: steps.cache-rpm.outputs.cache-hit != 'true'
       run: |
         cd workspace
         tar czf cloudberry-source-rocky9.tar.gz cloudberry/
+
+    - name: Save RPM cache
+      # save cache from default branch only (this cache can be reused between PRs)
+      if: steps.cache-rpm.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          workspace/cloudberry-rpm
+          workspace/cloudberry-source-rocky9.tar.gz
+        key: cloudberry-rpm-${{ runner.os }}-${{ steps.get-month.outputs.month }}
 
     - name: Upload RPM artifact
       uses: actions/upload-artifact@v4
