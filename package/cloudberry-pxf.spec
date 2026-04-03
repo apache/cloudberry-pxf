@@ -41,6 +41,7 @@ Prefix:   /usr/local/cloudberry-pxf-%{version}
 # management scripts
 
 Requires: bash
+Requires: procps-ng
 
 # Require Apache Cloudberry - .so file makes sense only when
 # installing on Cloudberry node, so inherit Cloudberry's dependencies

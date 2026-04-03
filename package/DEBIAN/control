@@ -2,4 +2,5 @@ Package: apache-cloudberry-pxf-incubating
 Version: %VERSION%
 Architecture: %ARCH%
 Maintainer: %MAINTAINER%
+Depends: procps
 Description: Apache Cloudberry PXF (Platform Extension Framework) for advanced data access
