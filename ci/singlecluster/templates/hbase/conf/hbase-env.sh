@@ -91,7 +91,7 @@ export HBASE_PID_DIR=$PIDS_ROOT
 # export HBASE_SLAVE_SLEEP=0.1
 
 # Tell HBase whether it should manage it's own instance of Zookeeper or not.
-export HBASE_MANAGES_ZK=false
+export HBASE_MANAGES_ZK=true
 
 # Prefer JAVA_HOME from gphd-env.sh; fail fast if missing to avoid divergent per-service detection.
 if [ -z "${JAVA_HOME:-}" ]; then

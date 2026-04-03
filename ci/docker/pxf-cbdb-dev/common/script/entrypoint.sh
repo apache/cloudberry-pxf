@@ -32,7 +32,6 @@ source "${COMMON_SCRIPTS}/utils.sh"
 HADOOP_ROOT=${GPHD_ROOT}/hadoop
 HIVE_ROOT=${GPHD_ROOT}/hive
 HBASE_ROOT=${GPHD_ROOT}/hbase
-ZOOKEEPER_ROOT=${GPHD_ROOT}/zookeeper
 
 # --------------------------------------------------------------------
 # OS detection: "deb" (Ubuntu/Debian) or "rpm" (Rocky/RHEL/CentOS)
@@ -475,9 +474,6 @@ prepare_hadoop_stack() {
   # Wait for HDFS DataNode to be ready before proceeding; Tez upload in
   # start_hive_services will fail if no DataNode is accepting writes.
   wait_for_datanode
-  if ! ${GPHD_ROOT}/bin/start-zookeeper.sh; then
-    log "start-zookeeper.sh returned non-zero (may already be running)"
-  fi
   # ensure HBase is up
   if ! ${GPHD_ROOT}/bin/start-hbase.sh; then
     log "start-hbase.sh returned non-zero (services may already be running), continue"

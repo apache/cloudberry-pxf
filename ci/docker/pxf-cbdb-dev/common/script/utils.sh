@@ -52,12 +52,10 @@ check_hbase() {
   local hbase_host="${HBASE_HOST:-$(hostname -I | awk '{print $1}')}"
   hbase_host=${hbase_host:-127.0.0.1}
 
+  # In standalone mode HMaster embeds RegionServer and ZooKeeper in a single JVM,
+  # so only the HMaster process exists — no separate HRegionServer process.
   if ! echo "$jps_out" | grep -q HMaster && ! pgrep -f HMaster >/dev/null 2>&1; then
     die "HBase HMaster not running"
-  fi
-
-  if ! echo "$jps_out" | grep -q HRegionServer && ! pgrep -f HRegionServer >/dev/null 2>&1; then
-    die "HBase RegionServer not running"
   fi
 
   local hbase_ok=true

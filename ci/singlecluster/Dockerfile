@@ -39,14 +39,12 @@ RUN if command -v apt-get >/dev/null 2>&1; then \
 # TODO: update hive to support java 11+
 ENV    HADOOP_VERSION=3.1.2
 ENV      HIVE_VERSION=3.1.3
-ENV ZOOKEEPER_VERSION=3.5.9
 ENV     HBASE_VERSION=2.3.7
 ENV       TEZ_VERSION=0.9.2
 
 # checksums from archive.apache.org
 ENV    HADOOP_SHA512="0e0ee817c89b3c4eb761eca7f16640742a83b0e99b6fda26c1bee2baabedad93aab86e252bf5f1e2381c6d464bc4003d10c7cc0f61b2062f4c59732ca24d1bd9"
 ENV      HIVE_SHA256="0c9b6a6359a7341b6029cc9347435ee7b379f93846f779d710b13f795b54bb16"
-ENV ZOOKEEPER_SHA512="0e5a64713abc6f36d961dd61a06f681868171a9d9228366e512a01324806d263e05508029c94d8e18307811867cdc39d848e736c252bf56c461273ef74c66a45"
 ENV     HBASE_SHA512="1032521025660daa70260cdc931f52a26c87596be444451fe1fa88b526ede55e9d6b4220e91ff6f7422bec11f30d64fa6745e95a9c36971fdb1a264a2c745693"
 ENV      TEZ_SHA512="a2d94bd9fa778d42a8bac9d9da8e263e469ddfef93968b06434716554995f490231de5607541ac236e770aa0158b64250c38bc1cd57dbfa629fea705f2ffa2f5"
 
@@ -57,7 +55,6 @@ ENV APACHE_MIRROR="repo.huaweicloud.com/apache"
 
 ENV    HADOOP_URL="https://$APACHE_MIRROR/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz"
 ENV      HIVE_URL="https://$APACHE_MIRROR/hive/hive-$HIVE_VERSION/apache-hive-$HIVE_VERSION-bin.tar.gz"
-ENV ZOOKEEPER_URL="https://$APACHE_MIRROR/zookeeper/zookeeper-$ZOOKEEPER_VERSION/apache-zookeeper-$ZOOKEEPER_VERSION-bin.tar.gz"
 ENV     HBASE_URL="https://$APACHE_MIRROR/hbase/$HBASE_VERSION/hbase-$HBASE_VERSION-bin.tar.gz"
 ENV       TEZ_URL="https://$APACHE_MIRROR/tez/$TEZ_VERSION/apache-tez-$TEZ_VERSION-bin.tar.gz"
 
@@ -65,7 +62,6 @@ ENV GPHD_ROOT=/home/gpadmin/workspace/singlecluster
 ENV HADOOP_ROOT=$GPHD_ROOT/hadoop
 ENV HBASE_ROOT=$GPHD_ROOT/hbase
 ENV HIVE_ROOT=$GPHD_ROOT/hive
-ENV ZOOKEEPER_ROOT=$GPHD_ROOT/zookeeper
 ENV TEZ_ROOT=$GPHD_ROOT/tez
 
 RUN mkdir -p $HADOOP_ROOT && \
@@ -81,12 +77,6 @@ RUN mkdir -p $HIVE_ROOT && \
     echo "$HIVE_SHA256 /tmp/hive.tar.gz" | sha256sum -c && \
     tar xvf /tmp/hive.tar.gz -C $HIVE_ROOT --strip-components 1 && \
     rm /tmp/hive.tar.gz
-
-RUN mkdir -p $ZOOKEEPER_ROOT && \
-    curl -fSL $ZOOKEEPER_URL -o /tmp/zookeeper.tar.gz && \
-    echo "$ZOOKEEPER_SHA512 /tmp/zookeeper.tar.gz" | sha512sum -c && \
-    tar xvf /tmp/zookeeper.tar.gz -C $ZOOKEEPER_ROOT --strip-components 1 --exclude="docs/*" && \
-    rm /tmp/zookeeper.tar.gz
 
 RUN mkdir -p $HBASE_ROOT && \
     curl -fSL "$HBASE_URL" -o /tmp/hbase.tar.gz && \

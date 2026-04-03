@@ -8,9 +8,6 @@ bin=${root}/bin
 if [ "$START_HBASE" == "true" ]; then
 	echo Stopping HBase...
 	${bin}/stop-hbase.sh
-
-	echo Stopping Zookeeper...
-	${bin}/stop-zookeeper.sh
 fi
 
 if [ "$START_PXF" == "true" ]; then
