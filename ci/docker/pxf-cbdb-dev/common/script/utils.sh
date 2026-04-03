@@ -119,7 +119,7 @@ _detect_java8_default() {
 }
 
 health_check() {
-  log "sanity check Hadoop/Hive/HBase/PXF"
+  log "sanity check HDFS/Hive/PXF"
   GPHD_ROOT=${GPHD_ROOT:-/home/gpadmin/workspace/singlecluster}
   HADOOP_ROOT=${HADOOP_ROOT:-${GPHD_ROOT}/hadoop}
   HBASE_ROOT=${HBASE_ROOT:-${GPHD_ROOT}/hbase}
@@ -131,9 +131,8 @@ health_check() {
   [ -f "${GPHD_ROOT}/bin/gphd-env.sh" ] && source "${GPHD_ROOT}/bin/gphd-env.sh"
 
   check_jvm_procs
-  check_hbase
   check_hdfs
   check_hive
   check_pxf
-  log "all components healthy: HDFS/HBase/Hive/PXF"
+  log "all components healthy: HDFS/Hive/PXF"
 }

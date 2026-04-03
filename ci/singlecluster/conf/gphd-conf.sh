@@ -25,7 +25,7 @@ export RANGER_STORAGE_ROOT=$STORAGE_ROOT/ranger
 export SLAVES=${SLAVES:-1}
 
 # Automatically start HBase during GPHD startup
-export START_HBASE=true
+export START_HBASE=false
 
 # Automatically start Stargate during HBase startup
 export START_STARGATE=false

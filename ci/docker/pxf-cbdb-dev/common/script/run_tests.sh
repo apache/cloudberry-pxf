@@ -118,10 +118,15 @@ start_hbase() {
     pxf_app=$(ls -1v /usr/local/pxf/application/pxf-app-*.jar 2>/dev/null | grep -v 'plain' | tail -n 1)
     [ -n "${pxf_app}" ] && unzip -qq -j "${pxf_app}" 'BOOT-INF/lib/pxf-hbase-*.jar' -d "${GPHD_ROOT}/hbase/lib/" || true
   fi
-  echo "[run_tests] starting HBase..."
-  if ! "${GPHD_ROOT}/bin/start-hbase.sh"; then
-    echo "[run_tests] start-hbase.sh returned non-zero (may already be running), continue"
+  if pgrep -f HMaster >/dev/null 2>&1; then
+    echo "[run_tests] HBase HMaster already running, skipping start"
+  else
+    echo "[run_tests] starting HBase..."
+    "${GPHD_ROOT}/bin/start-hbase.sh"
   fi
+  echo "[run_tests] waiting for HBase ZooKeeper on 127.0.0.1:2181..."
+  wait_port 127.0.0.1 2181 30 2 || { echo "[run_tests] ERROR: HBase ZooKeeper did not become ready on 127.0.0.1:2181"; return 1; }
+  echo "[run_tests] HBase ZooKeeper is ready"
 }
 
 cleanup_hbase_state() {

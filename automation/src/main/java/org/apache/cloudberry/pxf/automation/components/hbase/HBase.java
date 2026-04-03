@@ -94,7 +94,7 @@ public class HBase extends BaseSystemObject implements IDbFunctionality {
     }
 
     private void waitHBaseAvailable(Configuration config) throws Exception {
-        int attemptsLeft = 100;
+        int attemptsLeft = 50;
         while (attemptsLeft > 0) {
             try {
                 HBaseAdmin.checkHBaseAvailable(config);
