@@ -95,6 +95,7 @@ jobs:
         tar czf cloudberry-source.tar.gz cloudberry/
 
     - name: Save DEB cache
+      # save cache from default branch only (this cache can be reused between PRs)
       if: steps.cache-deb.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
       uses: actions/cache/save@v4
       with:
@@ -124,7 +125,7 @@ jobs:
       image: apache/incubator-cloudberry:cbdb-build-rocky9-latest
       options: --user root
     steps:
-    - name: Get week number
+    - name: Get month number
       id: get-month
       run: echo "month=$(/bin/date -u '+%Y-%m')" >> "$GITHUB_OUTPUT"
 
@@ -167,6 +168,7 @@ jobs:
         tar czf cloudberry-source-rocky9.tar.gz cloudberry/
 
     - name: Save RPM cache
+      # save cache from default branch only (this cache can be reused between PRs)
       if: steps.cache-rpm.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
       uses: actions/cache/save@v4
       with:
