@@ -35,6 +35,13 @@
         <value>false</value>
     </property>
     <property>
+        <!-- Explicit use IPv4 address instead of "localhost" to prevent Java from
+             resolving it to ::1 (IPv6) first, which causes ConnectionLoss errors
+             when the embedded ZooKeeper only listens on 127.0.0.1. -->
+        <name>hbase.zookeeper.quorum</name>
+        <value>127.0.0.1</value>
+    </property>
+    <property>
         <name>hbase.zookeeper.property.clientPort</name>
         <value>2181</value>
     </property>
