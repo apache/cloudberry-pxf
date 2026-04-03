@@ -65,12 +65,6 @@ jobs:
           workspace/cloudberry-source.tar.gz
         key: cloudberry-deb-${{ runner.os }}-${{ steps.get-month.outputs.month }}
 
-    - name: Checkout PXF source (for build script)
-      if: steps.cache-deb.outputs.cache-hit != 'true'
-      uses: actions/checkout@v4
-      with:
-        path: cloudberry-pxf
-
     - name: Checkout Cloudberry source
       if: steps.cache-deb.outputs.cache-hit != 'true'
       uses: actions/checkout@v4
@@ -79,6 +73,12 @@ jobs:
         ref: ${{ env.CLOUDBERRY_VERSION }}
         path: workspace/cloudberry
         submodules: true
+
+    - name: Checkout PXF source (for build script)
+      if: steps.cache-deb.outputs.cache-hit != 'true'
+      uses: actions/checkout@v4
+      with:
+        path: cloudberry-pxf
 
     - name: Build Cloudberry DEB
       if: steps.cache-deb.outputs.cache-hit != 'true'
@@ -137,12 +137,6 @@ jobs:
           workspace/cloudberry-source-rocky9.tar.gz
         key: cloudberry-rpm-${{ runner.os }}-${{ steps.get-month.outputs.month }}
 
-    - name: Checkout PXF source (for build script)
-      if: steps.cache-rpm.outputs.cache-hit != 'true'
-      uses: actions/checkout@v4
-      with:
-        path: cloudberry-pxf
-
     - name: Checkout Cloudberry source
       if: steps.cache-rpm.outputs.cache-hit != 'true'
       uses: actions/checkout@v4
@@ -151,6 +145,12 @@ jobs:
         ref: ${{ env.CLOUDBERRY_VERSION }}
         path: workspace/cloudberry
         submodules: true
+
+    - name: Checkout PXF source (for build script)
+      if: steps.cache-rpm.outputs.cache-hit != 'true'
+      uses: actions/checkout@v4
+      with:
+        path: cloudberry-pxf
 
     - name: Build Cloudberry RPM
       if: steps.cache-rpm.outputs.cache-hit != 'true'
