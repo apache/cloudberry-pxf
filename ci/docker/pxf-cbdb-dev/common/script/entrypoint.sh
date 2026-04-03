@@ -446,12 +446,6 @@ prepare_hadoop_stack() {
   source "${GPHD_ROOT}/bin/gphd-env.sh"
   cd "${REPO_DIR}/automation"
   make symlink_pxf_jars
-  cp /home/gpadmin/automation_tmp_lib/pxf-hbase.jar "$GPHD_ROOT/hbase/lib/" || true
-  # Ensure HBase sees PXF comparator classes even if automation_tmp_lib was empty
-  if [ ! -f "${GPHD_ROOT}/hbase/lib/pxf-hbase.jar" ]; then
-    pxf_app=$(ls -1v /usr/local/pxf/application/pxf-app-*.jar | grep -v 'plain' | tail -n 1)
-    unzip -qq -j "${pxf_app}" 'BOOT-INF/lib/pxf-hbase-*.jar' -d "${GPHD_ROOT}/hbase/lib/"
-  fi
   # clean stale Hive locks and stop any leftover services to avoid start failures
   rm -f "${GPHD_ROOT}/storage/hive/metastore_db/"*.lck 2>/dev/null || true
   rm -f "${GPHD_ROOT}/storage/pids"/hive-*.pid 2>/dev/null || true
@@ -467,17 +461,15 @@ prepare_hadoop_stack() {
     log "initializing HDFS namenode..."
     ${GPHD_ROOT}/bin/init-gphd.sh 2>&1 || log "init-gphd.sh failed with exit code $?"
   fi
-  log "starting HDFS/YARN/HBase via start-gphd.sh..."
+  # HBase is started on demand per test group, not as part of the default stack
+  export START_HBASE=false
+  log "starting HDFS/YARN via start-gphd.sh..."
   if ! ${GPHD_ROOT}/bin/start-gphd.sh 2>&1; then
     log "start-gphd.sh returned non-zero (services may already be running), continue"
   fi
   # Wait for HDFS DataNode to be ready before proceeding; Tez upload in
   # start_hive_services will fail if no DataNode is accepting writes.
   wait_for_datanode
-  # ensure HBase is up
-  if ! ${GPHD_ROOT}/bin/start-hbase.sh; then
-    log "start-hbase.sh returned non-zero (services may already be running), continue"
-  fi
   start_hive_services
 }
 

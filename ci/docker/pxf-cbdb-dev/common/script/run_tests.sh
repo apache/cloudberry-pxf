@@ -111,6 +111,19 @@ cleanup_hive_state() {
   hdfs dfs -rm -r -f /hive/warehouse/hive_small_data_orc >/dev/null 2>&1 || true
 }
 
+start_hbase() {
+  echo "[run_tests] copying pxf-hbase.jar to HBase lib..."
+  cp /home/gpadmin/automation_tmp_lib/pxf-hbase.jar "${GPHD_ROOT}/hbase/lib/" 2>/dev/null || true
+  if [ ! -f "${GPHD_ROOT}/hbase/lib/pxf-hbase.jar" ]; then
+    pxf_app=$(ls -1v /usr/local/pxf/application/pxf-app-*.jar 2>/dev/null | grep -v 'plain' | tail -n 1)
+    [ -n "${pxf_app}" ] && unzip -qq -j "${pxf_app}" 'BOOT-INF/lib/pxf-hbase-*.jar' -d "${GPHD_ROOT}/hbase/lib/" || true
+  fi
+  echo "[run_tests] starting HBase..."
+  if ! "${GPHD_ROOT}/bin/start-hbase.sh"; then
+    echo "[run_tests] start-hbase.sh returned non-zero (may already be running), continue"
+  fi
+}
+
 cleanup_hbase_state() {
   echo "disable 'pxflookup'; drop 'pxflookup';
         disable 'hbase_table'; drop 'hbase_table';
@@ -445,6 +458,7 @@ base_test(){
   save_test_reports "hive"
   echo "[run_tests] GROUP=hive finished"
 
+  start_hbase
   cleanup_hbase_state
   make GROUP="hbase" || true
   save_test_reports "hbase"
@@ -891,6 +905,7 @@ run_single_group() {
       save_test_reports "hive"
       ;;
     hbase)
+      start_hbase
       cleanup_hbase_state
       export PROTOCOL=
       make GROUP="hbase"
@@ -924,6 +939,7 @@ run_single_group() {
       performance_test
       ;;
     proxy)
+      start_hbase
       export PROTOCOL=
       make GROUP="proxy"
       save_test_reports "proxy"
