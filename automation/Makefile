@@ -22,6 +22,8 @@ ifneq "$(GROUP)" ""
 	MAVEN_TEST_OPTS+= -Dgroups=$(GROUP)
 endif
 
+EXCLUDED_GROUPS ?=
+
 MAVEN_TEST_OPTS+= -Djava.awt.headless=true -DuseFDW=$(USE_FDW) -Duser.timezone=UTC
 
 ifneq "$(OFFLINE)" "true"
@@ -94,7 +96,11 @@ MVN=mvn
 all: test
 
 check-env:
-	@if [ -z "$(PXF_HOME)" ]; then echo 'ERROR: PXF_HOME must be set'; exit 1; fi
+	@if [ -z "$(PXF_HOME)" ]; then \
+		echo 'ERROR: PXF_HOME must be set'; \
+		echo 'Example: export PXF_HOME="$(abspath ../server/build/stage)"'; \
+		exit 1; \
+	fi
 
 symlink_pxf_jars: check-env
 	@if [ -d "$(PXF_HOME)/application" ]; then \
@@ -118,7 +124,7 @@ symlink_pxf_jars: check-env
 	fi
 
 test: check-env clean-logs symlink_pxf_jars sync_cloud_configs sync_jdbc_config pxf_regress
-	$(MVN) $(MAVEN_TEST_OPTS) ${MAVEN_DEBUG_OPTS} test
+	$(MVN) $(MAVEN_TEST_OPTS) ${MAVEN_DEBUG_OPTS} -DexcludedGroups=testcontainers$${EXCLUDED_GROUPS:+,$$EXCLUDED_GROUPS} test
 
 clean: clean-logs
 	$(MVN) $(MAVEN_TEST_OPTS) clean
@@ -244,6 +250,20 @@ else
 	@echo "***** Feature tests: *****"
 	@ls src/test/java/org/apache/cloudberry/pxf/automation/features/*/*Test.java | sed 's/.*\///g' | sed 's/\.java//g' | awk '{print "* ", $$1}'
 endif
+
+# Run Testcontainers-based tests.
+# Usage:
+#   make test-tc                          => run all testcontainers tests (Ubuntu)
+#   make test-tc TC_GROUP=pxf-jdbc        => run only pxf-jdbc group
+#   make test-tc DISTRO=rocky9            => run with Rocky Linux 9 base image
+.PHONY: test-tc
+test-tc: check-env symlink_pxf_jars pxf_regress
+	$(MVN) -B -e -Djava.awt.headless=true -Duser.timezone=UTC \
+		-DuseFDW=$(USE_FDW) \
+		-Dpxf.test.distro=$(or $(DISTRO),$(PXF_TEST_DISTRO),ubuntu) \
+		-Dgroups=$(or $(TC_GROUP),testcontainers) \
+		-DexcludedGroups= \
+		test
 
 .PHONY: pxf_regress
 pxf_regress:

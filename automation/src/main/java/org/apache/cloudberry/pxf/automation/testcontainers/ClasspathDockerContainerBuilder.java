@@ -1,0 +1,131 @@
+package org.apache.cloudberry.pxf.automation.testcontainers;
+
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ *
+ */
+public class ClasspathDockerContainerBuilder {
+
+    private ClasspathDockerContainerBuilder() {
+    }
+
+    /**
+     * Builds named Docker image from resources in the classpath.
+     *
+     * @param imageName - name of the image to build
+     * @param resourceDirectory - resource path to Dockerfile's folder
+     * @param resources - list of files to copy (relative to resourceDirectory)
+     */
+    public static void ensureImageExists(String imageName, String resourceDirectory, String[] resources) {
+        ensureImageExists(imageName, resourceDirectory, resources, new String[0]);
+    }
+
+    /**
+     * Builds named Docker image from resources in the classpath with optional build arguments.
+     *
+     * @param imageName - name of the image to build
+     * @param resourceDirectory - resource path to Dockerfile's folder
+     * @param resources - list of files to copy (relative to resourceDirectory)
+     * @param buildArgs - docker --build-arg values in "KEY=VALUE" format
+     */
+    public static void ensureImageExists(String imageName, String resourceDirectory,
+                                         String[] resources, String[] buildArgs) {
+        if (imageExists(imageName)) {
+            System.out.println("=== Image '" + imageName + "' already exists locally, skip build ===");
+            return;
+        }
+        try {
+            Path contextDir = Files.createTempDirectory("tc-docker-context-");
+            for (String resource : resources) {
+                Path target = contextDir.resolve(resource);
+                Files.createDirectories(target.getParent());
+                try (InputStream is = ClasspathDockerContainerBuilder.class
+                        .getClassLoader()
+                        .getResourceAsStream(resourceDirectory + "/" + resource)) {
+                    if (is == null) {
+                        throw new IllegalStateException("Classpath resource not found: " + resource);
+                    }
+                    Files.copy(is, target, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+            dockerBuild(contextDir.toFile(), imageName, buildArgs);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to prepare Docker build context from classpath", e);
+        }
+    }
+
+    private static boolean imageExists(String imageName) {
+        try {
+            Process process = new ProcessBuilder("docker", "image", "inspect", imageName)
+                    .redirectErrorStream(true)
+                    .start();
+            int exitCode = process.waitFor();
+            return exitCode == 0;
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Failed to check Docker image existence: " + imageName, e);
+        }
+    }
+
+    private static void dockerBuild(File contextDir, String tag, String[] buildArgs) {
+        System.out.println("=== docker build -t " + tag + " " + contextDir + " ===");
+        try {
+            List<String> cmd = new ArrayList<>(Arrays.asList("docker", "build", "-t", tag));
+            for (String arg : buildArgs) {
+                cmd.add("--build-arg");
+                cmd.add(arg);
+            }
+            cmd.add(".");
+            ProcessBuilder pb = new ProcessBuilder(cmd)
+                    .directory(contextDir)
+                    .redirectErrorStream(true);
+            Process process = pb.start();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                }
+            }
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                throw new RuntimeException(
+                        "docker build failed for '" + tag + "' (exit " + exitCode + "). "
+                                + "Context dir: " + contextDir.getAbsolutePath());
+            }
+            System.out.println("=== Image '" + tag + "' built successfully ===");
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Failed to build Docker image '" + tag + "'", e);
+        }
+    }
+}
