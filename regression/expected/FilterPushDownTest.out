@@ -483,9 +483,62 @@ SELECT * FROM test_filter WHERE  c3 IS NOT NULL ORDER BY t0, a1;
     |  0 | t  | 0.01 | AA | AA | a3o9
 (9 rows)
 
+-- test numeric predicates with integer constant (cross-type pushdown)
+SELECT * FROM test_filter WHERE  c3 >  1 ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
+----+----+----+------+----+----+----------------
+ B  |    | f  | 1.11 | BB | BB | a3c1700s1d1o2
+ C  |  2 |    | 2.21 | CC | CC | a3c1700s1d1o2
+ E  |  4 | t  | 4.41 |    | EE | a3c1700s1d1o2
+ F  |  5 | f  | 5.51 | FF |    | a3c1700s1d1o2
+ G  |  6 | t  | 6.61 | GG | GG | a3c1700s1d1o2
+ H  |  7 | f  | 7.71 | HH | HH | a3c1700s1d1o2
+ I  |  8 | t  | 8.81 | II | II | a3c1700s1d1o2
+ J  |  9 | f  | 9.91 | JJ | JJ | a3c1700s1d1o2
+(8 rows)
+
+SELECT * FROM test_filter WHERE  c3 <= 2 ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
+----+----+----+------+----+----+----------------
+ B  |    | f  | 1.11 | BB | BB | a3c1700s1d2o3
+    |  0 | t  | 0.01 | AA | AA | a3c1700s1d2o3
+(2 rows)
+
+SELECT * FROM test_filter WHERE  c3 >= 5 ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
+----+----+----+------+----+----+----------------
+ F  |  5 | f  | 5.51 | FF |    | a3c1700s1d5o4
+ G  |  6 | t  | 6.61 | GG | GG | a3c1700s1d5o4
+ H  |  7 | f  | 7.71 | HH | HH | a3c1700s1d5o4
+ I  |  8 | t  | 8.81 | II | II | a3c1700s1d5o4
+ J  |  9 | f  | 9.91 | JJ | JJ | a3c1700s1d5o4
+(5 rows)
+
+SELECT * FROM test_filter WHERE  c3 <> 5 ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
+----+----+----+------+----+----+----------------
+ B  |    | f  | 1.11 | BB | BB | a3c1700s1d5o6
+ C  |  2 |    | 2.21 | CC | CC | a3c1700s1d5o6
+ E  |  4 | t  | 4.41 |    | EE | a3c1700s1d5o6
+ F  |  5 | f  | 5.51 | FF |    | a3c1700s1d5o6
+ G  |  6 | t  | 6.61 | GG | GG | a3c1700s1d5o6
+ H  |  7 | f  | 7.71 | HH | HH | a3c1700s1d5o6
+ I  |  8 | t  | 8.81 | II | II | a3c1700s1d5o6
+ J  |  9 | f  | 9.91 | JJ | JJ | a3c1700s1d5o6
+    |  0 | t  | 0.01 | AA | AA | a3c1700s1d5o6
+(9 rows)
+
+SELECT * FROM test_filter WHERE  c3 BETWEEN 1 AND 5 ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4 | e5 |            filtervalue
+----+----+----+------+----+----+------------------------------------
+ B  |    | f  | 1.11 | BB | BB | a3c1700s1d1o4a3c1700s1d5o3l0
+ C  |  2 |    | 2.21 | CC | CC | a3c1700s1d1o4a3c1700s1d5o3l0
+ E  |  4 | t  | 4.41 |    | EE | a3c1700s1d1o4a3c1700s1d5o3l0
+(3 rows)
+
 -- test char predicates
 SELECT * FROM test_filter WHERE  d4 =  'BB' ORDER BY t0, a1;
- t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue   
+ t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
 ----+----+----+------+----+----+----------------
  B  |    | f  | 1.11 | BB | BB | a4c1042s2dBBo5
 (1 row)
@@ -1219,9 +1272,62 @@ SELECT * FROM test_filter WHERE  c3 IS NOT NULL ORDER BY t0, a1;
     |  0 | t  | 0.01 | AA | AA | a3o8l2
 (9 rows)
 
+-- test numeric predicates with integer constant (cross-type pushdown)
+SELECT * FROM test_filter WHERE  c3 >  1 ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
+----+----+----+------+----+----+----------------
+ B  |    | f  | 1.11 | BB | BB | a3c1700s1d1o2
+ C  |  2 |    | 2.21 | CC | CC | a3c1700s1d1o2
+ E  |  4 | t  | 4.41 |    | EE | a3c1700s1d1o2
+ F  |  5 | f  | 5.51 | FF |    | a3c1700s1d1o2
+ G  |  6 | t  | 6.61 | GG | GG | a3c1700s1d1o2
+ H  |  7 | f  | 7.71 | HH | HH | a3c1700s1d1o2
+ I  |  8 | t  | 8.81 | II | II | a3c1700s1d1o2
+ J  |  9 | f  | 9.91 | JJ | JJ | a3c1700s1d1o2
+(8 rows)
+
+SELECT * FROM test_filter WHERE  c3 <= 2 ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
+----+----+----+------+----+----+----------------
+ B  |    | f  | 1.11 | BB | BB | a3c1700s1d2o3
+    |  0 | t  | 0.01 | AA | AA | a3c1700s1d2o3
+(2 rows)
+
+SELECT * FROM test_filter WHERE  c3 >= 5 ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
+----+----+----+------+----+----+----------------
+ F  |  5 | f  | 5.51 | FF |    | a3c1700s1d5o4
+ G  |  6 | t  | 6.61 | GG | GG | a3c1700s1d5o4
+ H  |  7 | f  | 7.71 | HH | HH | a3c1700s1d5o4
+ I  |  8 | t  | 8.81 | II | II | a3c1700s1d5o4
+ J  |  9 | f  | 9.91 | JJ | JJ | a3c1700s1d5o4
+(5 rows)
+
+SELECT * FROM test_filter WHERE  c3 <> 5 ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
+----+----+----+------+----+----+----------------
+ B  |    | f  | 1.11 | BB | BB | a3c1700s1d5o6
+ C  |  2 |    | 2.21 | CC | CC | a3c1700s1d5o6
+ E  |  4 | t  | 4.41 |    | EE | a3c1700s1d5o6
+ F  |  5 | f  | 5.51 | FF |    | a3c1700s1d5o6
+ G  |  6 | t  | 6.61 | GG | GG | a3c1700s1d5o6
+ H  |  7 | f  | 7.71 | HH | HH | a3c1700s1d5o6
+ I  |  8 | t  | 8.81 | II | II | a3c1700s1d5o6
+ J  |  9 | f  | 9.91 | JJ | JJ | a3c1700s1d5o6
+    |  0 | t  | 0.01 | AA | AA | a3c1700s1d5o6
+(9 rows)
+
+SELECT * FROM test_filter WHERE  c3 BETWEEN 1 AND 5 ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4 | e5 |            filtervalue
+----+----+----+------+----+----+------------------------------------
+ B  |    | f  | 1.11 | BB | BB | a3c1700s1d1o4a3c1700s1d5o3l0
+ C  |  2 |    | 2.21 | CC | CC | a3c1700s1d1o4a3c1700s1d5o3l0
+ E  |  4 | t  | 4.41 |    | EE | a3c1700s1d1o4a3c1700s1d5o3l0
+(3 rows)
+
 -- test char predicates
 SELECT * FROM test_filter WHERE  d4 =  'BB' ORDER BY t0, a1;
- t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue   
+ t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
 ----+----+----+------+----+----+----------------
  B  |    | f  | 1.11 | BB | BB | a4c1042s2dBBo5
 (1 row)
