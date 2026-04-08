@@ -245,9 +245,6 @@ public class JdbcHiveTest extends BaseFeature {
         runSqlTest("features/jdbc/hive");
     }
 
-    // Fails with the error: ERROR:  PXF server error : java.io.DataInputStream cannot be cast to [B
-    // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @FailsWithFDW
     @Test(enabled = false, groups = {"features", "gpdb", "security"})
     public void jdbcHiveWrite() throws Exception {
         prepareDataForWriteTest();
