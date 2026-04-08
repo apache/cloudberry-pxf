@@ -30,7 +30,6 @@ import org.testng.annotations.Factory;
 import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -84,9 +83,6 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
     private static final String V_D_DATE = "2020-01-02";
     private static final String V_D_TS = "2020-01-02 03:04:05.006";
     private static final String V_D_UUID = "550e8400-e29b-41d4-a716-446655440000";
-    /** Four-byte payload for binary data; same bytes as `decode('41424344','hex')` in regress SQL. */
-    private static final byte[] V_BIN_BYTES = "ABCD".getBytes(StandardCharsets.US_ASCII);
-
     private final String dockerImageTag;
 
     private ClickHouseContainer clickhouseContainer;
@@ -289,9 +285,11 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
 
     /** Inserts fixture row into {@link #CLICKHOUSE_TABLE_READ} for the read test. */
     private void insertClickhouseReadFixture(Connection chConn) throws SQLException {
+        // TODO: setBytes() for ClickHouse String is driver-version sensitive and can serialize
+        // into an unexpected textual representation instead of raw bytes; use unhex() in SQL.
         String insertSql = "INSERT INTO " + CLICKHOUSE_TABLE_READ + " ("
                 + "i_int, s_small, b_big, f_float32, d_float64, b_bool, dec, t_text, bin, d_date, d_ts, d_tstz, d_uuid"
-                + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, unhex('41424344'), ?, ?, ?, ?)";
 
         try (PreparedStatement ps = chConn.prepareStatement(insertSql)) {
             // JDBC setDate/setTimestamp without Calendar uses JVM default timezone during
@@ -306,11 +304,10 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
             ps.setBoolean(6, V_B_BOOL);
             ps.setBigDecimal(7, new BigDecimal(V_DEC_TEXT));
             ps.setString(8, V_T_TEXT);
-            ps.setBytes(9, V_BIN_BYTES);
-            ps.setDate(10, Date.valueOf(V_D_DATE), utcCalendar);
+            ps.setDate(9, Date.valueOf(V_D_DATE), utcCalendar);
+            ps.setTimestamp(10, Timestamp.valueOf(V_D_TS), utcCalendar);
             ps.setTimestamp(11, Timestamp.valueOf(V_D_TS), utcCalendar);
-            ps.setTimestamp(12, Timestamp.valueOf(V_D_TS), utcCalendar);
-            ps.setObject(13, UUID.fromString(V_D_UUID));
+            ps.setObject(12, UUID.fromString(V_D_UUID));
             ps.executeUpdate();
         }
     }
