@@ -22,6 +22,6 @@ dependencies {
     // Its version is defined in server/build.gradle
 
     // Clickhouse
-    implementation('com.clickhouse:clickhouse-jdbc:0.9.7:all')                { transitive = false }
+    implementation('com.clickhouse:clickhouse-jdbc:0.9.8:all')                { transitive = false }
 
 }
