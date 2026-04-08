@@ -68,9 +68,8 @@ You do **not** need a `servers/clickhouse/jdbc-site.xml` if you pass connection 
 
 Automated tests exercise ClickHouse server versions **24** and **26** together with the ClickHouse JDBC drivers.
 
-For ClickHouse versions < 25.10 we tested clickhouse-jdbc **0.6.5**. In practice this driver tends to work more reliably with **Apache HttpClient**; add the JDBC URL parameter `http_connection_provider=APACHE_HTTP_CLIENT` (for example `jdbc:clickhouse://clickhousehost:8123/default?http_connection_provider=APACHE_HTTP_CLIENT`). To use that mode, you must also place the **Apache HttpClient 5** JAR on the PXF classpath: copy `org.apache.httpcomponents.client5:httpclient5` (and its required dependencies, if any) into `$PXF_BASE/lib` next to the ClickHouse driver JAR, then synchronize PXF and restart PXF. See [Registering PXF Library Dependencies](reg_jar_depend.html).
+For ClickHouse we recommend latest clickhouse-jdbc-all:0.9.7 or newer (fat jar version with shaded dependencies). In case you observe HTTP reliably issues you can use Apache HttpClient: add the JDBC URL parameter `http_connection_provider=APACHE_HTTP_CLIENT` (for example `jdbc:clickhouse://clickhousehost:8123/default?http_connection_provider=APACHE_HTTP_CLIENT`).
 
-For ClickHouse versions > 25.10 we recommend latest clickhouse-jdbc-all (fat jar version with shaded dependencies).
 
 ## <a id="ex_readjdbc_1"></a>Read from the ClickHouse Table
 
@@ -142,8 +141,3 @@ For ClickHouse, the typical JDBC-side mappings are:
 - `TIMESTAMPTZ` → `DateTime64(precision, 'UTC')`
 - `BYTEA` → `String`
 - `UUID` → `UUID`
-
-Notes:
-
-- `UUID` and `TIMESTAMPTZ` are supported for reading and writing with PXF JDBC when mapped to ClickHouse `UUID` and `DateTime64` as above.
-- For `BYTEA`, prefer `String` on the ClickHouse side for reliable JDBC round-trip; use `FixedString(n)` only if you control the wire format and length.
