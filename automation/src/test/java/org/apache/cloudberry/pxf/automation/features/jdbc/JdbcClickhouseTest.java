@@ -131,37 +131,37 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
         }
     }
 
-    @Test(groups = {"testcontainers", "jdbc-tc"})
+    @Test(groups = {"testcontainers", "pxf-jdbc"})
     public void readSupportedTypes() throws Exception {
         runReadSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), false);
     }
 
-    @Test(groups = {"testcontainers", "jdbc-tc"})
+    @Test(groups = {"testcontainers", "pxf-jdbc"})
     public void readSupportedTypesWithProtocolCompression() throws Exception {
         runReadSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), true);
     }
 
-    @Test(groups = {"testcontainers", "jdbc-tc"})
+    @Test(groups = {"testcontainers", "pxf-jdbc"})
     public void readSupportedTypesWithHttpConnectionProvider() throws Exception {
         runReadSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), false, true);
     }
 
-    @Test(groups = {"testcontainers", "jdbc-tc"})
+    @Test(groups = {"testcontainers", "pxf-jdbc"})
     public void writeSupportedTypes() throws Exception {
         runWriteSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), false);
     }
 
-    @Test(groups = {"testcontainers", "jdbc-tc"})
+    @Test(groups = {"testcontainers", "pxf-jdbc"})
     public void writeSupportedTypesWithProtocolCompression() throws Exception {
         runWriteSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), true);
     }
 
-    @Test(groups = {"testcontainers", "jdbc-tc"})
+    @Test(groups = {"testcontainers", "pxf-jdbc"})
     public void writeSupportedTypesWithHttpConnectionProvider() throws Exception {
         runWriteSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), false, true);
     }
 
-    @Test(groups = {"testcontainers", "jdbc-tc"})
+    @Test(groups = {"testcontainers", "pxf-jdbc"})
     public void writeSupportedTypesWithHttpConnectionProviderAndCompression() throws Exception {
         runWriteSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), true, true);
     }
