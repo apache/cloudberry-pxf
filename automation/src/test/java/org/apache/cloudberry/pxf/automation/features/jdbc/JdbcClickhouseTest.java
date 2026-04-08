@@ -107,7 +107,6 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
                 { "24" },
                 // ClickHouse 25.10+ doesn't work with old JDBC drivers
                 // https://github.com/ClickHouse/clickhouse-java/issues/2636
-                 { "26.1.4.35" },
                  { "26.2" },
         };
     }
