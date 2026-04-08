@@ -66,6 +66,8 @@ mkdir -p "$PXF_BASE"
 
 # Initialize PXF
 pxf prepare
+cp $PXF_HOME/lib/*.jar $PXF_BASE/lib/
+ls -l $PXF_BASE/lib/
 pxf start
 
 # Verify PXF is running

@@ -3,11 +3,6 @@ dependencies {
     // Its version is defined in server/build.gradle
 
     // Clickhouse
-    implementation('com.clickhouse:clickhouse-jdbc:0.6.5')
-    implementation('com.clickhouse:clickhouse-jdbc:0.6.5:http')
-    implementation('at.yawk.lz4:lz4-java')
-    implementation('org.apache.httpcomponents.client5:httpclient5:5.3.1')   { transitive = false }
-       implementation('org.apache.httpcomponents.core5:httpcore5:5.2.4')    { transitive = false }
-       implementation('org.apache.httpcomponents.core5:httpcore5-h2:5.2.4') { transitive = false }
+    implementation('com.clickhouse:clickhouse-jdbc:0.9.7:all')                { transitive = false }
 
 }

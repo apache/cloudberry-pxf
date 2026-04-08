@@ -1,27 +1,46 @@
 -- start_ignore
 -- end_ignore
--- @description ClickHouse JDBC read: validate primitive types via PXF (JDBC_DRIVER/DB_URL in external table DDL)
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+
+-- @description ClickHouse JDBC read: expect one row of primitive types from PXF (values compared by regress output)
 SET timezone='utc';
 SET
 
+SET bytea_output='hex';
+SET
+
 SELECT
-  (i_int = 1) AS i_int_ok,
-  (s_small = 2) AS s_small_ok,
-  (b_big = 3) AS b_big_ok,
-  (abs(f_float32 - 1.25) < 0.000001) AS f_float32_ok,
-  (abs(d_float64 - 3.1415926) < 0.000001) AS d_float64_ok,
-  (b_bool = true) AS b_bool_ok,
-  (dec = CAST('12345.6789012345' AS numeric)) AS dec_ok,
-  (t_text = 'hello') AS t_text_ok,
-  (bin = decode('41424344','hex')) AS bin_ok,
-  (d_date = DATE '2020-01-02') AS d_date_ok,
-  (d_ts = TIMESTAMP '2020-01-02 03:04:05.006') AS d_ts_ok,
-  (d_tstz = TIMESTAMPTZ '2020-01-02 03:04:05.006+00') AS d_tstz_ok,
-  (d_uuid = '550e8400-e29b-41d4-a716-446655440000'::uuid) AS d_uuid_ok
+    i_int,
+    s_small,
+    b_big,
+    f_float32,
+    d_float64,
+    b_bool,
+    dec,
+    t_text,
+    bin,
+    d_date,
+    d_ts,
+    d_tstz,
+    d_uuid
 FROM pxf_ch_clickhouse_read_types
 LIMIT 1;
- i_int_ok | s_small_ok | b_big_ok | f_float32_ok | d_float64_ok | b_bool_ok | dec_ok | t_text_ok | bin_ok | d_date_ok | d_ts_ok | d_tstz_ok | d_uuid_ok 
-----------+------------+----------+--------------+--------------+-----------+--------+-----------+--------+-----------+---------+-----------+-----------
- t        | t          | t        | t            | t            | t         | t      | t         | t      | t         | t       | t         | t
+ i_int | s_small | b_big | f_float32 | d_float64 | b_bool |        dec        | t_text |    bin     |   d_date   |         d_ts          |        d_tstz         |                d_uuid
+-------+---------+-------+-----------+-----------+--------+-------------------+--------+------------+------------+-----------------------+-----------------------+--------------------------------------
+     1 |       2 |     3 |      1.25 | 3.1415926 | t      | 12345.6789012345 | hello  | \x5b36352c36362c36372c36385d | 2020-01-02 | 2020-01-02 03:04:05.006 | 2020-01-02 03:04:05.006+00 | 550e8400-e29b-41d4-a716-446655440000
 (1 row)
-

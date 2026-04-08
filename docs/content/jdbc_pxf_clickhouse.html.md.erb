@@ -66,6 +66,12 @@ Place the ClickHouse JDBC driver JAR under `$PXF_BASE/lib` on every coordinator 
 
 You do **not** need a `servers/clickhouse/jdbc-site.xml` if you pass connection options in the external table definition, as shown below.
 
+Automated tests exercise ClickHouse server versions **24** and **26** together with the ClickHouse JDBC drivers.
+
+For ClickHouse versions < 25.10 we tested clickhouse-jdbc **0.6.5**. In practice this driver tends to work more reliably with **Apache HttpClient**; add the JDBC URL parameter `http_connection_provider=APACHE_HTTP_CLIENT` (for example `jdbc:clickhouse://clickhousehost:8123/default?http_connection_provider=APACHE_HTTP_CLIENT`). To use that mode, you must also place the **Apache HttpClient 5** JAR on the PXF classpath: copy `org.apache.httpcomponents.client5:httpclient5` (and its required dependencies, if any) into `$PXF_BASE/lib` next to the ClickHouse driver JAR, then synchronize PXF and restart PXF. See [Registering PXF Library Dependencies](reg_jar_depend.html).
+
+For ClickHouse versions > 25.10 we recommend latest clickhouse-jdbc-all (fat jar version with shaded dependencies).
+
 ## <a id="ex_readjdbc_1"></a>Read from the ClickHouse Table
 
 Perform the following procedure to create a PXF external table that references the `pxf_ch_types` ClickHouse table, and reads the data in the table:
