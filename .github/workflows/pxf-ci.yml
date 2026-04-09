@@ -260,7 +260,7 @@ jobs:
         include:
           - distro: ubuntu
             base_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest
-            image_tag: pxf/cbdb-testcontainer:1
+            image_tag: pxf/cbdb-testcontainer-ubuntu:1
           - distro: rocky9
             base_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest
             image_tag: pxf/cbdb-testcontainer-rocky9:1
