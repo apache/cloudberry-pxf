@@ -381,5 +381,5 @@ task stageJdbcDrivers(type: Copy) {
     dependsOn ":pxf-jdbc-drivers:jar"
     from(project(':pxf-jdbc-drivers').configurations.runtimeClasspath)
     into("${buildDir}/stage/lib")
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    duplicatesStrategy = DuplicatesStrategy.FAIL
 }
