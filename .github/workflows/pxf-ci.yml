@@ -364,7 +364,6 @@ jobs:
       run: |
         cd cloudberry-pxf
         docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v || true
-        docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml build
         docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml up -d
         docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry
         docker cp /tmp/*.deb pxf-cbdb-dev:/tmp/
@@ -536,7 +535,6 @@ jobs:
       run: |
         cd cloudberry-pxf
         docker compose -f ci/docker/pxf-cbdb-dev/rocky9/docker-compose.yml down -v || true
-        docker compose -f ci/docker/pxf-cbdb-dev/rocky9/docker-compose.yml build
         docker compose -f ci/docker/pxf-cbdb-dev/rocky9/docker-compose.yml up -d
         docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry
         docker cp /tmp/*.rpm pxf-cbdb-dev:/tmp/
