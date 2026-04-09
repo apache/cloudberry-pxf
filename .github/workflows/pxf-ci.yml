@@ -675,6 +675,7 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
+          cache: 'gradle'
 
       - name: Download pxf-cbdb testcontainer image
         uses: actions/download-artifact@v4
