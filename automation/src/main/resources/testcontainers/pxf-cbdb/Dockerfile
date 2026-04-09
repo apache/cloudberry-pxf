@@ -48,7 +48,7 @@ RUN rm -rf /tmp/gradle /tmp/gradlew /tmp/gradlew.bat /tmp/.gradle
 ENV GRADLE_HOME="/opt/gradle-${GRADLE_VERSION}"
 
 # Go toolchain for building pxf_regress inside the container
-ARG GO_VERSION=1.21.13
+ARG GO_VERSION=1.24.0
 RUN ARCH=$(uname -m) && \
     case "$ARCH" in \
       x86_64) GARCH=amd64 ;; \
