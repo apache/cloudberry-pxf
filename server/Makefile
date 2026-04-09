@@ -103,7 +103,7 @@ stage-jdbc-drivers: prepare-gradle-wrapper
 	rm -rf build/stage/lib
 	./gradlew $(PXF_GRADLE_PROPERTIES) stageJdbcDrivers
 
-.PHONY: install
+.PHONY: install-jdbc-drivers
 install-jdbc-drivers: stage-jdbc-drivers
 	@if [ -z "$(PXF_HOME)" ]; then \
 		echo "ERROR: PXF_HOME is not set"; exit 2; \
