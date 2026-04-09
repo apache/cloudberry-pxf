@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -277,7 +278,7 @@ public class JdbcResolver extends JdbcBasePlugin implements Resolver {
                 if (oneField.val == null) {
                     valDebug = "null";
                 } else if (oneFieldType == DataType.BYTEA) {
-                    valDebug = String.format("'{}'", new String((byte[]) oneField.val));
+                    valDebug = String.format("'{}'", new String(toByteArray(oneField.val)));
                 } else {
                     valDebug = String.format("'{}'", oneField.val.toString());
                 }
@@ -421,7 +422,7 @@ public class JdbcResolver extends JdbcBasePlugin implements Resolver {
                     if (field.val == null) {
                         statement.setNull(i, Types.BINARY);
                     } else {
-                        statement.setBytes(i, (byte[]) field.val);
+                        statement.setBytes(i, toByteArray(field.val));
                     }
                     break;
                 case DATE:
@@ -505,5 +506,20 @@ public class JdbcResolver extends JdbcBasePlugin implements Resolver {
             }
         }
         return value;
+    }
+
+    /**
+     * Converts a BYTEA field value to byte[]. The value can arrive
+     *   as byte[] (OutputFormat.GPDBWritable from external-table)
+     *   as ByteBuffer (OutputFormat.TEXT from FDW)
+     */
+    private static byte[] toByteArray(Object val) {
+        if (val instanceof byte[]) {
+            return (byte[]) val;
+        }
+        ByteBuffer bb = (ByteBuffer) val;
+        byte[] bytes = new byte[bb.remaining()];
+        bb.duplicate().get(bytes);
+        return bytes;
     }
 }

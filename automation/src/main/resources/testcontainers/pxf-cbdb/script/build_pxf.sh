@@ -56,6 +56,7 @@ cd /home/gpadmin/workspace/cloudberry-pxf
 make -C external-table install
 make -C fdw install
 make -C server install-server
+make -C server install-jdbc-drivers
 
 # Set up PXF environment
 export PXF_BASE=$HOME/pxf-base
@@ -65,6 +66,8 @@ mkdir -p "$PXF_BASE"
 
 # Initialize PXF
 pxf prepare
+cp $PXF_HOME/lib/*.jar $PXF_BASE/lib/
+ls -l $PXF_BASE/lib/
 pxf start
 
 # Verify PXF is running

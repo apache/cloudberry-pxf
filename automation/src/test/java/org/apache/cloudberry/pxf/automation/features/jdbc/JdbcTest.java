@@ -21,7 +21,6 @@ package org.apache.cloudberry.pxf.automation.features.jdbc;
 
 import java.io.File;
 
-import annotations.FailsWithFDW;
 import annotations.WorksWithFDW;
 import org.apache.cloudberry.pxf.automation.AbstractTestcontainersTest;
 import org.apache.cloudberry.pxf.automation.applications.CloudberryApplication;
@@ -508,31 +507,21 @@ public class JdbcTest extends AbstractTestcontainersTest {
         runSqlTest("features/jdbc/session_params");
     }
 
-    @FailsWithFDW
-    // All the Writable Tests are failing with this Error:
-    // ERROR:  PXF server error : class java.io.DataInputStream cannot be cast to class
-    // [B (java.io.DataInputStream and [B are in module java.base of loader 'bootstrap')
     @Test(groups = {"testcontainers", "pxf-jdbc"})
     public void jdbcWritableTable() throws Exception {
         runSqlTest("features/jdbc/writable");
     }
 
-    @FailsWithFDW
-    // All the Writable Tests are failing with this Error:
-    // ERROR:  PXF server error : class java.io.DataInputStream cannot be cast to class
-    // [B (java.io.DataInputStream and [B are in module java.base of loader 'bootstrap')
     @Test(groups = {"testcontainers", "pxf-jdbc"})
     public void jdbcWritableTableWithDateWideRange() throws Exception {
         runSqlTest("features/jdbc/writable_date_wide_range");
     }
 
-    @FailsWithFDW
     @Test(groups = {"testcontainers", "pxf-jdbc"})
     public void jdbcWritableTableNoBatch() throws Exception {
         runSqlTest("features/jdbc/writable_nobatch");
     }
 
-    @FailsWithFDW
     @Test(groups = {"testcontainers", "pxf-jdbc"})
     public void jdbcWritableTablePool() throws Exception {
         runSqlTest("features/jdbc/writable_pool");
