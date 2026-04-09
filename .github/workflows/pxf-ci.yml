@@ -253,7 +253,7 @@ jobs:
         retention-days: 1
 
   build-pxf-cbdb-testcontainer-image:
-    name: Build PXF-CBDB Testcontainer Image (${{ matrix.distro }})
+    name: Build Testcontainer Images (${{ matrix.distro }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -265,24 +265,44 @@ jobs:
             base_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest
             image_tag: pxf/cbdb-testcontainer-rocky9:1
     steps:
+      - name: Get month number
+        id: get-month
+        run: echo "month=$(/bin/date -u '+%Y-%m')" >> "$GITHUB_OUTPUT"
+
       - name: Checkout PXF source
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Build pxf-cbdb testcontainer image
+      - name: Restore testcontainer image cache
+        id: cache-tc
+        uses: actions/cache/restore@v4
+        with:
+          path: pxf-cbdb-testcontainer-${{ matrix.distro }}.tar
+          key: pxf-cbdb-testcontainer-${{ matrix.distro }}-${{ steps.get-month.outputs.month }}-${{ hashFiles('automation/src/main/resources/testcontainers/pxf-cbdb/**') }}
+
+      - name: Build testcontainer images
+        if: steps.cache-tc.outputs.cache-hit != 'true'
         run: |
           docker build \
             --build-arg BASE_IMAGE=${{ matrix.base_image }} \
             -t ${{ matrix.image_tag }} \
             automation/src/main/resources/testcontainers/pxf-cbdb
-          docker save ${{ matrix.image_tag }} > /tmp/pxf-cbdb-testcontainer-${{ matrix.distro }}.tar
+          docker save ${{ matrix.image_tag }} > "${GITHUB_WORKSPACE}/pxf-cbdb-testcontainer-${{ matrix.distro }}.tar"
 
-      - name: Upload pxf-cbdb testcontainer image
+      - name: Save testcontainer image cache
+        # save cache from default branch only (reuse between PRs for the same month and context)
+        if: steps.cache-tc.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@v4
+        with:
+          path: pxf-cbdb-testcontainer-${{ matrix.distro }}.tar
+          key: pxf-cbdb-testcontainer-${{ matrix.distro }}-${{ steps.get-month.outputs.month }}-${{ hashFiles('automation/src/main/resources/testcontainers/pxf-cbdb/**') }}
+
+      - name: Upload testcontainer images
         uses: actions/upload-artifact@v4
         with:
           name: pxf-cbdb-testcontainer-image-${{ matrix.distro }}
-          path: /tmp/pxf-cbdb-testcontainer-${{ matrix.distro }}.tar
+          path: pxf-cbdb-testcontainer-${{ matrix.distro }}.tar
           retention-days: 1
 
   # Stage 2: Parallel test jobs using matrix strategy
