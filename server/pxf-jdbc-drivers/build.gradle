@@ -17,15 +17,11 @@
  * under the License.
  */
 
-rootProject.name = 'pxf'
+dependencies {
+    // PostgreSQL driver is used by PXF itself. 
+    // Its version is defined in server/build.gradle
 
-include 'pxf-service',
-        'pxf-api',
-        'pxf-hbase',
-        'pxf-hdfs',
-        'pxf-hive',
-        'pxf-jdbc',
-        'pxf-jdbc-drivers',
-        'pxf-json',
-        'pxf-s3',
-        'pxf-diagnostic'
+    // Clickhouse
+    implementation('com.clickhouse:clickhouse-jdbc:0.9.8:all')                { transitive = false }
+
+}
