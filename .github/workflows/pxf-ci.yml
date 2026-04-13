@@ -38,7 +38,7 @@ concurrency:
 env:
   JAVA_VERSION: "11"
   JAVA_HOME: "/usr/lib/jvm/java-11-openjdk"
-  GO_VERSION: "1.21"
+  GO_VERSION: "1.24"
   GPHOME: "/usr/local/cloudberry-db"
   CLOUDBERRY_VERSION: "main"
   PXF_HOME: "/usr/local/pxf"
