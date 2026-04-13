@@ -80,20 +80,20 @@ Perform the following steps to create an Oracle table named `countries` in the s
 
 You must create a JDBC server configuration for Oracle, download the Oracle driver JAR file to your system, copy the JAR file to the PXF user configuration directory, synchronize the PXF configuration, and then restart PXF.
 
-This procedure will typically be performed by the Greenplum Database administrator.
+This procedure will typically be performed by the Apache Cloudberry administrator.
 
-1. Download the Oracle JDBC driver and place it under `$PXF_BASE/lib` of your Greenplum Database coordinator host. If you [relocated $PXF_BASE](about_pxf_dir.html#movebase), make sure you use the updated location. You can download a Oracle JDBC driver from your preferred download location. The following example places a driver downloaded from Oracle webiste under `$PXF_BASE/lib` of the Greenplum Database coordinator:
+1. Download the Oracle JDBC driver and place it under `$PXF_BASE/lib` of your Apache Cloudberry coordinator host. If you [relocated $PXF_BASE](about_pxf_dir.html#movebase), make sure you use the updated location. You can download a Oracle JDBC driver from your preferred download location. The following example places a driver downloaded from Oracle webiste under `$PXF_BASE/lib` of the Apache Cloudberry coordinator:
 
-    1. If you did not relocate `$PXF_BASE`, run the following from the Greenplum coordinator:
+    1. If you did not relocate `$PXF_BASE`, run the following from the Cloudberry coordinator:
 
         ```shell
-        gpadmin@coordinator$ scp ojdbc10.jar gpadmin@coordinator:/usr/local/pxf-gp<version>/lib/
+        gpadmin@coordinator$ scp ojdbc11.jar gpadmin@coordinator:/usr/local/pxf-gp<version>/lib/
         ```
 
-    2. If you relocated `$PXF_BASE`, run the following from the Greenplum coordinator:
+    2. If you relocated `$PXF_BASE`, run the following from the Cloudberry coordinator:
 
         ```shell
-        gpadmin@coordinator$ scp ojdbc10.jar gpadmin@coordinator:$PXF_BASE/lib/
+        gpadmin@coordinator$ scp ojdbc11.jar gpadmin@coordinator:$PXF_BASE/lib/
         ```
 
 1. Synchronize the PXF configuration, and then restart PXF: 
@@ -131,7 +131,7 @@ This procedure will typically be performed by the Greenplum Database administrat
     </configuration>  
     ```
 
-3. Synchronize the PXF server configuration to the Greenplum Database cluster:
+3. Synchronize the PXF server configuration to the Apache Cloudberry cluster:
 
     ``` shell
     gpadmin@coordinator$ pxf cluster sync
@@ -148,6 +148,18 @@ Perform the following procedure to create a PXF external table that references t
               LOCATION('pxf://oracleuser.countries?PROFILE=jdbc&SERVER=oracle')
               FORMAT 'CUSTOM' (formatter='pxfwritable_import');
     ```
+
+	OR create the PXF foreign table specifying `jdbc_pxf_fdw` Foreign Data Wrapper. For example:
+
+	```sql
+	gpadmin=# CREATE SERVER "oracle" FOREIGN DATA WRAPPER jdbc_pxf_fdw;
+	gpadmin=# CREATE USER MAPPING FOR CURRENT_USER SERVER "oracle";
+	gpadmin=# CREATE FOREIGN TABLE oracle_countries (country_id int, country_name varchar, population float)
+				  SERVER "oracle"
+				  OPTIONS (
+					resource 'oracleuser.countries'
+				  );
+	```
 
 2. Display all rows of the `oracle_countries` table:
 
@@ -171,6 +183,8 @@ Perform the following procedure to insert some data into the `countries` Oracle 
               LOCATION('pxf://oracleuser.countries?PROFILE=jdbc&SERVER=oracle')
               FORMAT 'CUSTOM' (formatter='pxfwritable_export');
     ```
+
+	OR reuse PXF foreign table `oracle_countries` created in [Read from the Oracle Table](#ex_readjdbc).
 
 4. Insert some data into the `oracle_countries_write` table. For example:
 
