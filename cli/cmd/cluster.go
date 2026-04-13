@@ -87,7 +87,7 @@ func handlePlurality(num int) string {
 func GenerateStatusReport(cmd *command, clusterData *ClusterData) {
 	if _, ok := cmd.messages[standby]; !ok {
 		// this command cares not about standby
-		gplog.Info(fmt.Sprintf(cmd.messages[status], clusterData.NumHosts, handlePlurality(clusterData.NumHosts)))
+		gplog.Info("%s", fmt.Sprintf(cmd.messages[status], clusterData.NumHosts, handlePlurality(clusterData.NumHosts)))
 		return
 	}
 	standbyMsg := ""
@@ -99,7 +99,7 @@ func GenerateStatusReport(cmd *command, clusterData *ClusterData) {
 		standbyMsg = cmd.messages[standby]
 		numHosts--
 	}
-	gplog.Info(fmt.Sprintf(cmd.messages[status], standbyMsg, numHosts, handlePlurality(numHosts)))
+	gplog.Info("%s", fmt.Sprintf(cmd.messages[status], standbyMsg, numHosts, handlePlurality(numHosts)))
 }
 
 // GenerateOutput is exported for testing
@@ -126,7 +126,7 @@ func GenerateOutput(cmd *command, clusterData *ClusterData) error {
 		}
 		response += fmt.Sprintf("%s ==> %s\n", host, errorMessage)
 	}
-	gplog.Info("ERROR: "+cmd.messages[err], numErrors, clusterData.NumHosts, handlePlurality(clusterData.NumHosts))
+	gplog.Info("%s", fmt.Sprintf("ERROR: "+cmd.messages[err], numErrors, clusterData.NumHosts, handlePlurality(clusterData.NumHosts)))
 	gplog.Error("%s", response)
 	return errors.New(response)
 }
@@ -135,7 +135,7 @@ func doSetup() (*ClusterData, error) {
 	connection := dbconn.NewDBConnFromEnvironment("postgres")
 	err := connection.Connect(1)
 	if err != nil {
-		gplog.Error(fmt.Sprintf("ERROR: Could not connect to Cloudberry.\n%s\n"+
+		gplog.Error("%s", fmt.Sprintf("ERROR: Could not connect to Cloudberry.\n%s\n"+
 			"Please make sure that your Apache Cloudberry is running and you are on the coordinator node.", err.Error()))
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func doSetup() (*ClusterData, error) {
 
 	segConfigs, err := cluster.GetSegmentConfiguration(connection, true)
 	if err != nil {
-		gplog.Error(fmt.Sprintf("ERROR: Could not retrieve segment information from GPDB.\n%s\n" + err.Error()))
+		gplog.Error("ERROR: Could not retrieve segment information from GPDB.\n%s", err.Error())
 		return nil, err
 	}
 	clusterData := &ClusterData{Cluster: cluster.NewCluster(segConfigs), connection: connection}
@@ -158,13 +158,13 @@ func clusterRun(cmd *command, clusterData *ClusterData) error {
 
 	err := cmd.Warn(os.Stdin)
 	if err != nil {
-		gplog.Info(fmt.Sprintf("%s", err))
+		gplog.Info("%s", fmt.Sprintf("%s", err))
 		return err
 	}
 
 	functionToExecute, err := cmd.GetFunctionToExecute()
 	if err != nil {
-		gplog.Error(fmt.Sprintf("Error: %s", err))
+		gplog.Error("%s", fmt.Sprintf("Error: %s", err))
 		return err
 	}
 

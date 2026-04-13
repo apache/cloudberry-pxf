@@ -42,6 +42,7 @@ ENV      HIVE_VERSION=3.1.3
 ENV ZOOKEEPER_VERSION=3.5.9
 ENV     HBASE_VERSION=2.3.7
 ENV       TEZ_VERSION=0.9.2
+ENV        GO_VERSION=1.24.0
 
 # checksums from archive.apache.org
 ENV    HADOOP_SHA512="0e0ee817c89b3c4eb761eca7f16640742a83b0e99b6fda26c1bee2baabedad93aab86e252bf5f1e2381c6d464bc4003d10c7cc0f61b2062f4c59732ca24d1bd9"
@@ -110,7 +111,7 @@ RUN set -e; \
       *) echo "Unsupported architecture: ${arch}"; exit 1 ;; \
     esac; \
     mkdir -p /tmp/pxf_src/ && cd /tmp && \
-    wget -O go.tgz -q "https://go.dev/dl/go1.23.3.linux-${go_arch}.tar.gz" && \
+    wget -O go.tgz -q "https://go.dev/dl/go${GO_VERSION}.linux-${go_arch}.tar.gz" && \
     sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go.tgz && rm go.tgz
 
 # Install MinIO and mc

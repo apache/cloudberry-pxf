@@ -1,6 +1,6 @@
 module pxf-cli
 
-go 1.21.3
+go 1.24
 
 require (
 	github.com/apache/cloudberry-go-libs v1.0.12-0.20250910014224-fc376e8a1056

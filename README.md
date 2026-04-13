@@ -76,7 +76,7 @@ To build PXF, you must have:
     export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
     ```
 
-4. Go (1.9 or later)
+4. Go (1.24 or later)
 
     You can download and install Go via [Go downloads page](https://golang.org/dl/).
 
