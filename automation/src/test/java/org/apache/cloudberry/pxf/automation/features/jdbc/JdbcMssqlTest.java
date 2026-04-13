@@ -22,7 +22,7 @@ package org.apache.cloudberry.pxf.automation.features.jdbc;
 import org.apache.cloudberry.pxf.automation.AbstractTestcontainersTest;
 import org.apache.cloudberry.pxf.automation.structures.tables.pxf.ExternalTable;
 import org.apache.cloudberry.pxf.automation.structures.tables.utils.TableFactory;
-import org.apache.cloudberry.pxf.automation.testcontainers.MSSQLServerContainer;
+import org.apache.cloudberry.pxf.automation.testcontainers.MssqlServerContainer;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Factory;
@@ -75,7 +75,7 @@ public class JdbcMssqlTest extends AbstractTestcontainersTest {
     private static final String V_D_TS     = "2020-01-02 03:04:05.006";
 
     private final String dockerImageTag;
-    private MSSQLServerContainer mssqlContainer;
+    private MssqlServerContainer mssqlContainer;
 
     /**
      * TestNG Factory: one test class instance per `mssqlVersions` row.
@@ -100,7 +100,7 @@ public class JdbcMssqlTest extends AbstractTestcontainersTest {
 
     @Override
     public void beforeClass() throws Exception {
-        mssqlContainer = new MSSQLServerContainer(dockerImageTag, container.getSharedNetwork());
+        mssqlContainer = new MssqlServerContainer(dockerImageTag, container.getSharedNetwork());
         mssqlContainer.start();
 
         Assert.assertTrue(container.isRunning(), "PXFCloudberry container should be running");
@@ -133,8 +133,8 @@ public class JdbcMssqlTest extends AbstractTestcontainersTest {
                 MSSQL_TABLE_READ,
                 MSSQL_DRIVER,
                 internalJdbcUrl,
-                MSSQLServerContainer.MSSQL_USER,
-                "PASS=" + MSSQLServerContainer.MSSQL_PASSWORD);
+                MssqlServerContainer.MSSQL_USER,
+                "PASS=" + MssqlServerContainer.MSSQL_PASSWORD);
         pxfRead.setHost(pxfHost);
         pxfRead.setPort(pxfPort);
         cloudberry.createTableAndVerify(pxfRead);
@@ -155,8 +155,8 @@ public class JdbcMssqlTest extends AbstractTestcontainersTest {
                 MSSQL_TABLE_WRITE,
                 MSSQL_DRIVER,
                 internalJdbcUrl,
-                MSSQLServerContainer.MSSQL_USER,
-                "PASS=" + MSSQLServerContainer.MSSQL_PASSWORD);
+                MssqlServerContainer.MSSQL_USER,
+                "PASS=" + MssqlServerContainer.MSSQL_PASSWORD);
         pxfWrite.setHost(pxfHost);
         pxfWrite.setPort(pxfPort);
         cloudberry.createTableAndVerify(pxfWrite);
@@ -167,8 +167,8 @@ public class JdbcMssqlTest extends AbstractTestcontainersTest {
                 MSSQL_TABLE_WRITE,
                 MSSQL_DRIVER,
                 internalJdbcUrl,
-                MSSQLServerContainer.MSSQL_USER,
-                "PASS=" + MSSQLServerContainer.MSSQL_PASSWORD);
+                MssqlServerContainer.MSSQL_USER,
+                "PASS=" + MssqlServerContainer.MSSQL_PASSWORD);
         pxfVerify.setHost(pxfHost);
         pxfVerify.setPort(pxfPort);
         cloudberry.createTableAndVerify(pxfVerify);
@@ -242,8 +242,8 @@ public class JdbcMssqlTest extends AbstractTestcontainersTest {
 
     private Connection openMssqlConnection(String jdbcUrl) throws SQLException {
         Properties props = new Properties();
-        props.setProperty("user", MSSQLServerContainer.MSSQL_USER);
-        props.setProperty("password", MSSQLServerContainer.MSSQL_PASSWORD);
+        props.setProperty("user", MssqlServerContainer.MSSQL_USER);
+        props.setProperty("password", MssqlServerContainer.MSSQL_PASSWORD);
         return DriverManager.getConnection(jdbcUrl, props);
     }
 }

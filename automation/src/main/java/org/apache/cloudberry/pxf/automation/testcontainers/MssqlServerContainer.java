@@ -28,8 +28,8 @@ import org.testcontainers.utility.DockerImageName;
  * The container joins a shared Docker network with a version-derived alias so that PXF
  * inside the Cloudberry container can reach it at `mssql-<tag>:1433`.
  */
-public class MSSQLServerContainer
-        extends org.testcontainers.containers.MSSQLServerContainer<MSSQLServerContainer> {
+public class MssqlServerContainer
+        extends org.testcontainers.containers.MSSQLServerContainer<MssqlServerContainer> {
 
     private static final String DEFAULT_IMAGE = "mcr.microsoft.com/mssql/server";
     private static final String NETWORK_ALIAS_PREFIX = "mssql-";
@@ -39,7 +39,7 @@ public class MSSQLServerContainer
 
     private final String networkAlias;
 
-    public MSSQLServerContainer(String tag, Network network) {
+    public MssqlServerContainer(String tag, Network network) {
         super(DockerImageName.parse(DEFAULT_IMAGE + ":" + tag)
                 .asCompatibleSubstituteFor("mcr.microsoft.com/mssql/server"));
 
@@ -64,7 +64,7 @@ public class MSSQLServerContainer
 
     /**
      * JDBC URL reachable from the host (mapped port), used to seed data from the test JVM.
-     * Overrides parent to append TLS flags required for the container's self-signed cert.
+     * Uses `trustServerCertificate=true` because the container uses a self-signed certificate.
      */
     @Override
     public String getJdbcUrl() {
