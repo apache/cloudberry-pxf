@@ -24,4 +24,9 @@ dependencies {
     // Clickhouse
     implementation('com.clickhouse:clickhouse-jdbc:0.9.8:all')                { transitive = false }
 
+    // Oracle
+    implementation('com.oracle.database.jdbc:ojdbc11:23.3.0.23.09')
+    implementation('com.oracle.database.jdbc:ucp11:23.3.0.23.09')
+    implementation('com.oracle.database.nls:orai18n:23.3.0.23.09')
+
 }
