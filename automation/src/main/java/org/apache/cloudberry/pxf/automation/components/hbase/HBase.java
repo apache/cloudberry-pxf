@@ -97,16 +97,13 @@ public class HBase extends BaseSystemObject implements IDbFunctionality {
             try {
                 HBaseAdmin.checkHBaseAvailable(config);
                 return;
-            } catch (ZooKeeperConnectionException e) {
-                Thread.sleep(500);
-                attemptsLeft--;
-                ReportUtils.report(report, getClass(), "Zookeep connection issues: " + e.getMessage(), Reporter.WARNING);
             } catch (IOException e) {
                 Thread.sleep(500);
                 attemptsLeft--;
-                ReportUtils.report(report, getClass(), "IO issues: " + e.getMessage(), Reporter.WARNING);
+                ReportUtils.report(report, getClass(), "HBase availability probe failed: " + e.getMessage(), Reporter.WARNING);
             }
         }
+        throw new RuntimeException("HBase did not become available after 50 attempts (25s)");
     }
 
     @Override
