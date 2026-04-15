@@ -82,11 +82,11 @@ Perform the following procedure to create PostgreSQL tables named `customers` an
 
 ## <a id="nq_jdbconfig"></a>Configure the Named Query
 
-In this procedure you create a named query text file, add it to the `pgsrvcfg` JDBC server configuration, and synchronize the PXF configuration to the Greenplum Database cluster.
+In this procedure you create a named query text file, add it to the `pgsrvcfg` JDBC server configuration, and synchronize the PXF configuration to the Apache Cloudberry cluster.
 
-This procedure will typically be performed by the Greenplum Database administrator.
+This procedure will typically be performed by the Apache Cloudberry administrator.
 
-1. Log in to the Greenplum Database coordinator host:
+1. Log in to the Apache Cloudberry coordinator host:
 
     ``` shell
     $ ssh gpadmin@<coordinator>
@@ -109,7 +109,7 @@ This procedure will typically be performed by the Greenplum Database administrat
 
 4. Save the file and exit the editor.
 
-5. Synchronize these changes to the PXF configuration to the Greenplum Database cluster:
+5. Synchronize these changes to the PXF configuration to the Apache Cloudberry cluster:
 
     ``` shell
     gpadmin@coordinator$ pxf cluster sync
@@ -117,7 +117,7 @@ This procedure will typically be performed by the Greenplum Database administrat
 
 ## <a id="nq_readjdbc"></a>Read the Query Results
 
-Perform the following procedure on your Greenplum Database cluster to create a PXF external table that references the query file that you created in the previous section, and then reads the query result data:
+Perform the following procedure on your Apache Cloudberry cluster to create a PXF external table that references the query file that you created in the previous section, and then reads the query result data:
 
 1. Create the PXF external table specifying the `jdbc` profile. For example:
 
@@ -127,7 +127,21 @@ Perform the following procedure on your Greenplum Database cluster to create a P
     FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import');
     ```
 
-    With this partitioning scheme, PXF will issue 4 queries to the remote SQL database, one query per quarter. Each query will return customer names and the total amount of all of their orders in a given month, aggregated per customer, per month, for each month of the target quarter. Greenplum Database will then combine the data into a single result set for you when you query the external table.
+    OR foreign table
+    ``` sql
+	CREATE SERVER "pgsrvcfg" FOREIGN DATA WRAPPER jdbc_pxf_fdw;
+	CREATE USER MAPPING FOR CURRENT_USER SERVER "pgsrvcfg";
+	CREATE FOREIGN TABLE pxf_queryres_frompg (name text, city text, total int, month int)
+	  SERVER "pgsrvcfg"
+	  OPTIONS (
+		resource 'query:pg_order_report',
+		PARTITION_BY 'month:int'
+		RANGE '1:13'
+		INTERVAL '3'
+	);
+    ```
+
+    With this partitioning scheme, PXF will issue 4 queries to the remote SQL database, one query per quarter. Each query will return customer names and the total amount of all of their orders in a given month, aggregated per customer, per month, for each month of the target quarter. Apache Cloudberry will then combine the data into a single result set for you when you query the external table.
 
 2. Display all rows of the query result:
 
@@ -154,7 +168,7 @@ Perform the following procedure on your Greenplum Database cluster to create a P
     (2 rows)
     ```
 
-    When you run this query, PXF requests and retrieves query results for only the `city` and `total` columns, reducing the amount of data sent back to Greenplum Database.
+    When you run this query, PXF requests and retrieves query results for only the `city` and `total` columns, reducing the amount of data sent back to Apache Cloudberry.
 
 4. Provide additional filters and aggregations to filter the `total` in PostgreSQL:
 
@@ -170,5 +184,5 @@ Perform the following procedure on your Greenplum Database cluster to create a P
     (2 rows)
     ```
 
-    In this example, PXF will add the `WHERE` filter to the subquery. This filter is pushed to and run on the remote database system, reducing the amount of data that PXF sends back to Greenplum Database. The `GROUP BY` aggregation, however, is not pushed to the remote and is performed by Greenplum.
+    In this example, PXF will add the `WHERE` filter to the subquery. This filter is pushed to and run on the remote database system, reducing the amount of data that PXF sends back to Apache Cloudberry. The `GROUP BY` aggregation, however, is not pushed to the remote and is performed by Cloudberry.
 
