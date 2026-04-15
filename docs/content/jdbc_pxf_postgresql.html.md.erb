@@ -75,16 +75,16 @@ Perform the following steps to create a PostgreSQL table named `forpxf_table1` i
 
     With these privileges, `pxfuser1` can read from and write to the `forpxf_table1` table.
 
-7. Update the PostgreSQL configuration to allow user `pxfuser1` to access `pgtestdb` from each Greenplum Database host. This configuration is specific to your PostgreSQL environment. You will update the `/var/lib/pgsql/pg_hba.conf` file and then restart the PostgreSQL server.
+7. Update the PostgreSQL configuration to allow user `pxfuser1` to access `pgtestdb` from each Apache Cloudberry host. This configuration is specific to your PostgreSQL environment. You will update the `/var/lib/pgsql/pg_hba.conf` file and then restart the PostgreSQL server.
 
 
 ## <a id="ex_jdbconfig"></a>Configure the JDBC Connector
 
 You must create a JDBC server configuration for PostgreSQL and synchronize the PXF configuration. The PostgreSQL JAR file is bundled with PXF, so there is no need to manually download it.
 
-This procedure will typically be performed by the Greenplum Database administrator.
+This procedure will typically be performed by the Apache Cloudberry administrator.
 
-1. Log in to the Greenplum Database coordinator host:
+1. Log in to the Apache Cloudberry coordinator host:
 
     ``` shell
     $ ssh gpadmin@<coordinator>
@@ -114,7 +114,7 @@ This procedure will typically be performed by the Greenplum Database administrat
 </configuration>
     ```
 
-3. Synchronize the PXF server configuration to the Greenplum Database cluster:
+3. Synchronize the PXF server configuration to the Apache Cloudberry cluster:
 
     ``` shell
     gpadmin@coordinator$ pxf cluster sync
@@ -130,6 +130,15 @@ Perform the following procedure to create a PXF external table that references t
     gpadmin=# CREATE EXTERNAL TABLE pxf_tblfrompg(id int)
                 LOCATION ('pxf://public.forpxf_table1?PROFILE=jdbc&SERVER=pgsrvcfg')
                 FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import');
+    ```
+
+    OR foreign table
+    ``` sql
+    gpadmin=# CREATE SERVER "pgsrvcfg" FOREIGN DATA WRAPPER jdbc_pxf_fdw;
+    gpadmin=# CREATE USER MAPPING FOR CURRENT_USER SERVER "pgsrvcfg";
+    gpadmin=# CREATE FOREIGN TABLE pxf_tblfrompg (name text, city text, total int, month int)
+    	  SERVER "pgsrvcfg"
+    	  OPTIONS ( resource 'public.forpxf_table1' );
     ```
 
 2. Display all rows of the `pxf_tblfrompg` table:
@@ -155,6 +164,7 @@ Perform the following procedure to insert some data into the `forpxf_table1` Pos
                 LOCATION ('pxf://public.forpxf_table1?PROFILE=jdbc&SERVER=pgsrvcfg')
               FORMAT 'CUSTOM' (FORMATTER='pxfwritable_export');
     ```
+    OR reuse foreign table from previous steps
 
 4. Insert some data into the `pxf_writeto_postgres` table. For example:
 

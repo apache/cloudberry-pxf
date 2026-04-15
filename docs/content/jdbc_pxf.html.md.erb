@@ -32,9 +32,9 @@ This section describes how to use the PXF JDBC connector to access data in an ex
 Before you access an external SQL database using the PXF JDBC connector, ensure that:
 
 - You can identify the PXF runtime configuration directory (`$PXF_BASE`).
-- You have configured PXF, and PXF is running on each Greenplum Database host. See [Configuring PXF](instcfg_pxf.html) for additional information.
-- Connectivity exists between all Greenplum Database hosts and the external SQL database.
-- You have configured your external SQL database for user access from all Greenplum Database hosts.
+- You have configured PXF, and PXF is running on each Apache Cloudberry host. See [Configuring PXF](instcfg_pxf.html) for additional information.
+- Connectivity exists between all Apache Cloudberry hosts and the external SQL database.
+- You have configured your external SQL database for user access from all Apache Cloudberry hosts.
 - You have registered any JDBC driver JAR dependencies.
 - (Recommended) You have created one or more named PXF JDBC connector server configurations as described in [Configuring the PXF JDBC Connector](jdbc_cfg.html).
 
@@ -68,11 +68,25 @@ PXF includes version 1.1.0 of the Hive JDBC driver. This version does **not** su
 | BYTEA     | N/A                       | N/A | Read, Write |
 
 ## <a id="queryextdata"></a>Accessing an External SQL Database
-The PXF JDBC connector supports a single profile named `jdbc`. You can both read data from and write data to an external SQL database table with this profile. You can also use the connector to run a static, named query in external SQL database and read the results.
+The PXF JDBC connector supports a single profile named `jdbc` for external tables and `jdbc_pxf_fdw` foreign data wrapper for FDW. You can both read data from and write data to an external SQL database table with this profile. You can also use the connector to run a static, named query in external SQL database and read the results.
 
-To access data in a remote SQL database, you create a readable or writable Greenplum Database external table that references the remote database table. The Greenplum Database external table and the remote database table or query result tuple must have the same definition; the column names and types must match.
+To access data in a remote SQL database, you create a readable or writable Apache Cloudberry external table that references the remote database table. The Apache Cloudberry external table and the remote database table or query result tuple must have the same definition; the column names and types must match.
 
-Use the following syntax to create a Greenplum Database external table that references a remote SQL database table or a query result from the remote database:
+Use the following syntax to create a Apache Cloudberry foreign table that references a remote SQL database table or a query result from the remote database:
+
+<pre>
+CREATE SERVER "my_server" FOREIGN DATA WRAPPER jdbc_pxf_fdw;
+CREATE USER MAPPING FOR CURRENT_USER SERVER "my_server";
+CREATE FOREIGN TABLE &lt;table_name>
+    ( &lt;column_name> &lt;data_type> [, ...] | LIKE &lt;other_table> )
+    SERVER "my_server"
+    OPTIONS (
+     	resource '&lt;external-table-name>|query:&lt;query_name>'
+     	[,&&lt;custom-option>=&lt;value>[...]]
+	)
+</pre>
+
+OR create a Apache Cloudberry external table:
 
 <pre>
 CREATE [READABLE | WRITABLE] EXTERNAL TABLE &lt;table_name>
@@ -82,7 +96,7 @@ FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import'|'pxfwritable_export');
 </pre>
 
 
-The specific keywords and values used in the Greenplum Database [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Greenplum/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command are described in the table below.
+The specific keywords and values used in the Apache Cloudberry [CREATE FOREIGN TABLE](https://cloudberry.apache.org/docs/sql-stmts/create-foreign-table) / [CREATE EXTERNAL TABLE](https://cloudberry.apache.org/docs/sql-stmts/create-external-table/) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
@@ -97,7 +111,7 @@ The specific keywords and values used in the Greenplum Database [CREATE EXTERNAL
 
 ### <a id="jdbcoptions"></a>JDBC Custom Options
 
-You include JDBC connector custom options in the `LOCATION` URI, prefacing each option with an ampersand `&`. `CREATE EXTERNAL TABLE` \<custom-option\>s supported by the `jdbc` profile include:
+You include JDBC connector custom options in the `OPTIONS` or `LOCATION` URI (prefacing each option with an ampersand `&`). `CREATE FOREIGN TABLE` / `CREATE EXTERNAL TABLE` \<custom-option\>s supported by the `jdbc` profile include:
 
 | Option Name   | Operation | Description
 |---------------|------------|--------|
@@ -110,7 +124,6 @@ You include JDBC connector custom options in the `LOCATION` URI, prefacing each 
 | RANGE | Read | Required when `PARTITION_BY` is specified. The query range; used as a hint to aid the creation of partitions. The `RANGE` format is dependent upon the data type of the partition column. When the partition column is an `enum` type, `RANGE` must specify a list of values, \<value\>:\<value\>[:\<value\>[...]], each of which forms its own fragment. If the partition column is an `int` or `date` type, `RANGE` must specify \<start-value\>:\<end-value\> and represents the interval from \<start-value\> through \<end-value\>, inclusive. The `RANGE` for an `int` partition column may span any 64-bit signed integer values. If the partition column is a `date` type, use the `yyyy-MM-dd` date format. |
 | INTERVAL | Read | Required when `PARTITION_BY` is specified and of the `int`, `bigint`, or `date` type. The interval, \<interval-value\>[:\<interval-unit\>], of one fragment. Used with `RANGE` as a hint to aid the creation of partitions. Specify the size of the fragment in \<interval-value\>. If the partition column is a `date` type, use the \<interval-unit\> to specify `year`, `month`, or `day`. PXF ignores `INTERVAL` when the `PARTITION_BY` column is of the `enum` type. |
 | QUOTE_COLUMNS | Read | Controls whether PXF should quote column names when constructing an SQL query to the external database. Specify `true` to force PXF to quote all column names; PXF does not quote column names if any other value is provided. If `QUOTE_COLUMNS` is not specified (the default), PXF automatically quotes *all* column names in the query when *any* column name:<br>- includes special characters, or <br>- is mixed case and the external database does not support unquoted mixed case identifiers. |
-
 
 #### <a id="batching"></a>Batching Insert Operations (Write)
 
@@ -152,9 +165,9 @@ To deactivate or activate a thread pool and set the pool size, create the PXF ex
 
 #### <a id="partitioning"></a>Partitioning (Read)
 
-The PXF JDBC connector supports simultaneous read access from PXF instances running on multiple Greenplum Database hosts to an external SQL table. This feature is referred to as partitioning. Read partitioning is not activated by default. To activate read partitioning, set the `PARTITION_BY`, `RANGE`, and `INTERVAL` custom options when you create the PXF external table.
+The PXF JDBC connector supports simultaneous read access from PXF instances running on multiple Apache Cloudberry hosts to an external SQL table. This feature is referred to as partitioning. Read partitioning is not activated by default. To activate read partitioning, set the `PARTITION_BY`, `RANGE`, and `INTERVAL` custom options when you create the PXF external table.
 
-PXF uses the `RANGE` and `INTERVAL` values and the `PARTITON_BY` column that you specify to assign specific data rows in the external table to PXF instances running on the Greenplum Database segment hosts. This column selection is specific to PXF processing, and has no relationship to a partition column that you may have specified for the table in the external SQL database.
+PXF uses the `RANGE` and `INTERVAL` values and the `PARTITON_BY` column that you specify to assign specific data rows in the external table to PXF instances running on the Apache Cloudberry segment hosts. This column selection is specific to PXF processing, and has no relationship to a partition column that you may have specified for the table in the external SQL database.
 
 
 Example JDBC \<custom-option\> substrings that identify partitioning parameters:
@@ -176,9 +189,9 @@ For example, when a user queries a PXF external table created with a `LOCATION` 
 - Fragment 4: WHERE (id >= 5) - implicitly-generated fragment for RANGE end-bounded interval
 - Fragment 5: WHERE (id IS NULL) - implicitly-generated fragment
 
-PXF distributes the fragments among Greenplum Database segments. A PXF instance running on a segment host spawns a thread for each segment on that host that services a fragment. If the number of fragments is less than or equal to the number of Greenplum segments configured on a segment host, a single PXF instance may service all of the fragments. Each PXF instance sends its results back to Greenplum Database, where they are collected and returned to the user.
+PXF distributes the fragments among Apache Cloudberry segments. A PXF instance running on a segment host spawns a thread for each segment on that host that services a fragment. If the number of fragments is less than or equal to the number of Cloudberry segments configured on a segment host, a single PXF instance may service all of the fragments. Each PXF instance sends its results back to Apache Cloudberry, where they are collected and returned to the user.
 
-When you specify the `PARTITION_BY` option, tune the `INTERVAL` value and unit based upon the optimal number of JDBC connections to the target database and the optimal distribution of external data across Greenplum Database segments. The `INTERVAL` low boundary is driven by the number of Greenplum Database segments while the high boundary is driven by the acceptable number of JDBC connections to the target database. The `INTERVAL` setting influences the number of fragments, and should ideally not be set too high nor too low. Testing with multiple values may help you select the optimal settings. 
+When you specify the `PARTITION_BY` option, tune the `INTERVAL` value and unit based upon the optimal number of JDBC connections to the target database and the optimal distribution of external data across Apache Cloudberry segments. The `INTERVAL` low boundary is driven by the number of Apache Cloudberry segments while the high boundary is driven by the acceptable number of JDBC connections to the target database. The `INTERVAL` setting influences the number of fragments, and should ideally not be set too high nor too low. Testing with multiple values may help you select the optimal settings. 
 
 ## <a id="examples"></a>Examples
 
@@ -197,12 +210,12 @@ The PXF JDBC Connector allows you to specify a statically-defined query to run a
 - You need to join several tables that all reside in the same external database.
 - You want to perform complex aggregation closer to the data source.
 - You would use, but are not allowed to create, a `VIEW` in the external database.
-- You would rather consume computational resources in the external system to minimize utilization of Greenplum Database resources.
+- You would rather consume computational resources in the external system to minimize utilization of Apache Cloudberry resources.
 - You want to run a HIVE query and control resource utilization via YARN.
 
-The Greenplum Database administrator defines a query and provides you with the query name to use when you create the external table. Instead of a table name, you specify `query:<query_name>` in the `CREATE EXTERNAL TABLE` `LOCATION` clause to instruct the PXF JDBC connector to run the static query named `<query_name>` in the remote SQL database.
+The Apache Cloudberry administrator defines a query and provides you with the query name to use when you create the external table. Instead of a table name, you specify `query:<query_name>` in the `CREATE EXTERNAL TABLE` `LOCATION` clause to instruct the PXF JDBC connector to run the static query named `<query_name>` in the remote SQL database.
 
-PXF supports named queries only with readable external tables. You must create a unique Greenplum Database readable external table for each query that you want to run.
+PXF supports named queries only with readable external tables. You must create a unique Apache Cloudberry readable external table for each query that you want to run.
 
 The names and types of the external table columns must exactly match the names, types, and order of the columns return by the query result. If the query returns the results of an aggregation or other function, be sure to use the `AS` qualifier to specify a specific column name.
 
@@ -222,8 +235,14 @@ SELECT c.name, sum(o.amount) AS total, o.month
 GROUP BY c.name, o.month
 ```
 
-This query returns tuples of type `(name text, total int, month int)`. If the `order_rpt` query is defined for the PXF JDBC server named `pgserver`, you could create a Greenplum Database external table to read these query results as follows:
+This query returns tuples of type `(name text, total int, month int)`. If the `order_rpt` query is defined for the PXF JDBC server named `pgserver`, you could create a Apache Cloudberry external/foreign table to read these query results as follows:
 
+``` sql
+CREATE FOREIGN TABLE orderrpt_frompg(name text, total int, month int)
+  SERVER pgserver
+   OPTIONS ( resource 'query:order_rpt', PARTITION_BY 'month:int', RANGE '1:13', INTERVAL '3')
+```
+OR
 ``` sql
 CREATE EXTERNAL TABLE orderrpt_frompg(name text, total int, month int)
   LOCATION ('pxf://query:order_rpt?PROFILE=jdbc&SERVER=pgserver&PARTITION_BY=month:int&RANGE=1:13&INTERVAL=3')
@@ -238,7 +257,7 @@ The PXF JDBC connector automatically applies column projection and filter pushdo
 
 ## <a id="jdbc_override"></a>Overriding the JDBC Server Configuration with DDL
 
-You can override certain properties in a JDBC server configuration for a specific external database table by directly specifying the custom option in the `CREATE EXTERNAL TABLE` `LOCATION` clause:
+You can override certain properties in a JDBC server configuration for a specific external database table by directly specifying the custom option in the `CREATE SERVER` `OPTIONS` section or `CREATE EXTERNAL TABLE` `LOCATION` clause:
 
 | Custom Option Name   | jdbc-site.xml Property Name |
 |----------------------|-----------------------------|
@@ -251,18 +270,28 @@ You can override certain properties in a JDBC server configuration for a specifi
 | QUERY_TIMEOUT | jdbc.statement.queryTimeout |
 | DATE_WIDE_RANGE | jdbc.date.wideRange |
 
-Example JDBC connection strings specified via custom options:
-
-``` pre
-&JDBC_DRIVER=org.postgresql.Driver&DB_URL=jdbc:postgresql://pgserverhost:5432/pgtestdb&USER=pguser1&PASS=changeme
-&JDBC_DRIVER=com.mysql.jdbc.Driver&DB_URL=jdbc:mysql://mysqlhost:3306/testdb&USER=user1&PASS=changeme
+For foreign tables:
+```sql
+CREATE SERVER "pgserver" FOREIGN DATA WRAPPER jdbc_pxf_fdw
+	OPTIONS (
+		jdbc_driver 'org.postgresql.Driver',
+		db_url 'jdbc:postgresql://pgserverhost:5432/pgtestdb',
+		user 'pxfuser1',
+		pass 'changeme'
+	);
+CREATE USER MAPPING FOR CURRENT_USER SERVER "pgserver";
+CREATE FOREIGN TABLE pxf_pgtbl(name varchar, age int)
+  SERVER "pgserver"
+  OPTIONS (resource 'public.forpxf_table1');
 ```
-For example:
-<pre>CREATE EXTERNAL TABLE pxf_pgtbl(name text, orders int)
-  LOCATION ('pxf://public.forpxf_table1?PROFILE=jdbc<b>&JDBC_DRIVER=org.postgresql.Driver&DB_URL=jdbc:postgresql://pgserverhost:5432/pgtestdb&USER=pxfuser1&PASS=changeme</b>')
-FORMAT 'CUSTOM' (FORMATTER='pxfwritable_export');</pre>
 
+For external tables:
+```sql
+CREATE EXTERNAL TABLE pxf_pgtbl(name text, orders int)
+  LOCATION ('pxf://public.forpxf_table1?PROFILE=jdbc&JDBC_DRIVER=org.postgresql.Driver&DB_URL=jdbc:postgresql://pgserverhost:5432/pgtestdb&USER=pxfuser1&PASS=changeme')
+FORMAT 'CUSTOM' (FORMATTER='pxfwritable_export');</pre>
+```
 <div class="note warning"><b>Warning:</b> Credentials that you provide in this manner are visible as part of the external table definition. Do not use this method of passing credentials in a production environment.</div>
 
-Refer to [Configuration Property Precedence](cfg_server.html#override) for detailed information about the precedence rules that PXF uses to obtain configuration property settings for a Greenplum Database user.
+Refer to [Configuration Property Precedence](cfg_server.html#override) for detailed information about the precedence rules that PXF uses to obtain configuration property settings for a Apache Cloudberry user.
 
