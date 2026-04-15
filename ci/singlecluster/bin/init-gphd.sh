@@ -42,6 +42,5 @@ echo export GPHD_ROOT=${GPHD_ROOT}
 echo export HADOOP_ROOT=\$GPHD_ROOT/hadoop
 echo export HBASE_ROOT=\$GPHD_ROOT/hbase
 echo export HIVE_ROOT=\$GPHD_ROOT/hive
-echo export ZOOKEEPER_ROOT=\$GPHD_ROOT/zookeeper
-echo export PATH=\$PATH:\$GPHD_ROOT/bin:\$HADOOP_ROOT/bin:\$HBASE_ROOT/bin:\$HIVE_ROOT/bin:\$ZOOKEEPER_ROOT/bin
+echo export PATH=\$PATH:\$GPHD_ROOT/bin:\$HADOOP_ROOT/bin:\$HBASE_ROOT/bin:\$HIVE_ROOT/bin
 echo -------------------------------------------------------------

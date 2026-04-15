@@ -111,6 +111,24 @@ cleanup_hive_state() {
   hdfs dfs -rm -r -f /hive/warehouse/hive_small_data_orc >/dev/null 2>&1 || true
 }
 
+start_hbase() {
+  echo "[run_tests] copying pxf-hbase.jar to HBase lib..."
+  cp /home/gpadmin/automation_tmp_lib/pxf-hbase.jar "${GPHD_ROOT}/hbase/lib/" 2>/dev/null || true
+  if [ ! -f "${GPHD_ROOT}/hbase/lib/pxf-hbase.jar" ]; then
+    pxf_app=$(ls -1v /usr/local/pxf/application/pxf-app-*.jar 2>/dev/null | grep -v 'plain' | tail -n 1)
+    [ -n "${pxf_app}" ] && unzip -qq -j "${pxf_app}" 'BOOT-INF/lib/pxf-hbase-*.jar' -d "${GPHD_ROOT}/hbase/lib/" || true
+  fi
+  if pgrep -f HMaster >/dev/null 2>&1; then
+    echo "[run_tests] HBase HMaster already running, skipping start"
+  else
+    echo "[run_tests] starting HBase..."
+    "${GPHD_ROOT}/bin/start-hbase.sh"
+  fi
+  echo "[run_tests] waiting for HBase ZooKeeper on 127.0.0.1:2181..."
+  wait_port 127.0.0.1 2181 30 2 || { echo "[run_tests] ERROR: HBase ZooKeeper did not become ready on 127.0.0.1:2181"; return 1; }
+  echo "[run_tests] HBase ZooKeeper is ready"
+}
+
 cleanup_hbase_state() {
   echo "disable 'pxflookup'; drop 'pxflookup';
         disable 'hbase_table'; drop 'hbase_table';
@@ -445,6 +463,7 @@ base_test(){
   save_test_reports "hive"
   echo "[run_tests] GROUP=hive finished"
 
+  start_hbase
   cleanup_hbase_state
   make GROUP="hbase" || true
   save_test_reports "hbase"
@@ -891,6 +910,7 @@ run_single_group() {
       save_test_reports "hive"
       ;;
     hbase)
+      start_hbase
       cleanup_hbase_state
       export PROTOCOL=
       make GROUP="hbase"
@@ -924,6 +944,7 @@ run_single_group() {
       performance_test
       ;;
     proxy)
+      start_hbase
       export PROTOCOL=
       make GROUP="proxy"
       save_test_reports "proxy"

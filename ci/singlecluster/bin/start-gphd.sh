@@ -30,5 +30,4 @@ if [ "$START_HBASE" != "true" ]; then
 	exit 0
 fi
 
-${bin}/start-zookeeper.sh || exit 1
 ${bin}/start-hbase.sh || exit 1

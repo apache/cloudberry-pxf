@@ -52,12 +52,10 @@ check_hbase() {
   local hbase_host="${HBASE_HOST:-$(hostname -I | awk '{print $1}')}"
   hbase_host=${hbase_host:-127.0.0.1}
 
+  # In standalone mode HMaster embeds RegionServer and ZooKeeper in a single JVM,
+  # so only the HMaster process exists — no separate HRegionServer process.
   if ! echo "$jps_out" | grep -q HMaster && ! pgrep -f HMaster >/dev/null 2>&1; then
     die "HBase HMaster not running"
-  fi
-
-  if ! echo "$jps_out" | grep -q HRegionServer && ! pgrep -f HRegionServer >/dev/null 2>&1; then
-    die "HBase RegionServer not running"
   fi
 
   local hbase_ok=true
@@ -121,7 +119,7 @@ _detect_java8_default() {
 }
 
 health_check() {
-  log "sanity check Hadoop/Hive/HBase/PXF"
+  log "sanity check HDFS/Hive/PXF"
   GPHD_ROOT=${GPHD_ROOT:-/home/gpadmin/workspace/singlecluster}
   HADOOP_ROOT=${HADOOP_ROOT:-${GPHD_ROOT}/hadoop}
   HBASE_ROOT=${HBASE_ROOT:-${GPHD_ROOT}/hbase}
@@ -133,9 +131,8 @@ health_check() {
   [ -f "${GPHD_ROOT}/bin/gphd-env.sh" ] && source "${GPHD_ROOT}/bin/gphd-env.sh"
 
   check_jvm_procs
-  check_hbase
   check_hdfs
   check_hive
   check_pxf
-  log "all components healthy: HDFS/HBase/Hive/PXF"
+  log "all components healthy: HDFS/Hive/PXF"
 }

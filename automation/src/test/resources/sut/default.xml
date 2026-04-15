@@ -72,6 +72,7 @@
     <hbase>
         <class>org.apache.cloudberry.pxf.automation.components.hbase.HBase</class>
         <host>localhost</host>
+        <hbaseRoot>/home/gpadmin/workspace/singlecluster/hbase</hbaseRoot>
     </hbase>
 
     <hive>

@@ -27,7 +27,6 @@ fi
 # Some basic definitions
 export HADOOP_ROOT=${GPHD_ROOT}/hadoop
 export HBASE_ROOT=${GPHD_ROOT}/hbase
-export ZOOKEEPER_ROOT=${GPHD_ROOT}/zookeeper
 export HIVE_ROOT=${GPHD_ROOT}/hive
 export TEZ_ROOT=${GPHD_ROOT}/tez
 export RANGER_ROOT=${GPHD_ROOT}/ranger
@@ -37,12 +36,10 @@ export PIDS_ROOT=${STORAGE_ROOT}/pids
 
 export HADOOP_BIN=${HADOOP_ROOT}/bin
 export HADOOP_SBIN=${HADOOP_ROOT}/sbin
-export ZOOKEEPER_BIN=${ZOOKEEPER_ROOT}/bin
 export HBASE_BIN=${HBASE_ROOT}/bin
 export HIVE_BIN=${HIVE_ROOT}/bin
 
 export HADOOP_CONF=${HADOOP_ROOT}/etc/hadoop
-export ZOOKEEPER_CONF=${ZOOKEEPER_ROOT}/conf
 export HBASE_HOME=${HBASE_ROOT}
 export HBASE_CONF=${HBASE_ROOT}/conf
 export HIVE_CONF=${HIVE_ROOT}/conf
@@ -79,18 +76,4 @@ function hdfs_running()
 {
 	`${bin}/hdfs dfsadmin -Dipc.client.connect.max.retries.on.timeouts=0 -safemode get 2>&1 | grep -q "Safe mode is OFF"`
 	return $?
-}
-
-function zookeeper_running()
-{
-	local retval=1
-	for i in {1..10}; do
-		sleep 5s
-		${ZOOKEEPER_BIN}/zkServer.sh status > /dev/null 2>&1
-		retval=$?
-		if [ ${retval} -eq 0 ]; then
-			return 0
-		fi
-	done
-	return ${retval}
 }
