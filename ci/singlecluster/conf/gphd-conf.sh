@@ -16,7 +16,6 @@ if [ -z "${JAVA_HOME:-}" ]; then
 fi
 export STORAGE_ROOT=$GPHD_ROOT/storage
 export HADOOP_STORAGE_ROOT=$STORAGE_ROOT/hadoop
-export ZOOKEEPER_STORAGE_ROOT=$STORAGE_ROOT/zookeeper
 export HBASE_STORAGE_ROOT=$STORAGE_ROOT/hbase
 export HIVE_STORAGE_ROOT=$STORAGE_ROOT/hive
 export PXF_STORAGE_ROOT=$STORAGE_ROOT/pxf
@@ -26,7 +25,7 @@ export RANGER_STORAGE_ROOT=$STORAGE_ROOT/ranger
 export SLAVES=${SLAVES:-1}
 
 # Automatically start HBase during GPHD startup
-export START_HBASE=true
+export START_HBASE=false
 
 # Automatically start Stargate during HBase startup
 export START_STARGATE=false

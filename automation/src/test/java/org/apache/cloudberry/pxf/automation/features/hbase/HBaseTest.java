@@ -152,7 +152,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "sanity", "gpdb" })
+    @Test(groups = { "hbase" })
     public void sanity() throws Exception {
 
         verifyFilterResults(hbaseTable, exTable, "", NO_FILTER, "sanity", false);
@@ -164,7 +164,7 @@ public class HBaseTest extends BaseFeature {
      * @throws Exception if test fails to run
      */
     // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = { "hbase", "features", "gpdb" })
+    @Test(enabled = false, groups = { "hbase" })
     public void lowerFilter() throws Exception {
 
         String whereClause = " WHERE \"cf1:q3\" < '00000030'";
@@ -178,7 +178,7 @@ public class HBaseTest extends BaseFeature {
      * @throws Exception if test fails to run
      */
     // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = { "hbase", "features", "gpdb" })
+    @Test(enabled = false, groups = { "hbase" })
     public void rangeFilter() throws Exception {
 
         String whereClause = " WHERE \"cf1:q3\" > '00000090' AND \"cf1:q3\" <= '00000103'";
@@ -192,7 +192,7 @@ public class HBaseTest extends BaseFeature {
      * @throws Exception if test fails to run
      */
     // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = { "hbase", "features", "gpdb" })
+    @Test(enabled = false, groups = { "hbase" })
     public void specificRowFilter() throws Exception {
 
         String whereClause = " WHERE \"cf1:q3\" = 4";
@@ -206,7 +206,7 @@ public class HBaseTest extends BaseFeature {
      * @throws Exception if test fails to run
      */
     // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = { "hbase", "features", "gpdb" })
+    @Test(enabled = false, groups = { "hbase" })
     public void notEqualsFilter() throws Exception {
 
         String whereClause = " WHERE \"cf1:q3\" != 30";
@@ -220,7 +220,7 @@ public class HBaseTest extends BaseFeature {
      * @throws Exception if test fails to run
      */
     // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = { "hbase", "features", "gpdb" })
+    @Test(enabled = false, groups = { "hbase" })
     public void rowkeyEqualsFilter() throws Exception {
 
         String whereClause = " WHERE recordkey = '00000090'";
@@ -234,7 +234,7 @@ public class HBaseTest extends BaseFeature {
      * @throws Exception if test fails to run
      */
     // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = { "hbase", "features", "gpdb" })
+    @Test(enabled = false, groups = { "hbase" })
     public void rowkeyRangeFilter() throws Exception {
 
         String whereClause = " WHERE recordkey > '00000090' AND recordkey <= '00000103'";
@@ -248,7 +248,7 @@ public class HBaseTest extends BaseFeature {
      * @throws Exception if test fails to run
      */
     // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = { "hbase", "features", "gpdb" })
+    @Test(enabled = false, groups = { "hbase" })
     public void multipleQualifiersPushdownFilter() throws Exception {
 
         String whereClause = " WHERE recordkey != '00000002' AND \"cf1:q3\" > 6  AND \"cf1:q8\" < 10 AND \"cf1:q9\" > 0";
@@ -263,7 +263,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void partialFilterPushdown() throws Exception {
 
         String whereClause = " WHERE \"cf1:q3\" > 6  AND \"cf1:q7\" = '42'";
@@ -279,7 +279,7 @@ public class HBaseTest extends BaseFeature {
      * @throws Exception if test fails to run
      */
     // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = { "hbase", "features", "gpdb" })
+    @Test(enabled = false, groups = { "hbase" })
     public void textFilter() throws Exception {
 
         String whereClause = " WHERE \"cf1:q2\" = 'UTF8_計算機用語_00000024'";
@@ -292,7 +292,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void doubleFilter() throws Exception {
 
         String whereClause = " WHERE \"cf1:q5\" > 91.92 AND \"cf1:q6\" <= 99999999.99";
@@ -306,7 +306,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void orFilter() throws Exception {
 
         String whereClause = " WHERE \"cf1:q3\" < 10 OR \"cf1:q5\" > 90";
@@ -323,7 +323,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void mixedFilterPushdownOrAnd() throws Exception {
 
         String whereClause = " WHERE (\"cf1:q3\" < 10 OR \"cf1:q5\" > 90) AND (\"cf1:q3\" > 5 AND \"cf1:q8\" < 30)";
@@ -344,7 +344,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void isNullFilter() throws Exception {
 
         String whereClause = " WHERE \"cf1:q3\" is null";
@@ -358,7 +358,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void differentColumnNames() throws Exception {
 
         exTableNullHBase = TableFactory.getPxfHBaseReadableTable(
@@ -377,7 +377,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void disableLookupTable() throws Exception {
 
         try {
@@ -396,7 +396,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void noLookupTable() throws Exception {
 
         try {
@@ -415,7 +415,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void removeColumnFromLookupTable() throws Exception {
 
         try {
@@ -435,7 +435,7 @@ public class HBaseTest extends BaseFeature {
      * @throws Exception if test fails to run
      */
     // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = { "hbase", "features", "gpdb" })
+    @Test(enabled = false, groups = { "hbase" })
     public void recordkeyAsInteger() throws Exception {
 
         // create external table with record key as INTEGER
@@ -457,7 +457,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void notExistingHBaseTable() throws Exception {
 
         ReadableExternalTable notExistsHBaseTableExtTable = TableFactory.getPxfHBaseReadableTable(
@@ -474,7 +474,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void multiRegionsData() throws Exception {
 
         HBaseTable multiDataHBaseTable = new HBaseTable(
@@ -513,7 +513,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void longHBaseQualifierNameNoLookupTable() throws Exception {
 
         HBaseTable longQualifiersNamesHBaseTable = new HBaseTable(
@@ -559,7 +559,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void longHBaseQualifierNameUsingLookupTable() throws Exception {
 
         HBaseTable longQualifiersNamesHBaseTable = new HBaseTable(
@@ -600,7 +600,7 @@ public class HBaseTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = { "hbase", "features", "gpdb" })
+    @Test(groups = { "hbase" })
     public void emptyHBaseTable() throws Exception {
 
         HBaseTable emptyTable = new HBaseTable("empty_table", new String[] { "cf1" });

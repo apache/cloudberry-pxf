@@ -16,6 +16,7 @@ import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.ClusterConnection;
 import org.apache.hadoop.hbase.client.Connection;
@@ -74,10 +75,10 @@ public class HBase extends BaseSystemObject implements IDbFunctionality {
         if (StringUtils.isNotEmpty(hbaseRoot)) {
             config.addResource(new Path(getHbaseRoot() + "/conf/hbase-site.xml"));
         } else {
-            config.set("hbase.rootdir", "hdfs://" + host + ":8020/hbase");
+            throw new RuntimeException("No path to hbase-site specified. Please configure hbaseRoot property.");
         }
 
-        HBaseAdmin.checkHBaseAvailable(config);
+        waitHBaseAvailable(config);
         connection = ConnectionFactory.createConnection(config);
         admin = connection.getAdmin();
         if (admin.getClusterStatus().getServersSize() == 0) {
@@ -88,6 +89,21 @@ public class HBase extends BaseSystemObject implements IDbFunctionality {
         ReportUtils.report(report, getClass(), "HBase Admin created");
 
         ReportUtils.stopLevel(report);
+    }
+
+    private void waitHBaseAvailable(Configuration config) throws Exception {
+        int attemptsLeft = 50;
+        while (attemptsLeft > 0) {
+            try {
+                HBaseAdmin.checkHBaseAvailable(config);
+                return;
+            } catch (IOException e) {
+                Thread.sleep(500);
+                attemptsLeft--;
+                ReportUtils.report(report, getClass(), "HBase availability probe failed: " + e.getMessage(), Reporter.WARNING);
+            }
+        }
+        throw new RuntimeException("HBase did not become available after 50 attempts (25s)");
     }
 
     @Override

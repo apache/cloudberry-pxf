@@ -24,28 +24,27 @@
 <configuration>
     <property>
         <name>hbase.rootdir</name>
-        <value>hdfs://0.0.0.0:8020/hbase</value>
+        <value>file:///home/gpadmin/workspace/singlecluster/storage/hbase</value>
     </property>
     <property>
-        <name>dfs.replication</name>
-        <value>3</value>
-    </property>
-    <property>
-        <name>dfs.support.append</name>
-        <value>true</value>
+        <name>hbase.zookeeper.property.dataDir</name>
+        <value>/home/gpadmin/workspace/singlecluster/storage/hbase-zk</value>
     </property>
     <property>
         <name>hbase.cluster.distributed</name>
-        <value>true</value>
+        <value>false</value>
     </property>
-	<property>
-		<name>hbase.zookeeper.quorum</name>
-		<value>127.0.0.1</value>
-	</property>
-	<property>
-		<name>hbase.zookeeper.property.clientPort</name>
-		<value>2181</value>
-	</property>
+    <property>
+        <!-- Explicit use IPv4 address instead of "localhost" to prevent Java from
+             resolving it to ::1 (IPv6) first, which causes ConnectionLoss errors
+             when the embedded ZooKeeper only listens on 127.0.0.1. -->
+        <name>hbase.zookeeper.quorum</name>
+        <value>127.0.0.1</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.property.clientPort</name>
+        <value>2181</value>
+    </property>
     <property>
         <name>hadoop.proxyuser.gpadmin.hosts</name>
         <value>*</value>

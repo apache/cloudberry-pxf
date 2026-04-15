@@ -49,7 +49,7 @@ export PXF_HOME=${PXF_HOME:-/usr/local/pxf}
 export PXF_BASE=${PXF_BASE:-/home/gpadmin/pxf-base}
 export GPHD_ROOT=${GPHD_ROOT:-/home/gpadmin/workspace/singlecluster}
 export GOPATH=${GOPATH:-/home/gpadmin/go}
-export PATH="$GPHD_ROOT/bin:$GPHD_ROOT/hadoop/bin:$GPHD_ROOT/hive/bin:$GPHD_ROOT/hbase/bin:$GPHD_ROOT/zookeeper/bin:$JAVA_BUILD/bin:/usr/local/go/bin:$GOPATH/bin:$GPHOME/bin:$PXF_HOME/bin:$PATH"
+export PATH="$GPHD_ROOT/bin:$GPHD_ROOT/hadoop/bin:$GPHD_ROOT/hive/bin:$GPHD_ROOT/hbase/bin:$JAVA_BUILD/bin:/usr/local/go/bin:$GOPATH/bin:$GPHOME/bin:$PXF_HOME/bin:$PATH"
 export COMMON_JAVA_OPTS=${COMMON_JAVA_OPTS:-}
 
 # --------------------------------------------------------------------

@@ -6,7 +6,6 @@ It contains the following versions:
 
 - Hadoop 3.3.6
 - Hive 3.1.3
-- Zookeeper 3.5.9
 - HBase 2.3.7
 - Tez 0.9.2
 
@@ -40,8 +39,7 @@ Initialization
     export HADOOP_ROOT=$GPHD_ROOT/hadoop
     export HBASE_ROOT=$GPHD_ROOT/hbase
     export HIVE_ROOT=$GPHD_ROOT/hive
-    export ZOOKEEPER_ROOT=$GPHD_ROOT/zookeeper
-    export PATH=$PATH:$GPHD_ROOT/bin:$HADOOP_ROOT/bin:$HBASE_ROOT/bin:$HIVE_ROOT/bin:$ZOOKEEPER_ROOT/bin
+    export PATH=$PATH:$GPHD_ROOT/bin:$HADOOP_ROOT/bin:$HBASE_ROOT/bin:$HIVE_ROOT/bin
     ```
 
 Usage
@@ -53,10 +51,8 @@ Usage
   - `$GPHD_ROOT/bin/start-hdfs.sh`
 - Start PXF only (Install pxf first to make this work. [See Install PXF session here](https://cwiki.apache.org/confluence/display/HAWQ/PXF+Build+and+Install))
   - `$GPHD_ROOT/bin/start-pxf.sh`
-- Start HBase only (requires hdfs and zookeeper)
+- Start HBase only (standalone mode)
   - `$GPHD_ROOT/bin/start-hbase.sh`
-- Start ZooKeeper only
-  - `$GPHD_ROOT/bin/start-zookeeper.sh`
 - Start YARN only
   - `$GPHD_ROOT/bin/start-yarn.sh`
 - Start Hive (MetaStore)
@@ -64,7 +60,7 @@ Usage
 - Stop all PHD services
   - `$GPHD_ROOT/bin/stop-gphd.sh`
 - Stop an individual component
-  - `$GPHD_ROOT/bin/stop-[hdfs|pxf|hbase|zookeeper|yarn|hive].sh`
+  - `$GPHD_ROOT/bin/stop-[hdfs|pxf|hbase|yarn|hive].sh`
 - Start/stop HiveServer2
   - `$GPHD_ROOT/bin/hive-service.sh hiveserver2 start`
   - `$GPHD_ROOT/bin/hive-service.sh hiveserver2 stop`
