@@ -77,27 +77,27 @@ Perform the following steps to create a MySQL table named `names` in a database 
 
 You must create a JDBC server configuration for MySQL, download the MySQL driver JAR file to your system, copy the JAR file to the PXF user configuration directory, synchronize the PXF configuration, and then restart PXF.
 
-This procedure will typically be performed by the Greenplum Database administrator.
+This procedure will typically be performed by the Apache Cloudberry administrator.
 
-1. Log in to the Greenplum Database coordinator host:
+1. Log in to the Apache Cloudberry coordinator host:
 
     ``` shell
     $ ssh gpadmin@<coordinator>
     ```
 1. Download the MySQL JDBC driver and place it under `$PXF_BASE/lib`. If you [relocated $PXF_BASE](about_pxf_dir.html#movebase), make sure you use the updated location. You can download a MySQL JDBC driver from your preferred download location. The following example downloads the driver from Maven Central and places it under `$PXF_BASE/lib`:
 
-    1. If you did not relocate `$PXF_BASE`, run the following from the Greenplum coordinator:
+    1. If you did not relocate `$PXF_BASE`, run the following from the Cloudberry coordinator:
 
         ```shell
-        gpadmin@gcoord$ cd /usr/local/pxf-gp<version>/lib
-        gpadmin@coordinator$ wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.21/mysql-connector-java-8.0.21.jar
+        gpadmin@coordinator$ cd /usr/local/pxf-gp<version>/lib
+        gpadmin@coordinator$ wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.26/mysql-connector-java-8.0.26.jar
         ```
 
-    2. If you relocated `$PXF_BASE`, run the following from the Greenplum coordinator:
+    2. If you relocated `$PXF_BASE`, run the following from the Cloudberry coordinator:
 
         ```shell
         gpadmin@coordinator$ cd $PXF_BASE/lib
-        gpadmin@coordinator$ wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.21/mysql-connector-java-8.0.21.jar
+        gpadmin@coordinator$ wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.26/mysql-connector-java-8.0.26.jar
         ```
 
 1. Synchronize the PXF configuration, and then restart PXF:
@@ -135,7 +135,7 @@ This procedure will typically be performed by the Greenplum Database administrat
     </configuration> 
     ```
 
-3. Synchronize the PXF server configuration to the Greenplum Database cluster:
+3. Synchronize the PXF server configuration to the Apache Cloudberry cluster:
 
     ``` shell
     gpadmin@coordinator$ pxf cluster sync
@@ -152,6 +152,15 @@ Perform the following procedure to create a PXF external table that references t
               LOCATION('pxf://names?PROFILE=jdbc&SERVER=mysql')
               FORMAT 'CUSTOM' (formatter='pxfwritable_import');
     ```
+
+	OR foreign table
+	``` sql
+	gpadmin=# CREATE SERVER "mysql" FOREIGN DATA WRAPPER jdbc_pxf_fdw;
+	gpadmin=# CREATE USER MAPPING FOR CURRENT_USER SERVER "mysql";
+    gpadmin=# CREATE FOREIGN TABLE names_in_mysql (id int, name text, last text)
+                SERVER "mysql"
+                OPTIONS ( resource 'names' );
+	```
 
 2. Display all rows of the `names_in_mysql` table:
 
@@ -175,6 +184,7 @@ Perform the following procedure to insert some data into the `names` MySQL table
               LOCATION('pxf://names?PROFILE=jdbc&SERVER=mysql')
               FORMAT 'CUSTOM' (formatter='pxfwritable_export');
     ```
+    OR reuse foreign table from previous steps
 
 4. Insert some data into the `names_in_mysql_w` table. For example:
 
