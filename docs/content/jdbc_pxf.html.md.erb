@@ -289,7 +289,7 @@ For external tables:
 ```sql
 CREATE EXTERNAL TABLE pxf_pgtbl(name text, orders int)
   LOCATION ('pxf://public.forpxf_table1?PROFILE=jdbc&JDBC_DRIVER=org.postgresql.Driver&DB_URL=jdbc:postgresql://pgserverhost:5432/pgtestdb&USER=pxfuser1&PASS=changeme')
-FORMAT 'CUSTOM' (FORMATTER='pxfwritable_export');</pre>
+FORMAT 'CUSTOM' (FORMATTER='pxfwritable_export');
 ```
 <div class="note warning"><b>Warning:</b> Credentials that you provide in this manner are visible as part of the external table definition. Do not use this method of passing credentials in a production environment.</div>
 

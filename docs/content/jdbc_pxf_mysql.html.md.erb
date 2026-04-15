@@ -89,7 +89,7 @@ This procedure will typically be performed by the Apache Cloudberry administrato
     1. If you did not relocate `$PXF_BASE`, run the following from the Cloudberry coordinator:
 
         ```shell
-        gpadmin@gcoord$ cd /usr/local/pxf-gp<version>/lib
+        gpadmin@coordinator$ cd /usr/local/pxf-gp<version>/lib
         gpadmin@coordinator$ wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.26/mysql-connector-java-8.0.26.jar
         ```
 
@@ -145,7 +145,7 @@ This procedure will typically be performed by the Apache Cloudberry administrato
 
 Perform the following procedure to create a PXF external table that references the `names` MySQL table that you created in the previous section, and reads the data in the table:
 
-1. Create the PXF foreign table specifying the `jdbc` profile. For example:
+1. Create the PXF external table specifying the `jdbc` profile. For example:
 
     ``` sql
     gpadmin=# CREATE EXTERNAL TABLE names_in_mysql (id int, name text, last text)
