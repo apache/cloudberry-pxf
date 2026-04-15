@@ -31,7 +31,8 @@ INSERT INTO pxf_mssql_write_types (
     bin,
     d_date,
     d_ts,
-    d_tstz
+    d_tstz,
+    d_uuid
 ) VALUES (
              1,
              2,
@@ -44,7 +45,8 @@ INSERT INTO pxf_mssql_write_types (
              decode('41424344', 'hex'),
              DATE '2020-01-02',
              TIMESTAMP '2020-01-02 03:04:05.006',
-             TIMESTAMPTZ '2020-01-02 03:04:05.006+00'
+             TIMESTAMPTZ '2020-01-02 03:04:05.006+00',
+             '550e8400-e29b-41d4-a716-446655440000'::uuid
          );
 
 SELECT
@@ -59,6 +61,7 @@ SELECT
     bin,
     d_date,
     d_ts,
-    d_tstz
+    d_tstz,
+    d_uuid
 FROM pxf_mssql_write_verify
     LIMIT 1;

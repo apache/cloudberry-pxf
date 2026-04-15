@@ -31,6 +31,7 @@ SELECT
     bin,
     d_date,
     d_ts,
-    d_tstz
+    d_tstz,
+    d_uuid
 FROM pxf_mssql_read_types
     LIMIT 1;

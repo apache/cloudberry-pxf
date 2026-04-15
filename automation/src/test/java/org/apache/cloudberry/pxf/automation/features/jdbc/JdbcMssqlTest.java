@@ -39,6 +39,7 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Properties;
 import java.util.TimeZone;
+import java.util.UUID;
 
 public class JdbcMssqlTest extends AbstractTestcontainersTest {
 
@@ -60,7 +61,8 @@ public class JdbcMssqlTest extends AbstractTestcontainersTest {
             "bin bytea",
             "d_date date",
             "d_ts timestamp",
-            "d_tstz timestamp with time zone"
+            "d_tstz timestamp with time zone",
+            "d_uuid uuid"
     };
 
     private static final int    V_I_INT    = 1;
@@ -73,6 +75,7 @@ public class JdbcMssqlTest extends AbstractTestcontainersTest {
     private static final String V_T_TEXT   = "hello";
     private static final String V_D_DATE   = "2020-01-02";
     private static final String V_D_TS     = "2020-01-02 03:04:05.006";
+    private static final String V_D_UUID   = "550e8400-e29b-41d4-a716-446655440000";
 
     private final String dockerImageTag;
     private MssqlServerContainer mssqlContainer;
@@ -211,7 +214,8 @@ public class JdbcMssqlTest extends AbstractTestcontainersTest {
                     + "bin          VARBINARY(MAX), "
                     + "d_date       DATE, "
                     + "d_ts         DATETIME2(3), "
-                    + "d_tstz       DATETIMEOFFSET(3)"
+                    + "d_tstz       DATETIMEOFFSET(3), "
+                    + "d_uuid       UNIQUEIDENTIFIER"
                     + ")");
         }
     }
@@ -219,8 +223,8 @@ public class JdbcMssqlTest extends AbstractTestcontainersTest {
     /** Inserts fixture row into `MSSQL_TABLE_READ` for the read test. */
     private void insertMssqlReadFixture(Connection conn) throws SQLException {
         String insertSql = "INSERT INTO dbo." + MSSQL_TABLE_READ + " ("
-                + "i_int, s_small, b_big, f_float32, d_float64, b_bool, dec, t_text, bin, d_date, d_ts, d_tstz"
-                + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "i_int, s_small, b_big, f_float32, d_float64, b_bool, dec, t_text, bin, d_date, d_ts, d_tstz, d_uuid"
+                + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
             Calendar utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
@@ -236,6 +240,7 @@ public class JdbcMssqlTest extends AbstractTestcontainersTest {
             ps.setDate(10, Date.valueOf(V_D_DATE), utcCalendar);
             ps.setTimestamp(11, Timestamp.valueOf(V_D_TS), utcCalendar);
             ps.setTimestamp(12, Timestamp.valueOf(V_D_TS), utcCalendar);
+            ps.setObject(13, UUID.fromString(V_D_UUID));
             ps.executeUpdate();
         }
     }
