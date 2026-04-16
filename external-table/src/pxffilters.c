@@ -26,6 +26,7 @@
 
 #include "catalog/pg_operator.h"
 #include "optimizer/clauses.h"
+#include "optimizer/optimizer.h"
 #include "parser/parse_expr.h"
 #include "utils/builtins.h"
 #include "utils/guc.h"
