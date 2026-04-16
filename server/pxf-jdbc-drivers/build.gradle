@@ -29,4 +29,7 @@ dependencies {
     implementation('com.oracle.database.jdbc:ucp11:23.3.0.23.09')
     implementation('com.oracle.database.nls:orai18n:23.3.0.23.09')
 
+    // MSSQL
+    implementation('com.microsoft.sqlserver:mssql-jdbc:8.2.2.jre11')
+
 }
