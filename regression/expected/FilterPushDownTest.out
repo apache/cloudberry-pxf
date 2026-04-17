@@ -484,6 +484,20 @@ SELECT * FROM test_filter WHERE  c3 IS NOT NULL ORDER BY t0, a1;
 (9 rows)
 
 -- test numeric predicates with integer constant (cross-type pushdown)
+SELECT * FROM test_filter WHERE  c3 =  5 ORDER BY t0, a1;
+ t0 | a1 | b2 | c3 | d4 | e5 | filtervalue
+----+----+----+----+----+----+-------------
+(0 rows)
+
+SELECT * FROM test_filter WHERE  c3 <  5 ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
+----+----+----+------+----+----+----------------
+ B  |    | f  | 1.11 | BB | BB | a3c1700s1d5o1
+ C  |  2 |    | 2.21 | CC | CC | a3c1700s1d5o1
+ E  |  4 | t  | 4.41 |    | EE | a3c1700s1d5o1
+    |  0 | t  | 0.01 | AA | AA | a3c1700s1d5o1
+(4 rows)
+
 SELECT * FROM test_filter WHERE  c3 >  1 ORDER BY t0, a1;
  t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
 ----+----+----+------+----+----+----------------
@@ -1273,6 +1287,20 @@ SELECT * FROM test_filter WHERE  c3 IS NOT NULL ORDER BY t0, a1;
 (9 rows)
 
 -- test numeric predicates with integer constant (cross-type pushdown)
+SELECT * FROM test_filter WHERE  c3 =  5 ORDER BY t0, a1;
+ t0 | a1 | b2 | c3 | d4 | e5 | filtervalue
+----+----+----+----+----+----+-------------
+(0 rows)
+
+SELECT * FROM test_filter WHERE  c3 <  5 ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
+----+----+----+------+----+----+----------------
+ B  |    | f  | 1.11 | BB | BB | a3c1700s1d5o1
+ C  |  2 |    | 2.21 | CC | CC | a3c1700s1d5o1
+ E  |  4 | t  | 4.41 |    | EE | a3c1700s1d5o1
+    |  0 | t  | 0.01 | AA | AA | a3c1700s1d5o1
+(4 rows)
+
 SELECT * FROM test_filter WHERE  c3 >  1 ORDER BY t0, a1;
  t0 | a1 | b2 |  c3  | d4 | e5 |  filtervalue
 ----+----+----+------+----+----+----------------

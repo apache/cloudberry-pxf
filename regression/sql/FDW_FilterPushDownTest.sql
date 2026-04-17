@@ -85,6 +85,8 @@ SELECT * FROM test_filter WHERE  c3 IS NULL ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 IS NOT NULL ORDER BY t0, a1;
 
 -- test numeric predicates with integer constant (cross-type pushdown)
+SELECT * FROM test_filter WHERE  c3 =  5 ORDER BY t0, a1;
+SELECT * FROM test_filter WHERE  c3 <  5 ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 >  1 ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 <= 2 ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 >= 5 ORDER BY t0, a1;
@@ -186,6 +188,8 @@ SELECT * FROM test_filter WHERE  c3 IS NULL ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 IS NOT NULL ORDER BY t0, a1;
 
 -- test numeric predicates with integer constant (cross-type pushdown)
+SELECT * FROM test_filter WHERE  c3 =  5 ORDER BY t0, a1;
+SELECT * FROM test_filter WHERE  c3 <  5 ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 >  1 ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 <= 2 ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 >= 5 ORDER BY t0, a1;

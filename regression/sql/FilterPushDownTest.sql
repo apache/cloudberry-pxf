@@ -81,6 +81,8 @@ SELECT * FROM test_filter WHERE  c3 IS NULL ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 IS NOT NULL ORDER BY t0, a1;
 
 -- test numeric predicates with integer constant (cross-type pushdown)
+SELECT * FROM test_filter WHERE  c3 =  5 ORDER BY t0, a1;
+SELECT * FROM test_filter WHERE  c3 <  5 ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 >  1 ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 <= 2 ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 >= 5 ORDER BY t0, a1;
@@ -180,6 +182,15 @@ SELECT * FROM test_filter WHERE  c3 BETWEEN     1.11 AND 4.41 ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 NOT BETWEEN 1.11 AND 4.41 ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 IS NULL ORDER BY t0, a1;
 SELECT * FROM test_filter WHERE  c3 IS NOT NULL ORDER BY t0, a1;
+
+-- test numeric predicates with integer constant (cross-type pushdown)
+SELECT * FROM test_filter WHERE  c3 =  5 ORDER BY t0, a1;
+SELECT * FROM test_filter WHERE  c3 <  5 ORDER BY t0, a1;
+SELECT * FROM test_filter WHERE  c3 >  1 ORDER BY t0, a1;
+SELECT * FROM test_filter WHERE  c3 <= 2 ORDER BY t0, a1;
+SELECT * FROM test_filter WHERE  c3 >= 5 ORDER BY t0, a1;
+SELECT * FROM test_filter WHERE  c3 <> 5 ORDER BY t0, a1;
+SELECT * FROM test_filter WHERE  c3 BETWEEN 1 AND 5 ORDER BY t0, a1;
 
 -- test char predicates
 SELECT * FROM test_filter WHERE  d4 =  'BB' ORDER BY t0, a1;
