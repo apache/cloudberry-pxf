@@ -223,6 +223,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 gpdb.getUserName());
         pxfJdbcSingleFragment.setHost(pxfHost);
         pxfJdbcSingleFragment.setPort(pxfPort);
+        pxfJdbcSingleFragment.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcSingleFragment);
     }
 
@@ -242,6 +243,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                         null);
         pxfJdbcMultipleFragmentsByEnum.setHost(pxfHost);
         pxfJdbcMultipleFragmentsByEnum.setPort(pxfPort);
+        pxfJdbcMultipleFragmentsByEnum.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcMultipleFragmentsByEnum);
     }
 
@@ -261,6 +263,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                         null);
         pxfJdbcMultipleFragmentsByInt.setHost(pxfHost);
         pxfJdbcMultipleFragmentsByInt.setPort(pxfPort);
+        pxfJdbcMultipleFragmentsByInt.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcMultipleFragmentsByInt);
     }
 
@@ -280,6 +283,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                         null);
         pxfJdbcMultipleFragmentsByDate.setHost(pxfHost);
         pxfJdbcMultipleFragmentsByDate.setPort(pxfPort);
+        pxfJdbcMultipleFragmentsByDate.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcMultipleFragmentsByDate);
     }
 
@@ -299,6 +303,8 @@ public class JdbcTest extends AbstractTestcontainersTest {
                         "database");
         pxfJdbcReadServerConfigAll.setHost(pxfHost);
         pxfJdbcReadServerConfigAll.setPort(pxfPort);
+        pxfJdbcReadServerConfigAll.addUserParameter("USER=" + gpdb.getUserName());
+        pxfJdbcReadServerConfigAll.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcReadServerConfigAll);
     }
 
@@ -310,6 +316,8 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 "database");
         pxfJdbcReadViewNoParams.setHost(pxfHost);
         pxfJdbcReadViewNoParams.setPort(pxfPort);
+        pxfJdbcReadViewNoParams.addUserParameter("USER=" + gpdb.getUserName());
+        pxfJdbcReadViewNoParams.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcReadViewNoParams);
 
         pxfJdbcReadViewSessionParams = TableFactory.getPxfJdbcReadableTable(
@@ -319,6 +327,8 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 "db-session-params");
         pxfJdbcReadViewSessionParams.setHost(pxfHost);
         pxfJdbcReadViewSessionParams.setPort(pxfPort);
+        pxfJdbcReadViewSessionParams.addUserParameter("USER=" + gpdb.getUserName());
+        pxfJdbcReadViewSessionParams.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcReadViewSessionParams);
     }
 
@@ -332,6 +342,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 gpdb.getUserName(), null);
         pxfJdbcWritable.setHost(pxfHost);
         pxfJdbcWritable.setPort(pxfPort);
+        pxfJdbcWritable.addUserParameter("PASS=" + gpdb.getPassword());
         pxfJdbcWritable.addUserParameter("date_wide_range=false");
         gpdb.createTableAndVerify(pxfJdbcWritable);
 
@@ -344,6 +355,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 gpdb.getUserName(), null);
         pxfJdbcDateTimeWritableWithDateWideRangeOn.setHost(pxfHost);
         pxfJdbcDateTimeWritableWithDateWideRangeOn.setPort(pxfPort);
+        pxfJdbcDateTimeWritableWithDateWideRangeOn.addUserParameter("PASS=" + gpdb.getPassword());
         pxfJdbcDateTimeWritableWithDateWideRangeOn.addUserParameter("date_wide_range=true");
         gpdb.createTableAndVerify(pxfJdbcDateTimeWritableWithDateWideRangeOn);
 
@@ -356,6 +368,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 gpdb.getUserName(), null);
         pxfJdbcDateTimeWritableWithDateWideRangeOff.setHost(pxfHost);
         pxfJdbcDateTimeWritableWithDateWideRangeOff.setPort(pxfPort);
+        pxfJdbcDateTimeWritableWithDateWideRangeOff.addUserParameter("PASS=" + gpdb.getPassword());
         pxfJdbcDateTimeWritableWithDateWideRangeOff.addUserParameter("date_wide_range=false");
         gpdb.createTableAndVerify(pxfJdbcDateTimeWritableWithDateWideRangeOff);
 
@@ -368,6 +381,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 gpdb.getUserName(), "BATCH_SIZE=1");
         pxfJdbcWritableNoBatch.setHost(pxfHost);
         pxfJdbcWritableNoBatch.setPort(pxfPort);
+        pxfJdbcWritableNoBatch.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcWritableNoBatch);
 
         pxfJdbcWritablePool = TableFactory.getPxfJdbcWritableTable(
@@ -379,6 +393,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 gpdb.getUserName(), "POOL_SIZE=2");
         pxfJdbcWritablePool.setHost(pxfHost);
         pxfJdbcWritablePool.setPort(pxfPort);
+        pxfJdbcWritablePool.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcWritablePool);
     }
 
@@ -392,6 +407,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 gpdb.getUserName());
         pxfJdbcColumns.setHost(pxfHost);
         pxfJdbcColumns.setPort(pxfPort);
+        pxfJdbcColumns.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcColumns);
     }
 
@@ -405,6 +421,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 gpdb.getUserName());
         pxfJdbcColumnProjectionSubset.setHost(pxfHost);
         pxfJdbcColumnProjectionSubset.setPort(pxfPort);
+        pxfJdbcColumnProjectionSubset.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcColumnProjectionSubset);
     }
 
@@ -418,6 +435,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 gpdb.getUserName());
         pxfJdbcColumnProjectionSuperset.setHost(pxfHost);
         pxfJdbcColumnProjectionSuperset.setPort(pxfPort);
+        pxfJdbcColumnProjectionSuperset.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcColumnProjectionSuperset);
     }
 
@@ -431,6 +449,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 gpdb.getUserName(), "FETCH_SIZE=0");
         pxfJdbcSingleFragment.setHost(pxfHost);
         pxfJdbcSingleFragment.setPort(pxfPort);
+        pxfJdbcSingleFragment.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcSingleFragment);
     }
 
@@ -444,6 +463,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 gpdb.getUserName());
         pxfJdbcDateWideRangeOn.setHost(pxfHost);
         pxfJdbcDateWideRangeOn.setPort(pxfPort);
+        pxfJdbcDateWideRangeOn.addUserParameter("PASS=" + gpdb.getPassword());
         pxfJdbcDateWideRangeOn.addUserParameter("date_wide_range=true");
         gpdb.createTableAndVerify(pxfJdbcDateWideRangeOn);
 
@@ -456,6 +476,7 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 gpdb.getUserName());
         pxfJdbcDateWideRangeOff.setHost(pxfHost);
         pxfJdbcDateWideRangeOff.setPort(pxfPort);
+        pxfJdbcDateWideRangeOff.addUserParameter("PASS=" + gpdb.getPassword());
         pxfJdbcDateWideRangeOff.addUserParameter("date_wide_range=false");
         gpdb.createTableAndVerify(pxfJdbcDateWideRangeOff);
     }
@@ -468,6 +489,8 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 "database");
         pxfJdbcNamedQuery.setHost(pxfHost);
         pxfJdbcNamedQuery.setPort(pxfPort);
+        pxfJdbcNamedQuery.addUserParameter("USER=" + gpdb.getUserName());
+        pxfJdbcNamedQuery.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcNamedQuery);
 
         pxfJdbcNamedQuery = TableFactory.getPxfJdbcReadablePartitionedTable(
@@ -484,6 +507,8 @@ public class JdbcTest extends AbstractTestcontainersTest {
                 "database");
         pxfJdbcNamedQuery.setHost(pxfHost);
         pxfJdbcNamedQuery.setPort(pxfPort);
+        pxfJdbcNamedQuery.addUserParameter("USER=" + gpdb.getUserName());
+        pxfJdbcNamedQuery.addUserParameter("PASS=" + gpdb.getPassword());
         gpdb.createTableAndVerify(pxfJdbcNamedQuery);
     }
 
