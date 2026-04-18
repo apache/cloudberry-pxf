@@ -109,7 +109,7 @@ install-jdbc-drivers: stage-jdbc-drivers
 		echo "ERROR: PXF_HOME is not set"; exit 2; \
 	fi
 	mkdir -p "$(PXF_HOME)"/lib
-	rm -f "$(PXF_HOME)"/lib/clickhouse-jdbc-*.jar
+	rm -f "$(PXF_HOME)"/lib/*.jar
 	cp -R build/stage/lib/. "$(PXF_HOME)"/lib/
 
 clean: prepare-gradle-wrapper
