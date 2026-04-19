@@ -26,6 +26,7 @@
 
 #include "catalog/pg_operator.h"
 #include "optimizer/clauses.h"
+#include "optimizer/optimizer.h"
 #include "parser/parse_expr.h"
 #include "utils/builtins.h"
 #include "utils/guc.h"
@@ -773,6 +774,26 @@ opexpr_to_pxffilter(OpExpr *expr, PxfFilterDesc * filter)
 		{
 			rightop = (Node *)exprNode;
 		}
+	}
+
+	/*
+	 * Try to evaluate constant expressions in operands.
+	 * This handles implicit type casts where PostgreSQL wraps a constant
+	 * in a FuncExpr (e.g., int4 -> numeric cast when comparing a numeric
+	 * column with an integer constant). Evaluating these gives us back a
+	 * plain Const node that we can serialize for filter pushdown.
+	 */
+	if (!IsA(leftop, Var) && !IsA(leftop, Const))
+	{
+		Node *simplified = eval_const_expressions(NULL, leftop);
+		if (IsA(simplified, Const))
+			leftop = simplified;
+	}
+	if (!IsA(rightop, Var) && !IsA(rightop, Const))
+	{
+		Node *simplified = eval_const_expressions(NULL, rightop);
+		if (IsA(simplified, Const))
+			rightop = simplified;
 	}
 
 	/* arguments must be VAR and CONST */
