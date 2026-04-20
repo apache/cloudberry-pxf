@@ -64,6 +64,7 @@ public class PXFCloudberryContainer extends GenericContainer<PXFCloudberryContai
     public static final int CLOUDBERRY_PORT = 7000;
     public static final int PXF_PORT = 5888;
     public static final String CLOUDBERRY_USER = "gpadmin";
+    public static final String CLOUDBERRY_PASSWORD = "cbdb@123";
 
     private static final String CONTAINER_GRADLE_RO_CACHE = "/home/gpadmin/.gradle-host-cache";
     private static final String CONTAINER_REPO_DIR = "/home/gpadmin/workspace/cloudberry-pxf";
@@ -232,6 +233,10 @@ public class PXFCloudberryContainer extends GenericContainer<PXFCloudberryContai
 
     public String getCloudberryUser() {
         return CLOUDBERRY_USER;
+    }
+
+    public String getCloudberryPassword() {
+        return CLOUDBERRY_PASSWORD;
     }
 
     public String getPxfInternalHost() {

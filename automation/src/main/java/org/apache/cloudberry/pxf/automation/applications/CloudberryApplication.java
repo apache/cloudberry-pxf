@@ -49,6 +49,7 @@ public class CloudberryApplication implements AutoCloseable {
     private final PXFCloudberryContainer container;
     private final String jdbcUrl;
     private final String userName;
+    private final String password;
     private Connection connection;
     private Statement statement;
 
@@ -56,12 +57,14 @@ public class CloudberryApplication implements AutoCloseable {
         this.container = container;
         this.jdbcUrl = getCloudberryMappedJdbcUrl();
         this.userName = container.getCloudberryUser();
+        this.password = container.getCloudberryPassword();
     }
 
     public CloudberryApplication(PXFCloudberryContainer container, String dbName) {
         this.container = container;
         this.jdbcUrl = getCloudberryMappedJdbcUrl(dbName);
         this.userName = container.getCloudberryUser();
+        this.password = container.getCloudberryPassword();
     }
 
     public void connect() throws Exception {
@@ -71,6 +74,7 @@ public class CloudberryApplication implements AutoCloseable {
         Properties props = new Properties();
         if (userName != null) {
             props.setProperty("user", userName);
+            props.setProperty("password", password);
         }
 
         Exception lastException = null;
@@ -274,6 +278,10 @@ public class CloudberryApplication implements AutoCloseable {
 
     public String getUserName() {
         return userName;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     public PXFCloudberryContainer getContainer() {
