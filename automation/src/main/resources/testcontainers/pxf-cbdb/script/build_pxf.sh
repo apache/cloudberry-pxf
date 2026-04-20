@@ -33,14 +33,6 @@ export GPHOME=/usr/local/cloudberry-db
 source /usr/local/cloudberry-db/cloudberry-env.sh
 export PATH=$GPHOME/bin:$PATH
 
-# Install Java 11 JDK and Maven
-if command -v apt-get >/dev/null 2>&1; then
-  sudo apt update
-  sudo apt install -y openjdk-11-jdk-headless maven
-elif command -v dnf >/dev/null 2>&1; then
-  sudo dnf install -y java-11-openjdk-devel maven
-fi
-
 cd /home/gpadmin/workspace/cloudberry-pxf
 
 # Ensure gpadmin owns the source directory

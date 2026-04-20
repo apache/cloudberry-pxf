@@ -19,6 +19,7 @@ package org.apache.cloudberry.pxf.automation.features.jdbc;
  * under the License.
  */
 
+import annotations.WorksWithFDW;
 import org.apache.cloudberry.pxf.automation.AbstractTestcontainersTest;
 import org.apache.cloudberry.pxf.automation.structures.tables.pxf.ExternalTable;
 import org.apache.cloudberry.pxf.automation.structures.tables.utils.TableFactory;
@@ -41,6 +42,7 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.UUID;
 
+@WorksWithFDW
 public class JdbcMssqlTest extends AbstractTestcontainersTest {
 
     private static final String MSSQL_DRIVER = "com.microsoft.sqlserver.jdbc.SQLServerDriver";

@@ -113,7 +113,7 @@ public class ForeignTable extends WritableExternalTable {
         if (params != null) {
             for (String param : params) {
                 // parse parameter, each one is KEY=VALUE
-                String[] paramPair = param.split("=");
+                String[] paramPair = param.split("=", 2);
                 appendOption(joiner, paramPair[0], paramPair[1]);
             }
         }
