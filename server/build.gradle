@@ -242,6 +242,15 @@ configure(javaProjects) {
                 exclude("org.junit.jupiter:junit-jupiter-api")
             }
 
+            // JAVA 21 support
+            dependencySet(group:"org.mockito", version:"4.11.0") {
+                entry("mockito-core")
+                entry("mockito-inline")
+            }
+            dependencySet(group:"net.bytebuddy", version:"1.14.19") {
+                entry("byte-buddy")
+                entry("byte-buddy-agent")
+            }
         }
     }
 
