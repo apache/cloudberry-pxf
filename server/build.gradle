@@ -24,7 +24,7 @@ buildscript {
 }
 
 plugins {
-    id "io.freefair.lombok" version "6.6.3"
+    id "io.freefair.lombok" version "8.14.4"
     id "org.springframework.boot" version "${springBootVersion}" apply false
     id 'io.spring.dependency-management' version '1.0.15.RELEASE'
 }
