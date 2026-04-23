@@ -43,8 +43,9 @@ RUN curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSIO
     sudo unzip -q /tmp/gradle.zip -d /opt && \
     sudo ln -s "/opt/gradle-${GRADLE_VERSION}/bin/gradle" /usr/local/bin/gradle && \
     rm /tmp/gradle.zip && \
-    cd /tmp && gradle init && gradle wrapper --gradle-version ${GRADLE_VERSION} && ./gradlew javaToolchains &&\
-    rm -rf /tmp/gradle /tmp/gradlew /tmp/gradlew.bat /tmp/.gradle
+    mkdir -p /tmp/gradle-wrapper-warm && cd /tmp/gradle-wrapper-warm && \
+    gradle init && gradle wrapper --gradle-version ${GRADLE_VERSION} && ./gradlew javaToolchains && \
+    cd / && rm -rf /tmp/gradle-wrapper-warm
 ENV GRADLE_HOME="/opt/gradle-${GRADLE_VERSION}"
 
 # Go toolchain for building pxf_regress inside the container
