@@ -37,7 +37,7 @@ RUN if command -v apt-get >/dev/null 2>&1; then \
 
 # Install Gradle and warm wrapper cache (it will download GRADLE_VERSION again)
 # (version must match server/gradle/wrapper/gradle-wrapper.properties)
-ARG GRADLE_VERSION=7.6.6
+ARG GRADLE_VERSION=8.14.4
 RUN curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
       -o /tmp/gradle.zip && \
     sudo unzip -q /tmp/gradle.zip -d /opt && \
