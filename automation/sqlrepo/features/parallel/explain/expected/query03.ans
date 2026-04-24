@@ -1,0 +1,84 @@
+-- @description query03 for PXF parallel scan EXPLAIN ANALYZE - Workers Launched present
+-- start_matchsubs
+--
+-- m/Workers Planned: \d+/
+-- s/Workers Planned: \d+/Workers Planned: N/
+--
+-- m/Workers Launched: \d+/
+-- s/Workers Launched: \d+/Workers Launched: N/
+--
+-- m/cost=\d+\.\d+\.\.\d+\.\d+/
+-- s/cost=\d+\.\d+\.\.\d+\.\d+/cost=XXX/
+--
+-- m/rows=\d+/
+-- s/rows=\d+/rows=NNN/
+--
+-- m/width=\d+/
+-- s/width=\d+/width=NN/
+--
+-- m/actual time=\d+\.\d+\.\.\d+\.\d+/
+-- s/actual time=\d+\.\d+\.\.\d+\.\d+/actual time=XXX/
+--
+-- m/loops=\d+/
+-- s/loops=\d+/loops=N/
+--
+-- m/Execution Time: \d+\.\d+ ms/
+-- s/Execution Time: \d+\.\d+ ms/Execution Time: XXX ms/
+--
+-- m/Planning Time: \d+\.\d+ ms/
+-- s/Planning Time: \d+\.\d+ ms/Planning Time: XXX ms/
+--
+-- m/Memory Usage: \d+kB/
+-- s/Memory Usage: \d+kB/Memory Usage: NNkB/
+--
+-- m/Memory: \d+kB/
+-- s/Memory: \d+kB/Memory: NNkB/
+--
+-- m/Buckets: \d+/
+-- s/Buckets: \d+/Buckets: NNN/
+--
+-- m/Batches: \d+/
+-- s/Batches: \d+/Batches: NNN/
+--
+-- m/Peak Memory Usage: \d+/
+-- s/Peak Memory Usage: \d+/Peak Memory Usage: NNN/
+--
+-- m/Avg Peak Memory \(per process\): \d+/
+-- s/Avg Peak Memory \(per process\): \d+/Avg Peak Memory (per process): NNN/
+--
+-- m/slice \d+; segments: \d+/
+-- s/slice \d+; segments: \d+/slice N; segments: N/
+--
+-- m/Optimizer: .*/
+-- s/Optimizer: .*/Optimizer: OPT/
+--
+-- end_matchsubs
+-- start_matchignore
+--
+-- m/^\s+Slice statistics:/
+-- m/^\s+\(slice\d+\)/
+-- m/^\s+Statement statistics:/
+-- m/^\s+Settings:/
+-- m/^\s+Query Identifier:/
+--
+-- end_matchignore
+SET optimizer = off;
+SET
+SET enable_parallel = true;
+SET
+SET max_parallel_workers_per_gather = 4;
+SET
+EXPLAIN ANALYZE SELECT count(*) FROM pxf_parallel_enabled;
+                                          QUERY PLAN
+----------------------------------------------------------------------------------------------
+ Gather Motion 1:1  (slice N; segments: N)  (cost=XXX rows=NNN width=NN) (actual time=XXX rows=NNN loops=N)
+   ->  Finalize Aggregate  (cost=XXX rows=NNN width=NN) (actual time=XXX rows=NNN loops=N)
+         ->  Gather  (cost=XXX rows=NNN width=NN) (actual time=XXX rows=NNN loops=N)
+               Workers Planned: N
+               Workers Launched: N
+               ->  Partial Aggregate  (cost=XXX rows=NNN width=NN) (actual time=XXX rows=NNN loops=N)
+                     ->  Parallel Foreign Scan on pxf_parallel_enabled  (cost=XXX rows=NNN width=NN) (actual time=XXX rows=NNN loops=N)
+ Optimizer: OPT
+ Planning Time: XXX ms
+ Execution Time: XXX ms
+(10 rows)

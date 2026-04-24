@@ -55,6 +55,9 @@ typedef struct PxfOptions
 	/* Encoding options */
 	char	   *data_encoding;	/* The encoding of the data on the external system */
 	const char *database_encoding;	/* The database encoding */
+
+	/* Parallel execution options */
+	bool		enable_parallel;	/* whether to enable parallel foreign scan */
 } PxfOptions;
 
 /* Functions prototypes for pxf_option.c file */
