@@ -48,7 +48,7 @@ RUN curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSIO
 ENV GRADLE_HOME="/opt/gradle-${GRADLE_VERSION}"
 
 # Go toolchain for building pxf_regress inside the container
-ARG GO_VERSION=1.24.0
+ARG GO_VERSION=1.25.0
 RUN ARCH=$(uname -m) && \
     case "$ARCH" in \
       x86_64) GARCH=amd64 ;; \
