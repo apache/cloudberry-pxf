@@ -74,7 +74,7 @@ public class AbstractTestcontainersTest {
 
             regress = new RegressApplication(container);
 
-            // run users before class
+            // run user's before class
             beforeClass();
         } finally {
             CustomAutomationLogger.revertStdoutStream();
@@ -89,6 +89,8 @@ public class AbstractTestcontainersTest {
         }
         CustomAutomationLogger.redirectStdoutStreamToFile(getClass().getSimpleName(), "clean");
         try {
+            // run user's aafter class
+            afterClass();
             if (cloudberry != null) {
                 cloudberry.close();
             }
