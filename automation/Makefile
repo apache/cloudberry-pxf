@@ -255,7 +255,7 @@ endif
 # Usage:
 #   make test-tc                          => run all testcontainers tests (Ubuntu)
 #   make test-tc TC_GROUP=pxf-jdbc        => run only pxf-jdbc group
-#   make test-tc TC_GROUP=pxf-s3          => run S3 / S3 Select tests (MinIO sidecar)
+#   make test-tc TC_GROUP=pxf-s3          => run S3 Select + CloudAccess tests (MinIO sidecar)
 #   make test-tc DISTRO=rocky9            => run with Rocky Linux 9 base image
 .PHONY: test-tc
 test-tc: check-env symlink_pxf_jars pxf_regress
