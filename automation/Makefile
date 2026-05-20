@@ -35,11 +35,6 @@ endif
 # lowercase the protocol
 PROTOCOL := $(shell echo $(PROTOCOL) | tr A-Z a-z)
 
-ifeq "$(PROTOCOL)" "minio"
-	MINIO=true
-	PROTOCOL=s3
-endif
-
 PXF_BASE ?= $(PXF_HOME)
 TEMPLATES_DIR=$(PXF_HOME)/templates
 
@@ -192,21 +187,6 @@ ifneq "$(PROTOCOL)" ""
 			echo "Make sure your $$PXF_BASE/conf/pxf-profiles.xml file configures the file:AvroSequenceFile and file:SequenceFile profiles"; \
 			cp $(TEMPLATES_DIR)/pxf-site.xml $(PROTOCOL_HOME)/; \
 			sed $(SED_OPTS) 's|</configuration>|<property><name>pxf.fs.basePath</name><value>$(BASE_PATH)</value></property></configuration>|g' $(PROTOCOL_HOME)/pxf-site.xml; \
-		fi; \
-		if [ $(PROTOCOL) = s3 ]; then \
-			if [ "$(MINIO)" = "true" ]; then \
-				cp $(TEMPLATES_DIR)/minio-site.xml $(PROTOCOL_HOME)/$(PROTOCOL)-site.xml; \
-				sed $(SED_OPTS) "s|YOUR_MINIO_URL|http://localhost:9000|" $(PROTOCOL_HOME)/$(PROTOCOL)-site.xml; \
-			fi; \
-			mkdir -p $(PROTOCOL_HOME)-invalid; \
-			cp $(TEMPLATES_DIR)/$(PROTOCOL)-site.xml $(PROTOCOL_HOME)-invalid/; \
-			if [ -z "$(ACCESS_KEY_ID)" ] || [ -z "$(SECRET_ACCESS_KEY)" ]; then \
-				echo "AWS Keys (ACCESS_KEY_ID, SECRET_ACCESS_KEY) not set"; \
-				rm -rf $(PROTOCOL_HOME); \
-				exit 1; \
-			fi; \
-			sed $(SED_OPTS) "s|YOUR_AWS_ACCESS_KEY_ID|$(ACCESS_KEY_ID)|" $(PROTOCOL_HOME)/$(PROTOCOL)-site.xml; \
-			sed $(SED_OPTS) "s|YOUR_AWS_SECRET_ACCESS_KEY|$(SECRET_ACCESS_KEY)|" $(PROTOCOL_HOME)/$(PROTOCOL)-site.xml; \
 		fi; \
 		if [ $(PROTOCOL) = abfss ]; then \
 			if [ -z "$(ABFSS_ACCOUNT)" ] || [ -z "$(ABFSS_CLIENT_ENDPOINT)" ] || [ -z "$(ABFSS_CLIENT_ID)" ] || [ -z "$(ABFSS_CLIENT_SECRET)" ]; then \
