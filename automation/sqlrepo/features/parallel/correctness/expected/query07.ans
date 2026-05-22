@@ -1,0 +1,17 @@
+-- @description query07 for PXF parallel scan correctness - column projection with WHERE
+
+SET optimizer = off;
+SET
+SET enable_parallel = true;
+SET
+SET max_parallel_workers_per_gather = 4;
+SET
+SELECT val FROM pxf_parallel_enabled WHERE id <= 5 ORDER BY val;
+  val
+-------
+ row_1
+ row_2
+ row_3
+ row_4
+ row_5
+(5 rows)
