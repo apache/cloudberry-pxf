@@ -154,8 +154,8 @@ install_build_deps() {
       libperl-dev make pkg-config protobuf-compiler python3-dev python3-pip python3-setuptools \
       rsync libsnappy-dev
   else
-    sudo dnf install -y sudo git
-    sudo dnf install -y --allowerasing bison bzip2 cmake curl flex gcc gcc-c++ iproute iputils \
+    sudo dnf install -y --nobest sudo git
+    sudo dnf install -y --nobest --allowerasing bison bzip2 cmake curl flex gcc gcc-c++ iproute iputils \
       glibc-langpack-en glibc-locale-source apr-devel bzip2-devel libcurl-devel libevent-devel \
       krb5-devel perl-IPC-Run openldap-devel pam-devel protobuf-devel readline-devel \
       openssl-devel libuv-devel lz4-devel libxml2-devel libyaml-devel \
