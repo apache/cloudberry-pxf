@@ -70,7 +70,7 @@ RUN sudo mkdir -p /home/gpadmin/workspace && \
 
 # Clone Cloudberry source (parametrized via build args)
 ARG CLOUDBERRY_REPO=https://github.com/apache/cloudberry.git
-ARG CLOUDBERRY_BRANCH=PG14_ARCHIVE
+ARG CLOUDBERRY_BRANCH=REL_2_STABLE
 RUN git clone --depth 1 -b ${CLOUDBERRY_BRANCH} \
       ${CLOUDBERRY_REPO} /home/gpadmin/workspace/cloudberry
 
