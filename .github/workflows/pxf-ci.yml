@@ -255,7 +255,9 @@ jobs:
   build-pxf-cbdb-testcontainer-image:
     name: Build Testcontainer Images (${{ matrix.distro }})
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
+      fail-fast: false
       matrix:
         include:
           - distro: ubuntu

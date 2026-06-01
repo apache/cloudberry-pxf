@@ -38,7 +38,7 @@ if command -v apt-get >/dev/null 2>&1; then
   sudo apt update
   sudo apt install -y openjdk-11-jdk maven
 elif command -v dnf >/dev/null 2>&1; then
-  sudo dnf install -y java-11-openjdk-devel maven
+  sudo dnf install -y --nobest java-11-openjdk-devel maven
 fi
 
 cd /home/gpadmin/workspace/cloudberry-pxf

@@ -29,7 +29,7 @@ RUN if command -v apt-get >/dev/null 2>&1; then \
         openjdk-8-jdk-headless \
         openjdk-11-jdk-headless; \
     elif command -v dnf >/dev/null 2>&1; then \
-      sudo dnf install -y --allowerasing \
+      sudo dnf install -y --allowerasing --nobest \
         curl ca-certificates \
         java-1.8.0-openjdk-devel \
         java-11-openjdk-devel && \
