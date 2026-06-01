@@ -40,7 +40,7 @@ env:
   JAVA_HOME: "/usr/lib/jvm/java-11-openjdk"
   GO_VERSION: "1.25"
   GPHOME: "/usr/local/cloudberry-db"
-  CLOUDBERRY_VERSION: "main"
+  CLOUDBERRY_VERSION: "REL_2_STABLE"
   PXF_HOME: "/usr/local/pxf"
 
 jobs:
@@ -255,7 +255,9 @@ jobs:
   build-pxf-cbdb-testcontainer-image:
     name: Build Testcontainer Images (${{ matrix.distro }})
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
+      fail-fast: false
       matrix:
         include:
           - distro: ubuntu

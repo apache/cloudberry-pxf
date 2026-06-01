@@ -20,7 +20,7 @@
 ARG BASE_IMAGE=apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest
 FROM ${BASE_IMAGE}
 
-# Install Java 8 & 11: auto-detect OS package manager
+# Install Java 11: auto-detect OS package manager
 RUN if command -v apt-get >/dev/null 2>&1; then \
       export DEBIAN_FRONTEND=noninteractive && \
       sudo apt-get update && \
@@ -29,7 +29,7 @@ RUN if command -v apt-get >/dev/null 2>&1; then \
         locales wget lsb-release openssh-server iproute2 sudo \
         openjdk-11-jdk-headless; \
     elif command -v dnf >/dev/null 2>&1; then \
-      sudo dnf install -y --allowerasing \
+      sudo dnf install -y --allowerasing --nobest \
         curl ca-certificates wget maven unzip openssh-server iproute sudo glibc-langpack-en glibc-locale-source \
         java-11-openjdk-devel && \
       sudo dnf clean all; \
@@ -70,7 +70,7 @@ RUN sudo mkdir -p /home/gpadmin/workspace && \
 
 # Clone Cloudberry source (parametrized via build args)
 ARG CLOUDBERRY_REPO=https://github.com/apache/cloudberry.git
-ARG CLOUDBERRY_BRANCH=main
+ARG CLOUDBERRY_BRANCH=REL_2_STABLE
 RUN git clone --depth 1 -b ${CLOUDBERRY_BRANCH} \
       ${CLOUDBERRY_REPO} /home/gpadmin/workspace/cloudberry
 

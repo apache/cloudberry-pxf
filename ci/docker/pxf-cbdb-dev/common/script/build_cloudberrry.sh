@@ -24,7 +24,7 @@
 if command -v apt-get >/dev/null 2>&1; then
   sudo apt update && sudo apt install -y sudo git
 elif command -v dnf >/dev/null 2>&1; then
-  sudo dnf install -y sudo git
+  sudo dnf install -y --nobest sudo git
 fi
 
 # Required configuration
@@ -104,7 +104,7 @@ if command -v apt-get >/dev/null 2>&1; then
     rsync \
     libsnappy-dev
 elif command -v dnf >/dev/null 2>&1; then
-  sudo dnf install -y \
+  sudo dnf install -y --nobest \
     bison \
     bzip2 \
     cmake \
