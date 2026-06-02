@@ -1,0 +1,11 @@
+{
+  // Rules tuned for Docusaurus-flavoured Markdown imported from upstream PXF docs.
+  // We skip rules that conflict with how the upstream content is structured today.
+  "default": true,
+  "MD013": false,        // line length: many existing lines exceed sensible limits
+  "MD024": false,        // duplicate headings: tolerated for parallel structure
+  "MD033": false,        // inline HTML: required for legacy <a id>, <dt>, <dd>, etc.
+  "MD034": false,        // bare URLs: appear in Bookbinder-era references
+  "MD041": false,        // first line h1: frontmatter-driven titles cover this
+  "MD046": { "style": "fenced" }
+}
