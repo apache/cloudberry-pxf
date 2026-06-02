@@ -1,0 +1,10 @@
+{
+  "label": "Configuring PXF",
+  "link": {
+    "type": "doc",
+    "id": "administering/configuring/instcfg_pxf"
+  },
+  "position": 13,
+  "collapsible": true,
+  "collapsed": true
+}

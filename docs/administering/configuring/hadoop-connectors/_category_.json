@@ -1,0 +1,10 @@
+{
+  "label": "Configuring PXF Hadoop Connectors (Optional)",
+  "link": {
+    "type": "doc",
+    "id": "administering/configuring/hadoop-connectors/client_instcfg"
+  },
+  "position": 6,
+  "collapsible": true,
+  "collapsed": true
+}

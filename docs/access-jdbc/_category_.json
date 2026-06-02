@@ -1,0 +1,10 @@
+{
+  "label": "Accessing SQL Databases with PXF (JDBC)",
+  "link": {
+    "type": "doc",
+    "id": "access-jdbc/jdbc_pxf"
+  },
+  "position": 50,
+  "collapsible": true,
+  "collapsed": true
+}
