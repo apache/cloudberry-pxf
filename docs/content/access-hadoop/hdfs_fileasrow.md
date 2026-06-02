@@ -31,7 +31,7 @@ CREATE EXTERNAL TABLE <table_name>
 FORMAT 'CSV');
 ```
 
-The keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command are described in the table below.
+The keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
@@ -86,7 +86,7 @@ SELECT json_array_elements(j1->'root')->'record_obj'->'user'->'id'
 (1 rows)
 ```
 
-Refer to [Working with JSON Data](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/admin_guide-query-topics-json-data.html) in the Apache Cloudberry Documentation for specific information on manipulating JSON data in Apache Cloudberry.
+Refer to [Working with JSON Data](../../functions/json-functions-and-operators.md) in the Apache Cloudberry Documentation for specific information on manipulating JSON data in Apache Cloudberry.
 
 
 ### Example: Reading an HDFS Text File into a Single Table Row

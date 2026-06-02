@@ -31,7 +31,7 @@ The `S3_SELECT` external table custom option governs PXF's use of S3 Select when
 
 By default, PXF does not use S3 Select (`S3_SELECT=OFF`). You can enable PXF to always use S3 Select, or to use S3 Select only when PXF determines that it could be beneficial for performance. For example, when `S3_SELECT=AUTO`, PXF automatically uses S3 Select when a query on the external table utilizes column projection or predicate pushdown, or when the referenced CSV file has a header row.
 
-**Note**: The <code>IGNORE_MISSING_PATH</code> custom option is not available when you use a PXF external table to read CSV text and Parquet data from S3 using S3 Select.
+**Note**: The `IGNORE_MISSING_PATH` custom option is not available when you use a PXF external table to read CSV text and Parquet data from S3 using S3 Select.
 
 
 ## Reading Parquet Data with S3 Select
@@ -63,7 +63,7 @@ CREATE EXTERNAL TABLE <table_name>
 FORMAT 'CSV';
 ```
 
-<div className="note"><b>Note:</b> You <i>must</i> specify <code>FORMAT 'CSV'</code> when you enable PXF to use S3 Select on an external table that accesses a Parquet file on S3.</div>
+<div className="note"><b>Note:</b> You <i>must</i> specify `FORMAT 'CSV'` when you enable PXF to use S3 Select on an external table that accesses a Parquet file on S3.</div>
 
 For example, use the following command to have PXF use S3 Select to access a Parquet file on S3 when optimal:
 
@@ -95,7 +95,7 @@ The `FILE_HEADER` option takes the following values:
 
 If both the order and the names of the external table columns and the CSV header are the same, you can specify either `FILE_HEADER=IGNORE` or `FILE_HEADER=USE`.
 
-<div className="note"><b>Note:</b> PXF cannot match the CSV data with the external table definition when both the order and the names of the external table columns are different from the CSV header columns. Any query on an external table with these conditions fails with the error <code>Some headers in the query are missing from the file</code>. </div>
+<div className="note"><b>Note:</b> PXF cannot match the CSV data with the external table definition when both the order and the names of the external table columns are different from the CSV header columns. Any query on an external table with these conditions fails with the error `Some headers in the query are missing from the file`. </div>
 
 For example, if the order of the columns in the CSV file header and the external table are the same, add the following to the `CREATE EXTERNAL TABLE` `LOCATION` URI to have PXF ignore the CSV header:
 

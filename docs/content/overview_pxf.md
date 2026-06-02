@@ -67,7 +67,7 @@ Check out the [PXF introduction](intro/intro_pxf.md) for a high level overview o
 The Apache Cloudberry administrator manages PXF, Apache Cloudberry user privileges, and external data source configuration. Tasks include:
 
 - [Installing](administering/about_pxf_dir.md), [configuring](administering/instcfg_pxf.md), [starting](administering/cfginitstart_pxf.md), [monitoring](administering/monitor_pxf.md), and [troubleshooting](troubleshooting/troubleshooting_pxf.md) the PXF Service.
-- Managing PXF [upgrade](administering/upgrade_5_to_6.md).
+- Managing PXF [upgrade](upgrade/upgrade_landing.md).
 - [Configuring](administering/cfg_server.md) and publishing one or more server definitions for each external data source. This definition specifies the location of, and access credentials to, the external data source. 
 - [Granting](administering/using_pxf.md) Apache Cloudberry user access to PXF and PXF external tables.
 

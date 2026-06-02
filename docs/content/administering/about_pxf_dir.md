@@ -7,17 +7,17 @@ sidebar_position: 2
 This documentation uses `<PXF_INSTALL_DIR>` to refer to the PXF installation directory. Its value depends on how you have installed PXF:
 
  - If you installed PXF as part of Apache Cloudberry, its value is `$GPHOME/pxf`.
- - If you installed the PXF `rpm` or `deb` package, its value is `/usr/local/pxf-gp<greenplum-major-version>`, or the directory of your choosing (CentOS/RHEL only). 
+ - If you installed the PXF `rpm` or `deb` package, its value is `/usr/local/cloudberry-pxf-<version>`, or the directory of your choosing (CentOS/RHEL only). 
 
-`<PXF_INSTALL_DIR>` includes both the PXF executables and the PXF runtime configuration files and directories. In PXF 5.x, you needed to specify a `$PXF_CONF` directory for the runtime configuration when you initialized PXF. In PXF 6.x, however, no initialization is required: `$PXF_BASE` now identifies the runtime configuration directory, and the default `$PXF_BASE` is `<PXF_INSTALL_DIR>`.
+`<PXF_INSTALL_DIR>` includes both the PXF executables and the PXF runtime configuration files and directories. PXF does not require an initialization step: `$PXF_BASE` identifies the runtime configuration directory, and the default `$PXF_BASE` is `<PXF_INSTALL_DIR>`.
 
 If you want to store your configuration and runtime files in a different location, see [Relocating $PXF_BASE](#relocating-pxf-base).
 
-<div className="note"><b>Note:</b> This documentation uses <code>&lt;PXF_INSTALL_DIR></code> to reference the PXF installation directory. This documentation uses the <code>$PXF_BASE</code> environment variable to reference the PXF runtime configuration directory. PXF uses the variable internally. It only needs to be set in your shell environment if you explicitly relocate the directory.</div>
+<div className="note"><b>Note:</b> This documentation uses <code>&lt;PXF_INSTALL_DIR></code> to reference the PXF installation directory. This documentation uses the `$PXF_BASE` environment variable to reference the PXF runtime configuration directory. PXF uses the variable internally. It only needs to be set in your shell environment if you explicitly relocate the directory.</div>
 
 ## PXF Installation Directories
 
-The following PXF files and directories are installed to `<PXF_INSTALL_DIR>` when you install Apache Cloudberry or the PXF 6.x `rpm` or `deb` package:
+The following PXF files and directories are installed to `<PXF_INSTALL_DIR>` when you install Apache Cloudberry or the PXF `rpm` or `deb` package:
 
 | Directory | Description                                                                                                   |
 |--------------------------------|------------------------------------------------------------------------------------------|
@@ -29,7 +29,7 @@ The following PXF files and directories are installed to `<PXF_INSTALL_DIR>` whe
 | templates/  | The PXF directory for server configuration file templates. |
 | version              | The PXF version.             |
 
-The following PXF directories are installed to `$PXF_BASE` when you install Apache Cloudberry or the PXF 6.x `rpm` or `deb` package:
+The following PXF directories are installed to `$PXF_BASE` when you install Apache Cloudberry or the PXF `rpm` or `deb` package:
 
 | Directory | Description                                                                                                                                                                                                                                |
 |--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -44,7 +44,7 @@ Refer to [Configuring PXF](./instcfg_pxf.md) and [Starting PXF](./cfginitstart_p
 
 ## Relocating $PXF_BASE
 
-If you require that `$PXF_BASE` reside in a directory distinct from `<PXF_INSTALL_DIR>`, you can change it from the default location to a location of your choosing after you install PXF 6.x.
+If you require that `$PXF_BASE` reside in a directory distinct from `<PXF_INSTALL_DIR>`, you can change it from the default location to a location of your choosing after you install PXF.
 
 PXF provides the [pxf [cluster] prepare](../ref/pxf-cluster.md) command to prepare a new `$PXF_BASE` location. The command copies the runtime and configuration directories identified above to the file system location that you specify in a `PXF_BASE` environment variable.
 

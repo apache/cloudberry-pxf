@@ -4,7 +4,7 @@ description: Reading fixed-width text data in HDFS via PXF.
 sidebar_position: 9
 ---
 
-The PXF HDFS Connector supports reading and writing fixed-width text using the Apache Cloudberry [fixed width custom formatter](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/admin_guide-load-topics-g-importing-and-exporting-fixed-width-data.html). This section describes how to use PXF to access fixed-width text, including how to create, query, and insert data into an external table that references files in the HDFS data store.
+The PXF HDFS Connector supports reading and writing fixed-width text using the Apache Cloudberry fixed width custom formatter. This section describes how to use PXF to access fixed-width text, including how to create, query, and insert data into an external table that references files in the HDFS data store.
 
 PXF supports reading or writing fixed-width text that is compressed with the `default`, `bzip2`, and `gzip` codecs.
 
@@ -23,7 +23,7 @@ LOCATION ('pxf://<path-to-hdfs-file>?PROFILE=hdfs:fixedwidth[&SERVER=<server_nam
 FORMAT 'CUSTOM' (FORMATTER='fixedwidth_in', <field_name>='<width>' [, ...] [, line_delim[=|<space>][E]'<delim_value>']);
 ```
 
-The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command are described in the table below.
+The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
@@ -42,13 +42,13 @@ The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL 
 
 Apache Cloudberry loads all fields in a line of fixed-width data in their physical order. The `<field_name>`s that you specify in the `FORMAT` options must match the order that you define the columns in the `CREATE [WRITABLE] EXTERNAL TABLE` command. You specify the size of each field in the `<width>` value.
 
-Refer to the Apache Cloudberry [fixed width custom formatter documentation](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/admin_guide-load-topics-g-importing-and-exporting-fixed-width-data.html) for more information about the formatter options.
+Refer to the Apache Cloudberry fixed width custom formatter documentation for more information about the formatter options.
 
 ## About the line_delim and NEWLINE Formatter Options
 
 By default, Apache Cloudberry uses the `\n` (LF) character for the new line delimiter. When the line delimiter for the external file is also `\n`, you need not specify the `line_delim` option. If the `line_delim` formatter option is provided and contains `\r` (CR), `\r\n` (CRLF), or a set of custom escape characters, you must specify the `NEWLINE` option in the external table `LOCATION` clause, and set the value to `CR`, `CRLF` or the set of bytecode characters, respectively.
 
-Refer to the Apache Cloudberry [fixed width custom formatter documentation](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/admin_guide-load-topics-g-importing-and-exporting-fixed-width-data.html) for more information about the formatter options.
+Refer to the Apache Cloudberry fixed width custom formatter documentation for more information about the formatter options.
 
 ## Example: Reading Fixed-Width Text Data on HDFS
 
@@ -132,7 +132,7 @@ FORMAT 'CUSTOM' (FORMATTER='fixedwidth_out' [, <field_name>='<width>'] [, ...] [
 [DISTRIBUTED BY (<column_name> [, ... ] ) | DISTRIBUTED RANDOMLY];
 ```
 
-The specific keywords and values used in the [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command are described in the table below.
+The specific keywords and values used in the [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
@@ -157,7 +157,7 @@ Writable external tables that you create using the `hdfs:fixedwidth` profile can
 This example utilizes the data schema introduced in [Example: Reading Fixed-Width Text Data on HDFS](#example-reading-fixed-width-text-data-on-hdfs). 
 
 | Column Name  | Width | Data Type |
-|-------|-------------------------------------|
+|-------|-------|-------|
 | location | 15 | text |
 | month | 4 | text |
 | number_of_orders | 6 | int |

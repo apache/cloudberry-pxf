@@ -122,7 +122,7 @@ You configure properties in the `pxf-site.xml` file for a PXF server when one or
 | pxf.orc.write.decimal.overflow | Specifies how PXF handles numeric data that exceeds the maximum precision of 38 and [overflows](../access-hadoop/hdfs_orc.md#understanding-overflow-conditions-when-writing-numeric-data) when writing to an ORC file. Valid values are: round, error, or ignore | round |
 | pxf.parquet.write.decimal.overflow | Specifies how PXF handles numeric data that exceeds the maximum precision of 38 and [overflows](../access-hadoop/hdfs_parquet.md#understanding-overflow-conditions-when-writing-numeric-data) when writing to a Parquet file. Valid values are: round, error, or ignore | round |
 
-</br><sup>1</sup>&nbsp;Should you need to, you can override this setting on a per-table basis by specifying the `&PPD=<boolean>` option in the `LOCATION` clause when you create the external table.
+<br/><sup>1</sup>&nbsp;Should you need to, you can override this setting on a per-table basis by specifying the `&PPD=<boolean>` option in the `LOCATION` clause when you create the external table.
 
 Refer to [Configuring PXF Hadoop Connectors ](./client_instcfg.md) and [Configuring the JDBC Connector ](./jdbc_cfg.md) for information about relevant `pxf-site.xml` property settings for Hadoop and JDBC server configurations, respectively. See [Configuring a PXF Network File System Server](../access-nfs/nfs_pxf.md#configuring-a-pxf-network-file-system-server) for information about relevant `pxf-site.xml` property settings when you configure a PXF server to access a network file system.
 
@@ -132,7 +132,7 @@ You can use the `pxf.fs.basePath` property to restrict a user's access to files 
 
 When you configure the `pxf.fs.basePath` property for a server, PXF considers the file path specified in the `CREATE EXTERNAL TABLE` `LOCATION` clause to be relative to this base path setting, and constructs the remote path accordingly.
 
-<div className="note info"><b>Note:</b> You must set <code>pxf.fs.basePath</code> when you configure a PXF server for access to a network file system with a <code>file:*</code> profile. This property is optional for a PXF server that accesses a file in Hadoop or in an object store.</div>
+<div className="note info"><b>Note:</b> You must set `pxf.fs.basePath` when you configure a PXF server for access to a network file system with a `file:*` profile. This property is optional for a PXF server that accesses a file in Hadoop or in an object store.</div>
 
 
 ## Configuring a PXF User
@@ -141,10 +141,10 @@ You can configure access to an external data store on a per-server, per-Apache C
 
 <div className="note info"><b>Note:</b> PXF per-server, per-user configuration provides the most benefit for JDBC servers.</div>
 
-You configure external data store user access credentials and properties for a specific Apache Cloudberry user by providing a `<greenplum_user_name>-user.xml` user configuration file in the PXF server configuration directory, `$PXF_BASE/servers/<server_name>/`. For example, you specify the properties for the Apache Cloudberry user named `bill` in the file `$PXF_BASE/servers/<server_name>/bill-user.xml`. You can configure zero, one, or more users in a PXF server configuration.
+You configure external data store user access credentials and properties for a specific Apache Cloudberry user by providing a `<cloudberry_user_name>-user.xml` user configuration file in the PXF server configuration directory, `$PXF_BASE/servers/<server_name>/`. For example, you specify the properties for the Apache Cloudberry user named `bill` in the file `$PXF_BASE/servers/<server_name>/bill-user.xml`. You can configure zero, one, or more users in a PXF server configuration.
 
 
-The properties that you specify in a user configuration file are connector-specific. You can specify any configuration property supported by the PXF connector server in a `<greenplum_user_name>-user.xml` configuration file.
+The properties that you specify in a user configuration file are connector-specific. You can specify any configuration property supported by the PXF connector server in a `<cloudberry_user_name>-user.xml` configuration file.
 
 For example, suppose you have configured access to a PostgreSQL database in the PXF JDBC server configuration named `pgsrv1`. To allow the Apache Cloudberry user named `bill` to access this database as the PostgreSQL user named `pguser1`, password `changeme`, you create the user configuration file `$PXF_BASE/servers/pgsrv1/bill-user.xml` with the following properties:
 
@@ -181,23 +181,23 @@ For each PXF user that you want to configure, you will:
 1. Identify the name of the Apache Cloudberry user.
 2. Identify the PXF server definition for which you want to configure user access.
 3. Identify the name and value of each property that you want to configure for the user.
-4. Create/edit the file `$PXF_BASE/servers/<server_name>/<greenplum_user_name>-user.xml`, and add the outer configuration block:
+4. Create/edit the file `$PXF_BASE/servers/<server_name>/<cloudberry_user_name>-user.xml`, and add the outer configuration block:
 
     ``` xml
     <configuration>
     </configuration>
     ```
-5. Add each property/value pair that you identified in Step 3 within the configuration block in the `<greenplum_user_name>-user.xml` file.
+5. Add each property/value pair that you identified in Step 3 within the configuration block in the `<cloudberry_user_name>-user.xml` file.
 6. If you are adding the PXF user configuration to previously configured  PXF server definition, synchronize the user configuration to the Apache Cloudberry cluster.
 
 
 ## About Configuration Property Precedence
 
-A PXF server configuration may include default settings for user access credentials and other properties for accessing an external data store. Some PXF connectors, such as the S3 and JDBC connectors, allow you to directly specify certain server properties via custom options in the `CREATE EXTERNAL TABLE` command `LOCATION` clause. A `<greenplum_user_name>-user.xml` file specifies property settings for an external data store that are specific to an Apache Cloudberry user.
+A PXF server configuration may include default settings for user access credentials and other properties for accessing an external data store. Some PXF connectors, such as the S3 and JDBC connectors, allow you to directly specify certain server properties via custom options in the `CREATE EXTERNAL TABLE` command `LOCATION` clause. A `<cloudberry_user_name>-user.xml` file specifies property settings for an external data store that are specific to an Apache Cloudberry user.
 
 For a given Apache Cloudberry user, PXF uses the following precedence rules (highest to lowest) to obtain configuration property settings for the user:
 
-1. A property that you configure in `<server_name>/<greenplum_user_name>-user.xml` overrides any setting of the property elsewhere.
+1. A property that you configure in `<server_name>/<cloudberry_user_name>-user.xml` overrides any setting of the property elsewhere.
 2. A property that is specified via custom options in the `CREATE EXTERNAL TABLE` command `LOCATION` clause overrides any setting of the property in a PXF server configuration.
 3. Properties that you configure in the `<server_name>` PXF server definition identify the default property values.
 

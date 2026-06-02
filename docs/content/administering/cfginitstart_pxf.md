@@ -29,7 +29,7 @@ PXF provides two management commands:
 - [`pxf cluster`](../ref/pxf-cluster.md) - manage all PXF Service instances in the Apache Cloudberry cluster
 - [`pxf`](../ref/pxf.md) - manage the PXF Service instance on a specific Apache Cloudberry host
 
-<div className="note"><b>Note:</b> The procedures in this topic assume that you have added the <code>&lt;PXF_INSTALL_DIR>/bin</code> directory to your <code>$PATH</code>.</div>
+<div className="note"><b>Note:</b> The procedures in this topic assume that you have added the <code>&lt;PXF_INSTALL_DIR>/bin</code> directory to your `$PATH`.</div>
 
 
 ## Starting PXF

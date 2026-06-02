@@ -91,7 +91,7 @@ This procedure will typically be performed by the Apache Cloudberry administrato
     1. If you did not relocate `$PXF_BASE`, run the following from the Cloudberry coordinator:
 
         ```shell
-        gpadmin@coordinator$ cd /usr/local/pxf-gp<version>/lib
+        gpadmin@coordinator$ cd /usr/local/cloudberry-pxf-<version>/lib
         gpadmin@coordinator$ wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.26/mysql-connector-java-8.0.26.jar
         ```
 

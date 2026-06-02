@@ -14,12 +14,11 @@ You can query the external table via Apache Cloudberry, leaving the referenced d
 
 PXF is compatible with these operating system platforms and Apache Cloudberry versions:
 
-| OS Version | Greenplum Version |
+| OS Version | Apache Cloudberry Version |
 |--------------|-----------------|
-| RHEL 7.x, CentOS 7.x | 5.21.2+, 6.x     |
-| OEL 7.x, Ubuntu 18.04 LTS | 6.x   |
-| RHEL 8.x | 6.20+, 7.x   |
-| RHEL 9.x | 6.26+   |
+| Rocky Linux 8, Rocky Linux 9 | 2.0, 2.1 |
+| Ubuntu 22.04 | 2.0, 2.1 |
+| Rocky Linux 10, Ubuntu 24.04 | 2.2+ (planned) |
 
 ### Java
 
@@ -30,11 +29,9 @@ PXF supports Java 8 and Java 11.
 
 PXF bundles all of the Hadoop JAR files on which it depends, and supports the following Hadoop component versions:
 
-| PXF Version | Hadoop Version | Hive Server Version | HBase Server Version |
-|-------------|----------------|---------------------|-------------|
-| 6.x | 2.x, 3.1+ | 1.x, 2.x, 3.1+ | 1.3.2 |
-| 5.9+ | 2.x, 3.1+ | 1.x, 2.x, 3.1+ | 1.3.2 |
-| 5.8 | 2.x | 1.x | 1.3.2 |
+| Hadoop Version | Hive Server Version | HBase Server Version |
+|----------------|---------------------|-------------|
+| 2.x, 3.1+ | 1.x, 2.x, 3.1+ | 1.3.2 |
 
 ## Architectural Overview
 
@@ -57,7 +54,7 @@ Finally, a PXF *profile* is a named mapping identifying a specific data format o
 
 ## Creating an External Table
 
-PXF implements an Apache Cloudberry protocol named `pxf` that you can use to create an external table that references data in an external data store. The syntax for a [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command that specifies the `pxf` protocol follows:
+PXF implements an Apache Cloudberry protocol named `pxf` that you can use to create an external table that references data in an external data store. The syntax for a [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) command that specifies the `pxf` protocol follows:
 
 ``` sql
 CREATE [WRITABLE] EXTERNAL TABLE <table_name>

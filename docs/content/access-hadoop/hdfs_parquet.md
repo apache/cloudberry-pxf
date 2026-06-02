@@ -110,9 +110,9 @@ PXF uses the following data type mapping when writing Parquet data:
 | Varchar | binary (byte\_array) | UTF8 |
 | OTHERS | UNSUPPORTED | -- |
 
-</br><sup>1</sup>&nbsp;Because Parquet does not save the field length, a Bpchar that PXF writes to Parquet will be a text of undefined length.
-</br><sup>2</sup>&nbsp;PXF localizes a <code>Timestamp</code> to the current system time zone and converts it to universal time (UTC) before finally converting to <code>int96</code>.
-</br><sup>3</sup>&nbsp;PXF converts a <code>Timestamptz</code> to a UTC <code>timestamp</code> and then converts to <code>int96</code>. PXF loses the time zone information during this conversion.
+<br/><sup>1</sup>&nbsp;Because Parquet does not save the field length, a Bpchar that PXF writes to Parquet will be a text of undefined length.
+<br/><sup>2</sup>&nbsp;PXF localizes a `Timestamp` to the current system time zone and converts it to universal time (UTC) before finally converting to `int96`.
+<br/><sup>3</sup>&nbsp;PXF converts a `Timestamptz` to a UTC `timestamp` and then converts to `int96`. PXF loses the time zone information during this conversion.
 
 PXF can write a one-dimensional `LIST` of certain Parquet data types. The supported mappings follow:
 

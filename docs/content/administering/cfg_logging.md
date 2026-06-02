@@ -61,7 +61,7 @@ PXF utilizes Apache Log4j 2 for service-level logging. PXF Service-related log m
 
 You can change the log level for the PXF Service on a single Apache Cloudberry host, or on all hosts in the Apache Cloudberry cluster.
 
-<div className="note"><b>Note:</b> PXF provides more detailed logging when the <code>debug</code> and <code>trace</code> log levels are enabled. Logging at these levels is quite verbose, and has both a performance and a storage impact. Be sure to turn it off after you have collected the desired information.</div>
+<div className="note"><b>Note:</b> PXF provides more detailed logging when the `debug` and `trace` log levels are enabled. Logging at these levels is quite verbose, and has both a performance and a storage impact. Be sure to turn it off after you have collected the desired information.</div>
 
 ### Configuring for a Specific Host
 

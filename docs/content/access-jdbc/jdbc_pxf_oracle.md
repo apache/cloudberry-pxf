@@ -89,7 +89,7 @@ This procedure will typically be performed by the Apache Cloudberry administrato
     1. If you did not relocate `$PXF_BASE`, run the following from the Cloudberry coordinator:
 
         ```shell
-        gpadmin@coordinator$ scp ojdbc11.jar gpadmin@coordinator:/usr/local/pxf-gp<version>/lib/
+        gpadmin@coordinator$ scp ojdbc11.jar gpadmin@coordinator:/usr/local/cloudberry-pxf-<version>/lib/
         ```
 
     2. If you relocated `$PXF_BASE`, run the following from the Cloudberry coordinator:
@@ -231,8 +231,8 @@ where:
 
 | Keyword | Values/Description |
 |--------------|-----------------|
-| `<action>`  | `enable`</br>`disable`</br>`force` |
-| `<statement_type>`  | `query`</br>`ddl`</br>`dml`</br> |
+| `<action>`  | `enable`<br/>`disable`<br/>`force` |
+| `<statement_type>`  | `query`<br/>`ddl`<br/>`dml`<br/> |
 | `<degree_of_parallelism>`  | The \(integer\) number of parallel sessions that you can force when `<action>` specifies `force`. PXF ignores this value for other `<action>` settings. |
 
 Example parallel query execution property settings in the `jdbc-site.xml` configuration file for an Oracle PXF server follow:

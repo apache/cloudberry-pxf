@@ -1,13 +1,13 @@
 ---
-title: Upgrading to Version 6
-description: Upgrading PXF: entry point.
+title: Upgrading PXF
+description: PXF upgrade paths and considerations.
 sidebar_position: 1
 ---
 
-PXF 6.x supports these upgrade paths:
+When you install a newer version of PXF, perform the upgrade actions described in:
 
-- [Upgrading from PXF Version 5](../administering/upgrade_5_to_6.md)
-- [Upgrading from an Earlier PXF Version 6 Release](./upgrade_6.md)
+- [Upgrading PXF](./upgrade_pxf_rpm.md)
 
 Additionally, review [OS Upgrade Considerations for PXF](./upgrade_os.md) if you are planning to upgrade the operating system on your Apache Cloudberry cluster hosts.
 
+If you plan to perform an in-place major-version upgrade of Apache Cloudberry itself with `cbupgrade`, see the forward-looking [PXF Pre-Upgrade Actions](./pxf_gpupgrade_pre.md) and [PXF Post-Upgrade Actions](./pxf_gpupgrade_post.md). Note that `cbupgrade` is still under development and is not supported yet.

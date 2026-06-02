@@ -159,13 +159,13 @@ When you configure PXF for secure HDFS using an AD Kerberos KDC server, you will
 1. Start **Active Directory Users and Computers**.
 2. Expand the forest domain and the top-level UNIX organizational unit that describes your Apache Cloudberry user domain.
 3. Select **Service Accounts**, right-click, then select **New->User**.
-4. Type a name, for example: `ServiceGreenplumPROD1`, and change the login name to `gpadmin`. Note that the login name should be in compliance with POSIX standard and match `hadoop.proxyuser.<name>.hosts/groups` in the Hadoop `core-site.xml` and the Kerberos principal.
+4. Type a name, for example: `ServiceCloudberryPROD1`, and change the login name to `gpadmin`. Note that the login name should be in compliance with POSIX standard and match `hadoop.proxyuser.<name>.hosts/groups` in the Hadoop `core-site.xml` and the Kerberos principal.
 5. Type and confirm the Active Directory service account password. Select the **User cannot change password** and **Password never expires** check boxes, then click **Next**. For security reasons, if you can't have **Password never expires** checked, you will need to generate new keytab file (step 7) every time you change the password of the service account. 
 6. Click **Finish** to complete the creation of the new user principal. 
 7. Open Powershell or a command prompt and run the `ktpass` command to generate the keytab file. For example:
 
     ``` shell
-    powershell#>ktpass -out pxf.service.keytab -princ gpadmin@EXAMPLE.COM -mapUser ServiceGreenplumPROD1 -pass ******* -crypto all -ptype KRB5_NT_PRINCIPAL
+    powershell#>ktpass -out pxf.service.keytab -princ gpadmin@EXAMPLE.COM -mapUser ServiceCloudberryPROD1 -pass ******* -crypto all -ptype KRB5_NT_PRINCIPAL
     ```
 
     With Active Directory, the principal and the keytab file are shared by all Apache Cloudberry hosts. 
@@ -274,12 +274,12 @@ When you configure PXF for secure HDFS using an MIT Kerberos KDC server, you wil
     root@kdc-server$ kadmin.local -q "listprincs"
     ```
 
-6.  Copy the keytab file for each PXF Service principal to its respective host. For example, the following commands copy each principal generated in step 4 to the PXF default keytab directory on the host when `PXF_BASE=/usr/local/pxf-gp6`:
+6.  Copy the keytab file for each PXF Service principal to its respective host. For example, the following commands copy each principal generated in step 4 to the PXF default keytab directory on the host when `PXF_BASE=/usr/local/cloudberry-pxf`:
 
     ``` shell
-    root@kdc-server$ scp /etc/security/keytabs/pxf-host1.service.keytab host1.example.com:/usr/local/pxf-gp6/keytabs/pxf.service.keytab
-    root@kdc-server$ scp /etc/security/keytabs/pxf-host2.service.keytab host2.example.com:/usr/local/pxf-gp6/keytabs/pxf.service.keytab
-    root@kdc-server$ scp /etc/security/keytabs/pxf-host3.service.keytab host3.example.com:/usr/local/pxf-gp6/keytabs/pxf.service.keytab
+    root@kdc-server$ scp /etc/security/keytabs/pxf-host1.service.keytab host1.example.com:/usr/local/cloudberry-pxf/keytabs/pxf.service.keytab
+    root@kdc-server$ scp /etc/security/keytabs/pxf-host2.service.keytab host2.example.com:/usr/local/cloudberry-pxf/keytabs/pxf.service.keytab
+    root@kdc-server$ scp /etc/security/keytabs/pxf-host3.service.keytab host3.example.com:/usr/local/cloudberry-pxf/keytabs/pxf.service.keytab
     ```
 
     Note the file system location of the keytab file on each PXF host; you will need this information for a later configuration step.
@@ -287,12 +287,12 @@ When you configure PXF for secure HDFS using an MIT Kerberos KDC server, you wil
 7. Change the ownership and permissions on the `pxf.service.keytab` files. The files must be owned and readable by only the `gpadmin` user. For example:
 
     ``` shell 
-    root@kdc-server$ ssh host1.example.com chown gpadmin:gpadmin /usr/local/pxf-gp6/keytabs/pxf.service.keytab
-    root@kdc-server$ ssh host1.example.com chmod 400 /usr/local/pxf-gp6/keytabs/pxf.service.keytab
-    root@kdc-server$ ssh host2.example.com chown gpadmin:gpadmin /usr/local/pxf-gp6/keytabs/pxf.service.keytab
-    root@kdc-server$ ssh host2.example.com chmod 400 /usr/local/pxf-gp6/keytabs/pxf.service.keytab
-    root@kdc-server$ ssh host3.example.com chown gpadmin:gpadmin /usr/local/pxf-gp6/keytabs/pxf.service.keytab
-    root@kdc-server$ ssh host3.example.com chmod 400 /usr/local/pxf-gp6/keytabs/pxf.service.keytab
+    root@kdc-server$ ssh host1.example.com chown gpadmin:gpadmin /usr/local/cloudberry-pxf/keytabs/pxf.service.keytab
+    root@kdc-server$ ssh host1.example.com chmod 400 /usr/local/cloudberry-pxf/keytabs/pxf.service.keytab
+    root@kdc-server$ ssh host2.example.com chown gpadmin:gpadmin /usr/local/cloudberry-pxf/keytabs/pxf.service.keytab
+    root@kdc-server$ ssh host2.example.com chmod 400 /usr/local/cloudberry-pxf/keytabs/pxf.service.keytab
+    root@kdc-server$ ssh host3.example.com chown gpadmin:gpadmin /usr/local/cloudberry-pxf/keytabs/pxf.service.keytab
+    root@kdc-server$ ssh host3.example.com chmod 400 /usr/local/cloudberry-pxf/keytabs/pxf.service.keytab
     ```
 
 **Perform the following steps on the Apache Cloudberry coordinator host**:

@@ -62,7 +62,7 @@ PXF uses the following data type mapping when reading Avro data:
 | long | bigint |
 | string | text |
 | Complex type: Array (any dimension) of type: boolean, bytes, double, float, int, long, string | array (any dimension) of type: boolean, bytea, double, real, bigint, text   |
-| Complex type: Array of other types<br>(*Avro schema is provided*) | text[]   |
+| Complex type: Array of other types<br/>(*Avro schema is provided*) | text[]   |
 | Complex type: Map, Record, or Enum  | text, with delimiters inserted between collection items, mapped key-value pairs, and record data.   |
 | Complex type: Fixed     | bytea (supported for read operations only).   |
 | Union      | Follows the above conventions for primitive or complex data types, depending on the union; must contain 2 elements, one of which must be null.  |
@@ -98,14 +98,14 @@ PXF uses the following data type mapping when writing Avro data:
 | smallint<sup>2</sup> | int |
 | text | string |
 | varchar | string |
-| numeric, date, time, timestamp, timestamptz<br>(*no Avro schema is provided*) | string |
-| array (any dimension) of type: bigint, boolean, bytea, double, int, real, text <br>(*Avro schema is provided*) | Array (any dimension) of type: long, boolean, bytes, double, int, float, string |
-| bigint[], boolean[], bytea[], double[], int[], real[], text[] <br>(*no Avro schema is provided*) | long[], boolean[], bytes[], double[], int[], float[], string[] \(one-dimensional array) |
-| numeric[], date[], time[], timestamp[], timestamptz[] <br> (*Avro is schema is provided*) | string[] |
+| numeric, date, time, timestamp, timestamptz<br/>(*no Avro schema is provided*) | string |
+| array (any dimension) of type: bigint, boolean, bytea, double, int, real, text <br/>(*Avro schema is provided*) | Array (any dimension) of type: long, boolean, bytes, double, int, float, string |
+| bigint[], boolean[], bytea[], double[], int[], real[], text[] <br/>(*no Avro schema is provided*) | long[], boolean[], bytes[], double[], int[], float[], string[] \(one-dimensional array) |
+| numeric[], date[], time[], timestamp[], timestamptz[] <br/> (*Avro is schema is provided*) | string[] |
 | enum, record | string |
 
-</br><sup>1</sup>&nbsp;PXF right-pads <code>char[<i>n</i>]</code> types to length <code><i>n</i></code>, if required, with white space.
-</br><sup>2</sup>&nbsp;PXF converts Apache Cloudberry <code>smallint</code> types to <code>int</code> before it writes the Avro data. Be sure to read the field into an <code>int</code>.
+<br/><sup>1</sup>&nbsp;PXF right-pads <code>char[<i>n</i>]</code> types to length <code><i>n</i></code>, if required, with white space.
+<br/><sup>2</sup>&nbsp;PXF converts Apache Cloudberry `smallint` types to `int` before it writes the Avro data. Be sure to read the field into an `int`.
 
 
 ### Avro Schemas and Data
@@ -143,7 +143,7 @@ FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import'|'pxfwritable_export');
 [DISTRIBUTED BY (<column_name> [, ... ] ) | DISTRIBUTED RANDOMLY];
 ```
 
-The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command are described in the table below.
+The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|

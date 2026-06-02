@@ -22,7 +22,7 @@ The template configuration file for Azure Blob Storage is `<PXF_INSTALL_DIR>/tem
 | Property       | Description                                | Value |
 |----------------|--------------------------------------------|-------|
 | fs.adl.oauth2.access.token.provider.type | The token type. | Must specify `ClientCredential`. |
-| fs.azure.account.key.\<YOUR_AZURE_BLOB_STORAGE_ACCOUNT_NAME\>.blob.core.windows.net | The Azure account key. | Replace <YOUR_AZURE_BLOB_STORAGE_ACCOUNT_NAME\> with your account key. |
+| fs.azure.account.key.\<YOUR_AZURE_BLOB_STORAGE_ACCOUNT_NAME\>.blob.core.windows.net | The Azure account key. | Replace `<YOUR_AZURE_BLOB_STORAGE_ACCOUNT_NAME>` with your account key. |
 | fs.AbstractFileSystem.wasbs.impl | The file system class name. | Must specify `org.apache.hadoop.fs.azure.Wasbs`. |
 
 

@@ -101,14 +101,14 @@ PXF uses the following data type mapping when reading JSON data:
 | JSON Data Type    | PXF/Apache Cloudberry Data Type |
 |-------------------|-------------------------------------------|
 | boolean | boolean |
-| number  | { bigint &#124; float8 &#124; integer &#124; numeric &#124; real &#124; smallint } |
+| number  | `{ bigint &#124; float8 &#124; integer &#124; numeric &#124; real &#124; smallint }` |
 | string | text |
 | string (base64-encoded value) | bytea |
-| string (date, time, timestamp, timestamptz in a text format that Apache Cloudberry understands)<sup>1</sup> | { date &#124; time &#124; timestamp &#124; timestamptz } |
+| string (date, time, timestamp, timestamptz in a text format that Apache Cloudberry understands)<sup>1</sup> | `{ date &#124; time &#124; timestamp &#124; timestamptz }` |
 | Array (one dimension) of type boolean[] | boolean[] |
-| Array (one dimension) of type number[] | { bigint[] &#124; float8[] &#124; integer[] &#124; numeric[] &#124; real[] &#124; smallint[] } |
+| Array (one dimension) of type number[] | `{ bigint[] &#124; float8[] &#124; integer[] &#124; numeric[] &#124; real[] &#124; smallint[] }` |
 | Array (one dimension) of type string[] (base64-encoded value) | bytea[] |
-| Array (one dimension) of type string[] (date, time, timestamp in a text format that Apache Cloudberry understands)<sup>1</sup> | { date[] &#124; time[] &#124; timestamp[] &#124; timestamptz[] } |
+| Array (one dimension) of type string[] (date, time, timestamp in a text format that Apache Cloudberry understands)<sup>1</sup> | `{ date[] &#124; time[] &#124; timestamp[] &#124; timestamptz[] }` |
 | Array (one dimension) of type string[] | text[] |
 | Array of other types | text[] |
 | Object                | Use dot `.` notation to specify each level of projection (nesting) to a member of a primitive or Array type.                                                                                         |
@@ -184,7 +184,7 @@ FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import'|'pxfwritable_export')
 [DISTRIBUTED BY (<column_name> [, ... ] ) | DISTRIBUTED RANDOMLY];
 ```
 
-The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command are described in the table below.
+The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
@@ -205,7 +205,7 @@ The `hdfs:json` profile supports the following custom **read** options:
 | SPLIT_BY_FILE=\<boolean\> | Specify how PXF splits the data in \<path-to-hdfs-file\>. The default value is `false`, PXF creates multiple splits for each file that it will process in parallel. When set to `true`, PXF creates and processes a single split per file. |
 | IGNORE_MISSING_PATH=\<boolean\> | Specify the action to take when \<path-to-hdfs-file\> is missing or invalid. The default value is `false`, PXF returns an error in this situation. When the value is `true`, PXF ignores missing path errors and returns an empty fragment. |
 
-<div className="note"><b>Note:</b> When a nested object in a single object JSON file includes a field with the same name as that of a parent object field <i>and</i> the field name is also specified as the <code>IDENTIFIER</code>, there is a possibility that PXF could return incorrect results. Should you need to, you can work around this edge case by compressing the JSON file, and using PXF to read the compressed file.</div>
+<div className="note"><b>Note:</b> When a nested object in a single object JSON file includes a field with the same name as that of a parent object field <i>and</i> the field name is also specified as the `IDENTIFIER`, there is a possibility that PXF could return incorrect results. Should you need to, you can work around this edge case by compressing the JSON file, and using PXF to read the compressed file.</div>
 
 The `hdfs:json` profile supports the following custom **write** options:
 
@@ -302,7 +302,7 @@ Once the data is loaded to HDFS, you can use Apache Cloudberry and PXF to query 
 
 ### Example: Single Object Per Row (Read)
 
-Use the following [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) SQL command to create a readable external table that references the single-object-per-row JSON data file and uses the PXF default server.
+Use the following [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) SQL command to create a readable external table that references the single-object-per-row JSON data file and uses the PXF default server.
 
 ```sql
 CREATE EXTERNAL TABLE objperrow_json_tbl(
@@ -409,8 +409,6 @@ SELECT user.id,
 FROM objperrow_json_tbl_stc;
 ```
 
-**Note**: This conversion is possible only when you are using PXF with Apache Cloudberry 6.x; the function `json_array_elements_text()` is not available in Apache Cloudberry 5.x.
-
 If your external table definition uses a single text-type column for a JSON array and you want to read the array into a `TEXT[]` column, you can use the `ALTER EXTERNAL TABLE` command to update the table definition. For example:
 
 ```sql
@@ -433,7 +431,7 @@ The write examples use a data schema similar to that of the read examples.
 
 In this example, we add data to a directory named `jsopr`.
 
-Use the following [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) SQL command to create a writable external table that writes JSON data in single-object-per-row format and uses the PXF default server.
+Use the following [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) SQL command to create a writable external table that writes JSON data in single-object-per-row format and uses the PXF default server.
 
 ```sql
 CREATE WRITABLE EXTERNAL TABLE add_objperrow_json_tbl(
@@ -492,7 +490,7 @@ Notice that PXF creates a flat JSON structure.
 
 ### Example: Single Object Per File (Write)
 
-Use the following [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) SQL command to create a writable external table that writes JSON data in single object format and uses the PXF default server.
+Use the following [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) SQL command to create a writable external table that writes JSON data in single object format and uses the PXF default server.
 
 You must specify the `ROOT` keyword and associated value in the `LOCATION` clause. For example:
 

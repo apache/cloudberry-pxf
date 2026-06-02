@@ -79,5 +79,5 @@ The [Logging](./cfg_logging.md) advanced configuration topic describes how to en
 
 ## pxf-profiles.xml
 
-PXF defines its default profiles in the [`pxf-profiles-default.xml`](https://github.com/greenplum-db/pxf/blob/main/server/pxf-service/src/main/resources/pxf-profiles-default.xml) file. If you choose to add a custom profile, you configure the profile in `pxf-profiles.xml`.
+PXF defines its default profiles in the [`pxf-profiles-default.xml`](https://github.com/apache/cloudberry-pxf/blob/main/server/pxf-service/src/main/resources/pxf-profiles-default.xml) file. If you choose to add a custom profile, you configure the profile in `pxf-profiles.xml`.
 

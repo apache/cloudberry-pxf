@@ -48,7 +48,7 @@ FORMAT 'CUSTOM' (<formatting-properties>)
 [DISTRIBUTED BY (<column_name> [, ... ] ) | DISTRIBUTED RANDOMLY];
 ```
 
-The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command are described in the table below.
+The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
@@ -216,10 +216,10 @@ Perform the following procedure to create the Java class and writable table.
     $ ssh gpadmin@<coordinator>
     ````
 
-5. Copy the `pxfex-customwritable.jar` JAR file to the user runtime library directory, and note the location. For example, if `PXF_BASE=/usr/local/pxf-gp6`:
+5. Copy the `pxfex-customwritable.jar` JAR file to the user runtime library directory, and note the location. For example, if `PXF_BASE=/usr/local/cloudberry-pxf`:
 
     ``` shell
-    gpadmin@coordinator$ cp /home/gpadmin/pxfex-customwritable.jar /usr/local/pxf-gp6/lib/pxfex-customwritable.jar
+    gpadmin@coordinator$ cp /home/gpadmin/pxfex-customwritable.jar /usr/local/cloudberry-pxf/lib/pxfex-customwritable.jar
     ```
 
 5. Synchronize the PXF configuration to the Apache Cloudberry cluster:

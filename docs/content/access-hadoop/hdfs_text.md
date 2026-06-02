@@ -42,16 +42,16 @@ LOCATION ('pxf://<path-to-hdfs-file>?PROFILE=hdfs:text|csv[&SERVER=<server_name>
 FORMAT '[TEXT|CSV]' (delimiter[=|<space>][E]'<delim_value>');
 ```
 
-The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command are described in the table below.
+The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
 | \<path&#8209;to&#8209;hdfs&#8209;file\>    | The path to the directory or file in the HDFS data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/cfg_server.md#about-the-pxf-fs-basepath-property) property setting, PXF considers \<path&#8209;to&#8209;hdfs&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;hdfs&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
-| PROFILE    | Use `PROFILE` `hdfs:text` when \<path-to-hdfs-file\> references plain text delimited data.<br> Use `PROFILE` `hdfs:csv` when \<path-to-hdfs-file\> references comma-separated value data. |
+| PROFILE    | Use `PROFILE` `hdfs:text` when \<path-to-hdfs-file\> references plain text delimited data.<br/> Use `PROFILE` `hdfs:csv` when \<path-to-hdfs-file\> references comma-separated value data. |
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. PXF uses the `default` server if not specified. |
 | IGNORE_MISSING_PATH=\<boolean\> | Specify the action to take when \<path-to-hdfs-file\> is missing or invalid. The default value is `false`, PXF returns an error in this situation. When the value is `true`, PXF ignores missing path errors and returns an empty fragment. |
 | SKIP_HEADER_COUNT=\<numlines\> | Specify the number of header lines that PXF should skip in the first split of each \<hdfs-file\> before reading the data. The default value is 0, do not skip any lines. |
-| FORMAT | Use `FORMAT` `'TEXT'` when \<path-to-hdfs-file\> references plain text delimited data.<br> Use `FORMAT` `'CSV'`  when \<path-to-hdfs-file\> references comma-separated value data.  |
+| FORMAT | Use `FORMAT` `'TEXT'` when \<path-to-hdfs-file\> references plain text delimited data.<br/> Use `FORMAT` `'CSV'`  when \<path-to-hdfs-file\> references comma-separated value data.  |
 | delimiter    | The delimiter character in the data. For `FORMAT` `'CSV'`, the default \<delim_value\> is a comma (`,`). Preface the \<delim_value\> with an `E` when the value is an escape sequence. Examples: `(delimiter=E'\t')`, `(delimiter ':')`. |
 
 **Note**: PXF does not support the `(HEADER)` formatter option in the `CREATE EXTERNAL TABLE` command. If your text file includes header line(s), use `SKIP_HEADER_COUNT` to specify the number of lines that PXF should skip at the beginning of the first split of each file.
@@ -141,7 +141,7 @@ LOCATION ('pxf://<path-to-hdfs-file>?PROFILE=hdfs:text:multi[&SERVER=<server_nam
 FORMAT '[TEXT|CSV]' (delimiter[=|<space>][E]'<delim_value>');
 ```
 
-The specific keywords and values used in the [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command are described in the table below.
+The specific keywords and values used in the [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
@@ -150,7 +150,7 @@ The specific keywords and values used in the [CREATE EXTERNAL TABLE](https://doc
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. PXF uses the `default` server if not specified. |
 | IGNORE_MISSING_PATH=\<boolean\> | Specify the action to take when \<path-to-hdfs-file\> is missing or invalid. The default value is `false`, PXF returns an error in this situation. When the value is `true`, PXF ignores missing path errors and returns an empty fragment. |
 | SKIP_HEADER_COUNT=\<numlines\> | Specify the number of header lines that PXF should skip in the first split of each \<hdfs-file\> before reading the data. The default value is 0, do not skip any lines. |
-| FORMAT | Use `FORMAT` `'TEXT'` when \<path-to-hdfs-file\> references plain text delimited data.<br> Use `FORMAT` `'CSV'` when \<path-to-hdfs-file\> references comma-separated value data.  |
+| FORMAT | Use `FORMAT` `'TEXT'` when \<path-to-hdfs-file\> references plain text delimited data.<br/> Use `FORMAT` `'CSV'` when \<path-to-hdfs-file\> references comma-separated value data.  |
 | delimiter    | The delimiter character in the data. For `FORMAT` `'CSV'`, the default \<delim_value\> is a comma (`,`). Preface the \<delim_value\> with an `E` when the value is an escape sequence. Examples: `(delimiter=E'\t')`, `(delimiter ':')`. |
 
 **Note**: PXF does not support the `(HEADER)` formatter option in the `CREATE EXTERNAL TABLE` command. If your text file includes header line(s), use `SKIP_HEADER_COUNT` to specify the number of lines that PXF should skip at the beginning of the first split of each file.
@@ -237,15 +237,15 @@ FORMAT '[TEXT|CSV]' (delimiter[=|<space>][E]'<delim_value>');
 [DISTRIBUTED BY (<column_name> [, ... ] ) | DISTRIBUTED RANDOMLY];
 ```
 
-The specific keywords and values used in the [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) command are described in the table below.
+The specific keywords and values used in the [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
 | \<path&#8209;to&#8209;hdfs&#8209;dir\>    | The path to the directory in the HDFS data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/cfg_server.md#about-the-pxf-fs-basepath-property) property setting, PXF considers \<path&#8209;to&#8209;hdfs&#8209;dir\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;hdfs&#8209;dir\> must not specify a relative path nor include the dollar sign (`$`) character. |
-| PROFILE    | Use `PROFILE` `hdfs:text` to write plain, delimited text to \<path-to-hdfs-file\>.<br> Use `PROFILE` `hdfs:csv` to write comma-separated value text to \<path-to-hdfs-dir\>. |
+| PROFILE    | Use `PROFILE` `hdfs:text` to write plain, delimited text to \<path-to-hdfs-file\>.<br/> Use `PROFILE` `hdfs:csv` to write comma-separated value text to \<path-to-hdfs-dir\>. |
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. PXF uses the `default` server if not specified. |
 | \<custom&#8209;option\>  | \<custom-option\>s are described below.|
-| FORMAT | Use `FORMAT` `'TEXT'` to write plain, delimited text to \<path-to-hdfs-dir\>.<br> Use `FORMAT` `'CSV'` to write comma-separated value text to \<path-to-hdfs-dir\>. |
+| FORMAT | Use `FORMAT` `'TEXT'` to write plain, delimited text to \<path-to-hdfs-dir\>.<br/> Use `FORMAT` `'CSV'` to write comma-separated value text to \<path-to-hdfs-dir\>. |
 | delimiter    | The delimiter character in the data. For `FORMAT` `'CSV'`, the default \<delim_value\> is a comma (`,`). Preface the \<delim_value\> with an `E` when the value is an escape sequence. Examples: `(delimiter=E'\t')`, `(delimiter ':')`. |
 | DISTRIBUTED BY    | If you want to load data from an existing Apache Cloudberry table into the writable external table, consider specifying the same distribution policy or `<column_name>` on both tables. Doing so will avoid extra motion of data between segments on the load operation. |
 

@@ -96,7 +96,7 @@ LOCATION ('pxf://<hbase-table-name>?PROFILE=hbase[&SERVER=<server_name>]')
 FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import');
 ```
 
-HBase connector-specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) call are described below.
+HBase connector-specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) call are described below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|

@@ -1,50 +1,63 @@
 ---
-title: PXF Pre-gpupgrade Actions
-description: Preparing PXF for an Apache Cloudberry version upgrade.
+title: PXF Pre-Upgrade Actions (cbupgrade)
+description: Preparing PXF before an in-place Apache Cloudberry major version upgrade.
 sidebar_position: 5
 ---
 
-If you are running PXF with Apache Cloudberry 5.x and plan to use `gpupgrade` for an in-place upgrade to Apache Cloudberry 6.x, you must perform these steps prior to running `gpupgrade`.
+:::warning Forward-looking reference
+
+`cbupgrade` is the in-place major-version upgrade tool for Apache Cloudberry
+(for example, upgrading from Apache Cloudberry 2.x to 3.x). It is **under active
+development and is not supported yet**. This page is provided as a forward-looking
+reference for how PXF is expected to participate in a `cbupgrade` workflow; the
+exact commands and package layout may change before `cbupgrade` is released.
+Do not use this procedure on a production cluster.
+
+:::
+
+If you are running PXF and plan to use `cbupgrade` for an in-place upgrade to a
+new major version of Apache Cloudberry, you will perform these steps prior to
+running `cbupgrade`.
 
 
-## Pre-gpupgrade Actions
+## Pre-Upgrade Actions
 
-Before you run `gpupgrade`, perform the following steps:
+Before you run `cbupgrade`, perform the following steps:
 
-1. Upgrade your Apache Cloudberry 5.x PXF installation to the latest release (6.3.0 or newer); refer to the [Upgrading PXF](./upgrade_landing.md) documentation for instructions on upgrading PXF.
+1. Upgrade PXF in your current cluster to the latest release; refer to the [Upgrading PXF](./upgrade_landing.md) documentation for instructions.
 
 1. Note the PXF version.
 
-1. Install the Apache Cloudberry 6-specific PXF package of the same version on every segment host in the cluster. You need only install the PXF package; you do not need to run the `pxf cluster prepare` or `pxf cluster register` commands.
+1. Install the PXF package that targets the new Apache Cloudberry major version on every segment host in the cluster. You need only install the PXF package; you do not need to run the `pxf cluster prepare` or `pxf cluster register` commands.
 
-1. Log in to the coordinator host of your Apache Cloudberry 5.x cluster:
+1. Log in to the coordinator host of your current Apache Cloudberry cluster:
 
     ``` shell
     $ ssh gpadmin@<coordinator>
     gpadmin@coordinator$ 
     ```
 
-1. Run the following commands to set up your environment; substitute the file system path to your Apache Cloudberry 5.x install directory:
+1. Run the PXF pre-upgrade script for your current installation; substitute the file system path to your current Apache Cloudberry install directory:
 
     ``` shell
-    gpadmin@coordinator$ export GPHOME=<greenplum5-install-dir>
-    gpadmin@coordinator$ /usr/local/pxf-gp5/bin/pxf-pre-gpupgrade
+    gpadmin@coordinator$ export GPHOME=<current-cloudberry-install-dir>
+    gpadmin@coordinator$ /usr/local/cloudberry-pxf-<current-version>/bin/pxf-pre-cbupgrade
     ```
 
-    **Note:** The `pxf-pre-gpupgrade` script must connect to your running Apache Cloudberry 5.x cluster. By default, it attempts to connect to the `gpadmin` database on `localhost` on port `5432` as the `gpadmin` user (no password). If you need to customize these settings, refer to [Customizing the Apache Cloudberry Connection Parameters](#customizing-the-greenplum-connection-parameters) for instructions on setting environment variables for this purpose.
+    **Note:** The pre-upgrade script must connect to your running Apache Cloudberry cluster. By default, it attempts to connect to the `gpadmin` database on `localhost` on port `5432` as the `gpadmin` user (no password). If you need to customize these settings, refer to [Customizing the Apache Cloudberry Connection Parameters](#customizing-the-apache-cloudberry-connection-parameters) for instructions on setting environment variables for this purpose.
 
 1. Stop PXF; note that PXF external tables will be inaccessible during the Apache Cloudberry upgrade process.
 
     ``` shell
-    gpadmin@coordinator$ /usr/local/pxf-gp5/bin/pxf cluster stop
+    gpadmin@coordinator$ /usr/local/cloudberry-pxf-<current-version>/bin/pxf cluster stop
     ```
 
-1. PXF is ready for upgrading by `gpupgrade`; return to the `gpupgrade` documentation to upgrade from Apache Cloudberry 5.x to Apache Cloudberry 6.x.
+1. PXF is ready for upgrading by `cbupgrade`; return to the `cbupgrade` documentation to complete the major version upgrade.
 
 
 ## Customizing the Apache Cloudberry Connection Parameters
 
-The PXF scripts that you run before and after `gpupgrade` must connect to your running Apache Cloudberry 5.x or 6.x cluster. By default, the scripts attempt to connect to the `gpadmin` database on `localhost` on port `5432` as the `gpadmin` user, no password. If you need to customize these settings, you can do so by specifying the following environment variables:
+The PXF scripts that you run before and after `cbupgrade` must connect to your running Apache Cloudberry cluster. By default, the scripts attempt to connect to the `gpadmin` database on `localhost` on port `5432` as the `gpadmin` user, no password. If you need to customize these settings, you can do so by specifying the following environment variables:
 
 | Environment Variable | Default Value | Description                                           |
 |----------------------|---------------|-------------------------------------------------------|
@@ -55,4 +68,3 @@ The PXF scripts that you run before and after `gpupgrade` must connect to your r
 | `$PGPASSWORD`        | _none_        | The password for the user. |
 
 Refer to the [Environment Variables](https://www.postgresql.org/docs/9.4/libpq-envars.html) topic in the PostgreSQL documentation for more details.
-

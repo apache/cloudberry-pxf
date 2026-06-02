@@ -14,7 +14,7 @@ To configure PXF, you must:
     - Edit the `$PXF_BASE/conf/pxf-env.sh` file on the Apache Cloudberry coordinator host.
 
         ``` shell        
-        gpadmin@coordinator$ vi /usr/local/pxf-gp6/conf/pxf-env.sh
+        gpadmin@coordinator$ vi /usr/local/cloudberry-pxf/conf/pxf-env.sh
         ```
     - Locate the `JAVA_HOME` setting in the `pxf-env.sh` file, uncomment if necessary, and set it to your `$JAVA_HOME` value. For example:
 

@@ -50,7 +50,7 @@ The PXF object store connectors provide built-in profiles to support the followi
 The PXF connectors to Azure expose the following profiles to read, and in many cases write, these supported data formats.
 
 >**Note**:
->ADL support has been deprecated as of PXF 7.0.0. Use the ABFSS profile instead.
+>ADL support has been deprecated. Use the ABFSS profile instead.
 
 | Data Format | Azure Blob Storage | Azure Data Lake Storage Gen2 | Supported Operations |
 |-----|------|---------| ---------|
@@ -86,7 +86,7 @@ You provide the profile name when you specify the `pxf` protocol on a `CREATE EX
 
 ## Sample CREATE EXTERNAL TABLE Commands
 
-<div className="note"><b>Note:</b> When you create an external table that references a file or directory in an object store, you must specify a <code>SERVER</code> in the <code>LOCATION</code> URI.</div>
+<div className="note"><b>Note:</b> When you create an external table that references a file or directory in an object store, you must specify a `SERVER` in the `LOCATION` URI.</div>
 
 The following command creates an external table that references a text file on S3. It specifies the profile named `s3:text` and the server configuration named `s3srvcfg`:
 

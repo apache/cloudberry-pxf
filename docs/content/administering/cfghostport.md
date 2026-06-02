@@ -7,7 +7,7 @@ sidebar_position: 18
 In the default deployment topology, since PXF 6.7.0, the PXF Service starts on an Apache Cloudberry host and listens on `localhost:5888`. With this configuration, the PXF Service listens for local traffic on the Apache Cloudberry host. You can configure PXF to listen on a different listen address. You can also configure PXF to listen on a different port number, or to run on a different host. To change the default configuration, you set one or more of the properties identified below:
 
 |   Property |  Type | Description      | Default |
-|-------------------------|-------------------|-----|
+|-------------------------|-------------------|-----|----|
 |   server.address  | `pxf-application.properties` property | The PXF server listen address. | `localhost`  |
 |   PXF_HOST  | Environment variable | The name or IP address of the (non-Greenpum) host on which the PXF Service is running. | `localhost`  |
 |   PXF_PORT  | Environment variable | The port number on which the PXF server listens for requests on the host. | `5888`  |
@@ -28,7 +28,7 @@ Perform the following procedure to change the PXF listen address:
 1. Locate the `pxf-application.properties` file in your PXF installation. If you did not relocate `$PXF_BASE`, the file resides here:
 
     ``` pre
-    /usr/local/pxf-gp6/conf/pxf-application.properties
+    /usr/local/cloudberry-pxf/conf/pxf-application.properties
     ```
 
 1. Open the file in the editor of your choice,  uncomment and set the following line:
@@ -82,7 +82,7 @@ Perform the following procedure to configure the port number of the PXF server o
     gpadmin@coordinator$ source ~/.bashrc
     ```
 
-3. Restart Apache Cloudberry as described in [Restarting Apache Cloudberry](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/admin_guide-managing-startstop.html#restarting-greenplum-database) in the Apache Cloudberry Documentation.
+3. Restart Apache Cloudberry as described in [Restarting Apache Cloudberry](../../database-basic/start-and-stop-cbdb-database.md) in the Apache Cloudberry Documentation.
 
 4. Restart PXF on each Apache Cloudberry host:
 
@@ -131,7 +131,7 @@ Perform the following procedure to configure the PXF host on each Apache Cloudbe
 
 1. Configure the listen address of the PXF Service as described in [Configuring the Listen Address](#configuring-the-listen-address).
 
-3. Restart Apache Cloudberry as described in [Restarting Apache Cloudberry](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/admin_guide-managing-startstop.html#restarting-greenplum-database) in the Apache Cloudberry Documentation.
+3. Restart Apache Cloudberry as described in [Restarting Apache Cloudberry](../../database-basic/start-and-stop-cbdb-database.md) in the Apache Cloudberry Documentation.
 
 5. Verify that PXF is running on the reconfigured host by invoking `http://<PXF_HOST>:<PXF_PORT>/actuator/health` to view PXF monitoring information as described in [About PXF Service Runtime Monitoring](./monitor_pxf.md#about-pxf-service-runtime-monitoring).
 

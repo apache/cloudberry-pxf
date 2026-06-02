@@ -27,7 +27,7 @@ Apache Hive is a distributed data warehousing infrastructure. Hive facilitates m
 
 The PXF Hive connector reads data stored in a Hive table. This section describes how to use the PXF Hive connector. 
 
-<div className="note"><b>Note:</b> When accessing Hive 3, the PXF Hive connector supports using the <code>hive[:*]</code> profiles described below to access Hive 3 external tables only. The Connector does not support using the <code>hive[:*]</code> profiles to access Hive 3 managed (CRUD and insert-only transactional, and temporary) tables. Use the <a href="../access-jdbc/jdbc_pxf.md">PXF JDBC Connector</a> to access Hive 3 managed tables instead.</div>
+<div className="note"><b>Note:</b> When accessing Hive 3, the PXF Hive connector supports using the `hive[:*]` profiles described below to access Hive 3 external tables only. The Connector does not support using the `hive[:*]` profiles to access Hive 3 managed (CRUD and insert-only transactional, and temporary) tables. Use the <a href="../access-jdbc/jdbc_pxf.md">PXF JDBC Connector</a> to access Hive 3 managed tables instead.</div>
 
 ## Prerequisites
 
@@ -196,7 +196,7 @@ LOCATION ('pxf://<hive-db-name>.<hive-table-name>
 FORMAT 'CUSTOM|TEXT' (FORMATTER='pxfwritable_import' | delimiter='<delim>')
 ```
 
-Hive connector-specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/ref_guide-sql_commands-CREATE_EXTERNAL_TABLE.html) call are described below.
+Hive connector-specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](../../sql-stmts/create-external-table.md) call are described below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|

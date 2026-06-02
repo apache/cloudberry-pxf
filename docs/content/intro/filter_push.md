@@ -46,8 +46,8 @@ PXF filter pushdown can be used with these data types (connector- and profile-sp
 PXF accesses data sources using profiles exposed by different connectors, and filter pushdown support is determined by the specific connector implementation. 
 The following PXF profiles support some aspects of filter pushdown as well as different arithmetic and logical operations:
 
-|Profile | <,&nbsp;&nbsp; >,</br><=,&nbsp;&nbsp; >=,</br>=,&nbsp;&nbsp;<> | LIKE | IS [NOT] NULL | IN | AND | OR | NOT |
-|-------|:------------------------:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
+|Profile | `<`, `>`, `<=`, `>=`, `=`, `<>` | LIKE | IS [NOT] NULL | IN | AND | OR | NOT |
+|-------|:------------------------:|:----:|:----:|:----:|:----:|:----:|:----:|
 | jdbc | Y | Y<sup>4</sup> | Y | N | Y | Y | Y | 
 | *:parquet | Y<sup>1</sup> | N | Y<sup>1</sup> | Y<sup>1</sup> | Y<sup>1</sup> | Y<sup>1</sup> | Y<sup>1</sup> |
 | *:orc (all except hive:orc) | Y<sup>1,3</sup> | N | Y<sup>1,3</sup> | Y<sup>1,3</sup> | Y<sup>1,3</sup> | Y<sup>1,3</sup> | Y<sup>1,3</sup> |
@@ -59,10 +59,10 @@ The following PXF profiles support some aspects of filter pushdown as well as di
 | hive (accessing stored as Parquet) | Y, Y<sup>2</sup> | N | N | Y | Y, Y<sup>2</sup> | Y, Y<sup>2</sup> | Y |
 | hive:orc and VECTORIZE=true | Y<sup>2</sup> |  N | N | N | Y<sup>2</sup> | Y<sup>2</sup> | N |
 
-</br><sup>1</sup>&nbsp;PXF applies the predicate, rather than the remote system, reducing CPU usage and the memory footprint.
-</br><sup>2</sup>&nbsp;PXF supports partition pruning based on partition keys.
-</br><sup>3</sup>&nbsp;PXF filtering is based on file-level, stripe-level, and row-level ORC statistics.
-</br><sup>4</sup>&nbsp;The PXF `jdbc` profile supports the `LIKE` operator only for `TEXT` fields.
+<br/><sup>1</sup>&nbsp;PXF applies the predicate, rather than the remote system, reducing CPU usage and the memory footprint.
+<br/><sup>2</sup>&nbsp;PXF supports partition pruning based on partition keys.
+<br/><sup>3</sup>&nbsp;PXF filtering is based on file-level, stripe-level, and row-level ORC statistics.
+<br/><sup>4</sup>&nbsp;The PXF `jdbc` profile supports the `LIKE` operator only for `TEXT` fields.
 
 PXF does not support filter pushdown for any profile not mentioned in the table above, including: *:avro, *:AvroSequenceFile, *:SequenceFile, *:json, *:text, *:csv, `*:fixedwidth`, and *:text:multi.
 

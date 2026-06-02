@@ -1,6 +1,6 @@
 ---
 title: Troubleshooting
-description: Troubleshooting PXF: logs, common errors, and memory issues.
+description: "Troubleshooting PXF: logs, common errors, and memory issues."
 sidebar_position: 1
 ---
 
@@ -29,14 +29,14 @@ The following table describes some errors you may encounter while using PXF:
 
 | Error Message                 | Discussion                     |
 |-------------------------------|---------------------------------|
-| Protocol "pxf" does not exist | **Cause**: The `pxf` extension was not registered.<br>**Solution**: Create (enable) the PXF extension for the database as described in the PXF [Enable Procedure](../administering/using_pxf.md#enabling-pxf-in-a-database).|
-| Invalid URI pxf://\<path-to-data\>: missing options section | **Cause**: The `LOCATION` URI does not include the profile or other required options.<br>**Solution**: Provide the profile and required options in the URI when you submit the `CREATE EXTERNAL TABLE` command. |
-| PXF server error : Input path does not exist: hdfs://\<namenode\>:8020/\<path-to-file\> | **Cause**: The HDFS file that you specified in \<path-to-file\> does not exist. <br>**Solution**: Provide the path to an existing HDFS file. |
-| PXF server error : NoSuchObjectException(message:\<schema\>.\<hivetable\> table not found) | **Cause**: The Hive table that you specified with \<schema\>.\<hivetable\> does not exist. <br>**Solution**: Provide the name of an existing Hive table. |
-| PXF server error : Failed connect to localhost:5888; Connection refused (\<segment-id\> slice\<N\> \<segment-host\>:\<port\> pid=\<process-id\>)<br> ... |**Cause**: The PXF Service is not running on \<segment-host\>.<br>**Solution**: Restart PXF on \<segment-host\>. |
+| Protocol "pxf" does not exist | **Cause**: The `pxf` extension was not registered.<br/>**Solution**: Create (enable) the PXF extension for the database as described in the PXF [Enable Procedure](../administering/using_pxf.md#enabling-pxf-in-a-database).|
+| Invalid URI pxf://\<path-to-data\>: missing options section | **Cause**: The `LOCATION` URI does not include the profile or other required options.<br/>**Solution**: Provide the profile and required options in the URI when you submit the `CREATE EXTERNAL TABLE` command. |
+| PXF server error : Input path does not exist: hdfs://\<namenode\>:8020/\<path-to-file\> | **Cause**: The HDFS file that you specified in \<path-to-file\> does not exist. <br/>**Solution**: Provide the path to an existing HDFS file. |
+| PXF server error : NoSuchObjectException(message:\<schema\>.\<hivetable\> table not found) | **Cause**: The Hive table that you specified with \<schema\>.\<hivetable\> does not exist. <br/>**Solution**: Provide the name of an existing Hive table. |
+| PXF server error : Failed connect to localhost:5888; Connection refused (\<segment-id\> slice\<N\> \<segment-host\>:\<port\> pid=\<process-id\>)<br/> ... |**Cause**: The PXF Service is not running on \<segment-host\>.<br/>**Solution**: Restart PXF on \<segment-host\>. |
 | PXF server error: Permission denied: user=\<user\>, access=READ, inode=&quot;\<filepath\>&quot;:-rw------- | **Cause**: The Apache Cloudberry user that ran the PXF operation does not have permission to access the underlying Hadoop service (HDFS or Hive). See [Configuring the Hadoop User, User Impersonation, and Proxying](../administering/pxfuserimpers.md). |
-| PXF server error: PXF service could not be reached. PXF is not running in the tomcat container | **Cause**: The `pxf` extension was updated to a new version but the PXF server has not been updated to a compatible version. <br>**Solution**: Ensure that the PXF server has been updated and restarted on all hosts. |
-| ERROR: could not load library "/usr/local/greenplum-db-x.x.x/lib/postgresql/pxf.so" | **Cause**: Some steps have not been completed after an Apache Cloudberry upgrade or migration, such as `pxf cluster register`. <br>**Solution**: Make sure you follow the steps outlined for [PXF Upgrade and Migration](https://docs.vmware.com/en/VMware-Apache Cloudberry/6/greenplum-database/pxf-pxf_upgrade_migration.html. | 
+| PXF server error: PXF service could not be reached. PXF is not running in the tomcat container | **Cause**: The `pxf` extension was updated to a new version but the PXF server has not been updated to a compatible version. <br/>**Solution**: Ensure that the PXF server has been updated and restarted on all hosts. |
+| ERROR: could not load library "/usr/local/cloudberry-db-x.x.x/lib/postgresql/pxf.so" | **Cause**: Some steps have not been completed after an Apache Cloudberry upgrade or migration, such as `pxf cluster register`. <br/>**Solution**: Make sure you follow the steps outlined for [PXF Upgrade and Migration](../upgrade/upgrade_landing.md) | 
 
 Most PXF error messages include a `HINT` that you can use to resolve the error, or to collect more information to identify the error.
 
@@ -129,10 +129,10 @@ By default, PXF does not bundle the LZO compression library. If the Hadoop clust
 
 1. Log in to the Apache Cloudberry coordinator host.
 
-1. Copy `hadoop-lzo.jar` from the Hadoop NameNode to the PXF configuration directory on the Apache Cloudberry coordinator host. For example, if `$PXF_BASE` is `/usr/local/pxf-gp6`:
+1. Copy `hadoop-lzo.jar` from the Hadoop NameNode to the PXF configuration directory on the Apache Cloudberry coordinator host. For example, if `$PXF_BASE` is `/usr/local/cloudberry-pxf`:
 
     ``` shell
-    gpadmin@coordinator$ scp <hadoop-user>@<namenode-host>:/usr/lib/hadoop-lzo/lib/hadoop-lzo.jar /usr/local/pxf-gp6/lib/
+    gpadmin@coordinator$ scp <hadoop-user>@<namenode-host>:/usr/lib/hadoop-lzo/lib/hadoop-lzo.jar /usr/local/cloudberry-pxf/lib/
     ```
 
 1. Synchronize the PXF configuration and restart PXF:
@@ -176,7 +176,7 @@ To remedy this situation, specify an executable directory for the Snappy `tempdi
 1.  Locate the `pxf-env.sh` file in your PXF installation. If you did not relocate `$PXF_BASE`, the file is located here:
 
     ``` pre
-    /usr/local/pxf-gp6/conf/pxf-env.sh
+    /usr/local/cloudberry-pxf/conf/pxf-env.sh
     ```
 
 1.  Open `pxf-env.sh` in the editor of your choice, locate the line where `PXF_JVM_OPTS` is set, uncomment the line if it is not already uncommented, and add `-Dorg.xerial.snappy.tempdir=${PXF_BASE}/run` to the setting. For example:
@@ -224,10 +224,10 @@ The workaround described in this section applies when all of the following hold 
 
 1. Identify the name of your Hadoop PXF server configuration.
 
-1. Locate the `hive-site.xml` configuration file in the server configuration directory. For example, if `$PXF_BASE` is `/usr/local/pxf-gp6` and the server name is `<server_name>`, the file is located here:
+1. Locate the `hive-site.xml` configuration file in the server configuration directory. For example, if `$PXF_BASE` is `/usr/local/cloudberry-pxf` and the server name is `<server_name>`, the file is located here:
 
     ``` pre
-    /usr/local/pxf-gp6/servers/<server_name>/hive-site.xml
+    /usr/local/cloudberry-pxf/servers/<server_name>/hive-site.xml
     ```
 
 1. Add or update the following property definition in the `hive-site.xml` file, and then save and exit the editor:

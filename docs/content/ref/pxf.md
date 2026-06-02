@@ -44,22 +44,22 @@ The `pxf` utility manages the PXF configuration and the PXF Service instance on 
 ## Commands
 
 <dt>cluster</dt>
-<dd>Manage the PXF configuration and the PXF Service instance on all Apache Cloudberry hosts. See <code>pxf cluster</code>.</dd>
+<dd>Manage the PXF configuration and the PXF Service instance on all Apache Cloudberry hosts. See `pxf cluster`.</dd>
 
 <dt>help</dt>
-<dd>Display the <code>pxf</code> management utility help message and then exit.</dd>
+<dd>Display the `pxf` management utility help message and then exit.</dd>
 
 <dt>init (deprecated)</dt>
-<dd>The command is equivalent to the <code>register</code> command.</dd>
+<dd>The command is equivalent to the `register` command.</dd>
 
 <dt>migrate</dt>
-<dd>Migrate the configuration in a PXF 5 <code>$PXF_CONF</code> directory to <code>$PXF_BASE</code> on the host. When you run the command, you must identify the PXF 5 configuration directory via an environment variable named <code>PXF_CONF</code>. PXF migrates the version 5 configuration to the current <code>$PXF_BASE</code>, copying and merging files and directories as necessary. <div className="note"><b>Note:</b> You must manually migrate any <code>pxf-log4j.properties</code> customizations to the <code>pxf-log4j2.xml</code> file.</div></dd>
+<dd>Migrate the configuration in a legacy `$PXF_CONF` directory to `$PXF_BASE` on the host. When you run the command, you must identify the legacy configuration directory via an environment variable named `PXF_CONF`. PXF migrates the configuration to the current `$PXF_BASE`, copying and merging files and directories as necessary. <div className="note"><b>Note:</b> You must manually migrate any `pxf-log4j.properties` customizations to the `pxf-log4j2.xml` file.</div></dd>
 
 <dt>prepare</dt>
-<dd>Prepare a new <code>$PXF_BASE</code> directory on the host. When you run the command, you must identify the new PXF runtime configuration directory via an environment variable named <code>PXF_BASE</code>. PXF copies runtime configuration file templates and directories to this <code>$PXF_BASE</code>.</dd>
+<dd>Prepare a new `$PXF_BASE` directory on the host. When you run the command, you must identify the new PXF runtime configuration directory via an environment variable named `PXF_BASE`. PXF copies runtime configuration file templates and directories to this `$PXF_BASE`.</dd>
 
 <dt>register</dt>
-<dd>Copy the PXF extension files from the PXF installation on the host to the Apache Cloudberry installation on the host. This command requires that <code>$GPHOME</code> be set, and is run once after you install PXF 6.x the first time, or run when you upgrade your Apache Cloudberry installation.</dd>
+<dd>Copy the PXF extension files from the PXF installation on the host to the Apache Cloudberry installation on the host. This command requires that `$GPHOME` be set, and is run once after you install PXF 6.x the first time, or run when you upgrade your Apache Cloudberry installation.</dd>
 
 <dt>reset (deprecated)</dt>
 <dd>The command is a no-op.</dd>
@@ -77,7 +77,7 @@ The `pxf` utility manages the PXF configuration and the PXF Service instance on 
 <dd>Stop the PXF Service instance running on the local coordinator host, standby coordinator host, or segment host.</dd>
 
 <dt>sync  </dt>
-<dd>Synchronize the PXF configuration (<code>$PXF_BASE</code>) from the coordinator host to a specific Apache Cloudberry standby coordinator host or segment host. You must run <code>pxf sync</code> on the coordinator host. By default, this command updates files on and copies files to the remote. You can instruct PXF to also delete files during the synchronization; see Options below.</dd>
+<dd>Synchronize the PXF configuration (`$PXF_BASE`) from the coordinator host to a specific Apache Cloudberry standby coordinator host or segment host. You must run `pxf sync` on the coordinator host. By default, this command updates files on and copies files to the remote. You can instruct PXF to also delete files during the synchronization; see Options below.</dd>
 
 <dt>version  </dt>
 <dd>Display the PXF version and then exit.</dd>

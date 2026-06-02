@@ -4,7 +4,7 @@ description: Using PXF JDBC with Trino.
 sidebar_position: 6
 ---
 
-Because PXF accesses Trino using the JDBC connector, this example works for all PXF 6.x versions.
+Because PXF accesses Trino using the JDBC connector, this example works for all supported PXF versions.
 
 In this example, you:
 
@@ -48,7 +48,7 @@ This procedure will typically be performed by the Apache Cloudberry administrato
     1. If you did not relocate `$PXF_BASE`, run the following from the Cloudberry coordinator:
 
         ```shell
-        gpadmin@coordinator$ cd /usr/local/pxf-gp<version>/lib
+        gpadmin@coordinator$ cd /usr/local/cloudberry-pxf-<version>/lib
         gpadmin@coordinator$ wget <url-to-trino-jdbc-driver>
         ```
 
@@ -109,7 +109,7 @@ This procedure will typically be performed by the Apache Cloudberry administrato
     Copy the certificate to `$PXF_BASE/servers/trino`; storing the server's certificate inside `$PXF_BASE/servers/trino` ensures that `pxf cluster sync` copies the certificate to all segment hosts.
 
     ```shell
-    $ cp <path-to-trino-server-certificate> /usr/local/pxf-gp<version>/servers/trino
+    $ cp <path-to-trino-server-certificate> /usr/local/cloudberry-pxf-<version>/servers/trino
     ```
 
     Add the following connection properties to the `jdbc-site.xml` file that you created in the previous step. Here, `trino.cert` is the name of the certificate file that you copied into `$PXF_BASE/servers/trino`:
@@ -119,7 +119,7 @@ This procedure will typically be performed by the Apache Cloudberry administrato
     ...
         <property>
             <name>jdbc.connection.property.SSLTrustStorePath</name>
-            <value>/usr/local/pxf-gp<version>/servers/trino/trino.cert</value>
+            <value>/usr/local/cloudberry-pxf-<version>/servers/trino/trino.cert</value>
             <description>The location of the Java TrustStore file that will be used to validate HTTPS server certificates.</description>
         </property>
         <!-- the following property is only required if the server's certificate is stored in a JKS file; if using a PEM-encoded file, it should be omitted.-->
