@@ -17,6 +17,8 @@
 #ifndef PXF_FDW_H
 #define PXF_FDW_H
 
+#define PXF_METADATA_QUEUE_ID 0
+
 /* in pxf_deparse.c */
 extern void deparseTargetList(Relation rel, Bitmapset *attrs_used, List **retrieved_attrs);
 extern void classifyConditions(PlannerInfo *root, RelOptInfo *baserel, List *input_conds, List **remote_conds, List **local_conds);

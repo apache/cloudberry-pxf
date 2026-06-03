@@ -39,6 +39,7 @@
 #define FDW_OPTION_REJECT_LIMIT "reject_limit"
 #define FDW_OPTION_REJECT_LIMIT_TYPE "reject_limit_type"
 #define FDW_OPTION_RESOURCE "resource"
+#define FDW_OPTION_EXT_PROTOCOL_VERSION "ext_protocol_version"
 
 #define FDW_COPY_OPTION_FORMAT "format"
 #define FDW_COPY_OPTION_HEADER "header"
@@ -63,6 +64,7 @@ struct PxfFdwOption
 
 static const struct PxfFdwOption valid_options[] = {
 	{FDW_OPTION_PROTOCOL, ForeignDataWrapperRelationId},
+	{FDW_OPTION_EXT_PROTOCOL_VERSION, ForeignDataWrapperRelationId},
 	{FDW_OPTION_RESOURCE, ForeignTableRelationId},
 	{FDW_OPTION_FORMAT, ForeignTableRelationId},
 	{FDW_OPTION_CONFIG, ForeignServerRelationId},
@@ -134,6 +136,7 @@ Datum
 pxf_fdw_validator(PG_FUNCTION_ARGS)
 {
 	char	   *protocol = NULL;
+	char	   *ext_protocol_version = NULL;
 	char	   *resource = NULL;
 	char	   *reject_limit_type = FDW_OPTION_REJECT_LIMIT_ROWS;
 	bool		log_errors_set = false;
@@ -156,6 +159,8 @@ pxf_fdw_validator(PG_FUNCTION_ARGS)
 
 		if (strcmp(def->defname, FDW_OPTION_PROTOCOL) == 0)
 			protocol = defGetString(def);
+		else if(strcmp(def->defname, FDW_OPTION_EXT_PROTOCOL_VERSION) == 0)
+			ext_protocol_version = defGetString(def);
 		else if (strcmp(def->defname, FDW_OPTION_RESOURCE) == 0)
 			resource = defGetString(def);
 		else if (strcmp(def->defname, FDW_OPTION_MPP_EXECUTE) == 0)
@@ -252,6 +257,15 @@ pxf_fdw_validator(PG_FUNCTION_ARGS)
 		ereport(ERROR,
 				(errcode(ERRCODE_FDW_DYNAMIC_PARAMETER_VALUE_NEEDED),
 				 errmsg("the %s option must be defined for PXF foreign-data wrappers", FDW_OPTION_PROTOCOL)));
+	}
+
+	if (catalog == ForeignDataWrapperRelationId && 
+		ext_protocol_version != NULL && 
+		strcmp(ext_protocol_version, "v1") != 0)
+	{
+		ereport(ERROR,
+				(errcode(ERRCODE_FDW_INVALID_ATTRIBUTE_VALUE),
+				 errmsg("the %s option might have only 'v1' value", FDW_OPTION_EXT_PROTOCOL_VERSION)));
 	}
 
 	if (catalog == ForeignTableRelationId &&
@@ -444,6 +458,8 @@ PxfGetOptions(Oid foreigntableid)
 			opt->pxf_protocol = defGetString(def);
 		else if (strcmp(def->defname, FDW_OPTION_PROTOCOL) == 0)
 			opt->protocol = defGetString(def);
+		else if (strcmp(def->defname, FDW_OPTION_EXT_PROTOCOL_VERSION) == 0)
+			opt->ext_protocol_version = defGetString(def);
 		else if (strcmp(def->defname, FDW_OPTION_RESOURCE) == 0)
 			opt->resource = defGetString(def);
 		else if (strcmp(def->defname, FDW_OPTION_REJECT_LIMIT) == 0)
@@ -581,4 +597,14 @@ ValidateOption(char *option, Oid catalog)
 							RelationGetRelationName(rel))));
 		}
 	}
+}
+
+/*
+ Was the external commit metadata requested?
+ */
+bool
+IsExtCommitMetadata(PxfOptions *options)
+{
+	return  IsExtProtocol(options) &&
+		!strcmp(ExtProtocolVersion(options), PXF_EXTPROTOCOL_VERSION_V1);
 }

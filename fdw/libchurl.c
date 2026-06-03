@@ -466,8 +466,6 @@ churl_read_check_connectivity(CHURL_HANDLE handle)
 {
 	churl_context *context = (churl_context *) handle;
 
-	Assert(!context->upload);
-
 	fill_internal_buffer(context, 1);
 	check_response(context);
 }
@@ -481,8 +479,6 @@ churl_read(CHURL_HANDLE handle, char *buf, size_t max_size)
 	int			n = 0;
 	churl_context *context = (churl_context *) handle;
 	churl_buffer *context_buffer = context->download_buffer;
-
-	Assert(!context->upload);
 
 	fill_internal_buffer(context, max_size);
 

@@ -17,6 +17,9 @@
 #define PXF_FDW_DEFAULT_HOST     "localhost"
 #define PXF_FDW_DEFAULT_PORT     5888
 
+#define PXF_EXTPROTOCOL_VERSION    "ext_protocol_version"
+#define PXF_EXTPROTOCOL_VERSION_V1 "v1"
+
 /*
  * Structure to store the PXF options */
 typedef struct PxfOptions
@@ -46,6 +49,7 @@ typedef struct PxfOptions
 	char	   *resource;		/* PXF resource */
 	char	   *format;			/* PXF resource format */
 	char	   *profile;		/* protocol[:format] */
+	char	   *ext_protocol_version;
 
 	List	   *copy_options;	/* merged options for COPY */
 	List	   *options;		/* merged options, excluding COPY, protocol,
@@ -59,5 +63,10 @@ typedef struct PxfOptions
 
 /* Functions prototypes for pxf_option.c file */
 PxfOptions *PxfGetOptions(Oid foreigntableid);
+
+#define IsExtProtocol(options) ((options)->ext_protocol_version != NULL)
+#define ExtProtocolVersion(options) (IsExtProtocol(options) ? (options)->ext_protocol_version : NULL)
+
+bool IsExtCommitMetadata(PxfOptions *options);
 
 #endif							/* _PXF_OPTION_H */
