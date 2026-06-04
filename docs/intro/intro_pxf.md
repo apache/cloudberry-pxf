@@ -30,7 +30,7 @@ PXF bundles all of the Hadoop JAR files on which it depends, and supports the fo
 
 | Hadoop Version | Hive Server Version | HBase Server Version |
 |----------------|---------------------|-------------|
-| 2.x, 3.1+ | 1.x, 2.x, 3.1+ | 1.3.2 |
+| 2.x, 3.1+ | 1.x, 2.x, 3.1+ | 2.3.7 |
 
 ## Architectural Overview
 
