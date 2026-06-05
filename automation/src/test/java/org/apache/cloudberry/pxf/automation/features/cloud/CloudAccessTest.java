@@ -21,12 +21,18 @@ package org.apache.cloudberry.pxf.automation.features.cloud;
 
 import annotations.WorksWithFDW;
 import org.apache.cloudberry.pxf.automation.AbstractTestcontainersTest;
+import org.apache.cloudberry.pxf.automation.applications.PXFApplication;
 import org.apache.cloudberry.pxf.automation.applications.S3Application;
 import org.apache.cloudberry.pxf.automation.structures.tables.pxf.ExternalTable;
 import org.apache.cloudberry.pxf.automation.structures.tables.utils.TableFactory;
 import org.apache.cloudberry.pxf.automation.testcontainers.MinIOContainer;
 import org.testng.annotations.Test;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.UUID;
 
 /**
@@ -52,6 +58,7 @@ public class CloudAccessTest extends AbstractTestcontainersTest {
 
     private MinIOContainer s3Server;
     private S3Application s3Application;
+    private PXFApplication pxfApplication;
     private String s3PathRead;
     private String s3PathWrite;
     private String readObjectKeyPrefix;
@@ -62,7 +69,8 @@ public class CloudAccessTest extends AbstractTestcontainersTest {
     public void beforeClass() throws Exception {
         s3Server = new MinIOContainer(container.getSharedNetwork());
         s3Server.start();
-        s3Server.createBucket(MinIOContainer.DEFAULT_BUCKET);
+        s3Application = new S3Application(s3Server);
+        s3Application.createBucket(MinIOContainer.DEFAULT_BUCKET);
 
         String random = UUID.randomUUID().toString();
         readObjectKeyPrefix = String.format("tmp/pxf_automation_data_read/%s/", random);
@@ -70,39 +78,58 @@ public class CloudAccessTest extends AbstractTestcontainersTest {
         s3PathRead = MinIOContainer.DEFAULT_BUCKET + "/" + readObjectKeyPrefix;
         s3PathWrite = MinIOContainer.DEFAULT_BUCKET + "/" + writeObjectKeyPrefix;
 
-        // Servers 's3' and 's3-invalid' are pre-baked into the container image
-        // by entrypoint.sh — nothing to configure at runtime.
-        s3Application = new S3Application(container);
+        pxfApplication = new PXFApplication(container);
     }
 
     @Override
     public void afterClass() throws Exception {
-        if (s3Server != null) {
+        if (s3Application != null) {
             if (readObjectKeyPrefix != null) {
-                s3Server.deletePrefix(MinIOContainer.DEFAULT_BUCKET, readObjectKeyPrefix);
+                s3Application.deletePrefix(MinIOContainer.DEFAULT_BUCKET, readObjectKeyPrefix);
             }
             if (writeObjectKeyPrefix != null) {
-                s3Server.deletePrefix(MinIOContainer.DEFAULT_BUCKET, writeObjectKeyPrefix);
+                s3Application.deletePrefix(MinIOContainer.DEFAULT_BUCKET, writeObjectKeyPrefix);
             }
+            s3Application.shutdown();
+        }
+        if (s3Server != null) {
             s3Server.stop();
         }
         if (defaultHdfsStripped) {
-            s3Application.restoreDefaultServerHdfsConfig();
+            pxfApplication.restoreDefaultServerHdfsConfig();
         }
     }
 
     @Override
     protected void beforeMethod() throws Exception {
-        CloudAccessDataUploader.uploadSmallData(
-                s3Server, MinIOContainer.DEFAULT_BUCKET, readObjectKeyPrefix + fileName,
-                CloudAccessDataUploader.buildSmallData(), ",");
+        uploadSmallCsvFixture(MinIOContainer.DEFAULT_BUCKET, readObjectKeyPrefix + fileName);
+    }
+
+    // Uploads 100 rows of small CSV test data matching BaseFunctionality#getSmallData() layout.
+    private void uploadSmallCsvFixture(String bucket, String objectKey) throws IOException {
+        Path tempFile = Files.createTempFile("cloudaccess-", ".csv");
+        try {
+            try (BufferedWriter writer = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8)) {
+                for (int i = 1; i <= 100; i++) {
+                    writer.append(String.format("row_%d,%d,%s,%d,%s",
+                            i, i, Double.toString(i), 100000000000L * i, i % 2 == 0));
+                    if (i != 100) {
+                        writer.newLine();
+                    }
+                }
+            }
+            System.out.println("[CloudAccessTest] Uploading " + tempFile + " -> s3://" + bucket + "/" + objectKey);
+            s3Application.putObject(bucket, objectKey, tempFile);
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
     }
 
     @Override
     protected void afterMethod() throws Exception {
-        if (s3Server != null) {
-            s3Server.deletePrefix(MinIOContainer.DEFAULT_BUCKET, readObjectKeyPrefix);
-            s3Server.deletePrefix(MinIOContainer.DEFAULT_BUCKET, writeObjectKeyPrefix);
+        if (s3Application != null) {
+            s3Application.deletePrefix(MinIOContainer.DEFAULT_BUCKET, readObjectKeyPrefix);
+            s3Application.deletePrefix(MinIOContainer.DEFAULT_BUCKET, writeObjectKeyPrefix);
         }
         restoreDefaultHdfsIfNeeded();
     }
@@ -189,18 +216,18 @@ public class CloudAccessTest extends AbstractTestcontainersTest {
         try {
             if (creds) {
                 if (server == null) {
-                    s3Application.configureServerEndpointOnly(s3Server, "default");
+                    pxfApplication.configureS3ServerEndpointOnly(s3Server.getInternalEndpoint(), "default");
                 } else if ("s3-non-existent".equals(server)) {
-                    s3Application.configureServerEndpointOnly(s3Server, server);
+                    pxfApplication.configureS3ServerEndpointOnly(s3Server.getInternalEndpoint(), server);
                     createdEndpointOnlyServer = true;
                 }
             } else if ("s3-non-existent".equals(server)) {
-                s3Application.removeServerDirectory(server);
+                pxfApplication.removeServerDirectory(server);
             }
             runTestScenario(name, server, creds);
         } finally {
             if (createdEndpointOnlyServer) {
-                s3Application.removeServerDirectory(server);
+                pxfApplication.removeServerDirectory(server);
             }
             restoreDefaultHdfsIfNeeded();
         }
@@ -208,14 +235,14 @@ public class CloudAccessTest extends AbstractTestcontainersTest {
 
     private void stripDefaultHdfsIfNeeded() throws Exception {
         if (!defaultHdfsStripped) {
-            s3Application.stripDefaultServerHdfsConfig();
+            pxfApplication.stripDefaultServerHdfsConfig();
             defaultHdfsStripped = true;
         }
     }
 
     private void restoreDefaultHdfsIfNeeded() throws Exception {
         if (defaultHdfsStripped) {
-            s3Application.restoreDefaultServerHdfsConfig();
+            pxfApplication.restoreDefaultServerHdfsConfig();
             defaultHdfsStripped = false;
         }
     }

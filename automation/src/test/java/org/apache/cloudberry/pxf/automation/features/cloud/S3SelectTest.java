@@ -20,10 +20,16 @@ package org.apache.cloudberry.pxf.automation.features.cloud;
  */
 
 import org.apache.cloudberry.pxf.automation.AbstractTestcontainersTest;
+import org.apache.cloudberry.pxf.automation.applications.S3Application;
 import org.apache.cloudberry.pxf.automation.structures.tables.pxf.ReadableExternalTable;
 import org.apache.cloudberry.pxf.automation.testcontainers.MinIOContainer;
+import org.apache.cloudberry.pxf.automation.utils.AutomationUtils;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 import static org.apache.cloudberry.pxf.automation.features.tpch.LineItem.LINEITEM_SCHEMA;
@@ -51,6 +57,7 @@ public class S3SelectTest extends AbstractTestcontainersTest {
     };
 
     private MinIOContainer s3Server;
+    private S3Application s3Application;
     private String s3Path;
     private String objectKeyPrefix;
 
@@ -62,6 +69,18 @@ public class S3SelectTest extends AbstractTestcontainersTest {
     private static final String sampleParquetSnappyFile = "sample.snappy.parquet";
     private static final String sampleParquetGzipFile = "sample.gz.parquet";
 
+    private static final String[] FIXTURE_FILES = {
+            sampleCsvFile,
+            sampleCsvNoHeaderFile,
+            sampleGzippedCsvFile,
+            sampleBzip2CsvFile,
+            sampleParquetFile,
+            sampleParquetSnappyFile,
+            sampleParquetGzipFile,
+    };
+
+    private static final String FIXTURES_SUBDIR = "s3select";
+
     /**
      * Prepare all server configurations and components
      */
@@ -69,21 +88,55 @@ public class S3SelectTest extends AbstractTestcontainersTest {
     public void beforeClass() throws Exception {
         s3Server = new MinIOContainer(container.getSharedNetwork());
         s3Server.start();
-        s3Server.createBucket(MinIOContainer.DEFAULT_BUCKET);
+        s3Application = new S3Application(s3Server);
+        s3Application.createBucket(MinIOContainer.DEFAULT_BUCKET);
 
         String uuid = UUID.randomUUID().toString();
         objectKeyPrefix = "tmp/pxf_automation_data/" + uuid + "/s3select/";
         s3Path = MinIOContainer.DEFAULT_BUCKET + "/" + objectKeyPrefix;
 
-        S3SelectFixtureLoader.uploadAll(s3Server, MinIOContainer.DEFAULT_BUCKET, objectKeyPrefix);
+        uploadFixtures(MinIOContainer.DEFAULT_BUCKET, objectKeyPrefix);
+        // Server 's3' is pre-baked into the container image by entrypoint.sh.
     }
 
     @Override
     public void afterClass() throws Exception {
-        if (s3Server != null && objectKeyPrefix != null) {
-            S3SelectFixtureLoader.deletePrefix(s3Server, MinIOContainer.DEFAULT_BUCKET, objectKeyPrefix);
+        if (s3Application != null && objectKeyPrefix != null) {
+            s3Application.deletePrefix(MinIOContainer.DEFAULT_BUCKET, objectKeyPrefix);
+            s3Application.shutdown();
+        }
+        if (s3Server != null) {
             s3Server.stop();
         }
+    }
+
+    // Uploads committed S3 Select fixture files from src/test/resources/data/s3select/ into MinIO.
+    private void uploadFixtures(String bucket, String objectKeyPrefix) throws IOException {
+        Path fixturesDir = resolveFixturesDirectory();
+        for (String filename : FIXTURE_FILES) {
+            Path localFile = fixturesDir.resolve(filename);
+            if (!Files.isRegularFile(localFile)) {
+                throw new IOException("Missing S3 Select fixture: " + localFile);
+            }
+            String key = objectKeyPrefix + filename;
+            System.out.println("[S3SelectTest] Uploading " + localFile + " -> s3://" + bucket + "/" + key);
+            s3Application.putObject(bucket, key, localFile);
+        }
+    }
+
+    private static Path resolveFixturesDirectory() throws IOException {
+        Path relative = Paths.get("src/test/resources/data", FIXTURES_SUBDIR);
+        if (Files.isDirectory(relative)) {
+            return relative.toAbsolutePath().normalize();
+        }
+        Path fromRepo = AutomationUtils.findRepoRoot()
+                .resolve("automation/src/test/resources/data")
+                .resolve(FIXTURES_SUBDIR);
+        if (Files.isDirectory(fromRepo)) {
+            return fromRepo;
+        }
+        throw new IOException("Cannot find s3select fixtures directory (tried "
+                + relative.toAbsolutePath() + " and " + fromRepo + ")");
     }
 
     @Test(groups = {"testcontainers", "pxf-s3"})

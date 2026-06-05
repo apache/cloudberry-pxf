@@ -88,6 +88,88 @@ public class PXFApplication {
         System.out.println("[PXFApplication] JDBC servers configured and PXF restarted");
     }
 
+    // Writes s3-site.xml with endpoint only (no credentials) for credential-via-URL tests.
+    public void configureS3ServerEndpointOnly(String endpoint, String serverName)
+            throws IOException, InterruptedException {
+        String script = String.join("\n",
+                "set -e",
+                "source " + SCRIPTS_PREFIX + "/pxf-env.sh",
+                "TEMPLATES_DIR=${PXF_HOME}/templates",
+                "PXF_BASE_SERVERS=${PXF_BASE}/servers",
+                "SERVER_DIR=${PXF_BASE_SERVERS}/" + serverName,
+                "mkdir -p \"${SERVER_DIR}\"",
+                "cp \"${TEMPLATES_DIR}/mapred-site.xml\" \"${SERVER_DIR}/\"",
+                "cat > \"${SERVER_DIR}/s3-site.xml\" <<'S3SITE'",
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+                "<configuration>",
+                "    <property>",
+                "        <name>fs.s3a.endpoint</name>",
+                "        <value>" + endpoint + "</value>",
+                "    </property>",
+                "    <property>",
+                "        <name>fs.s3a.path.style.access</name>",
+                "        <value>true</value>",
+                "    </property>",
+                "    <property>",
+                "        <name>fs.s3a.connection.ssl.enabled</name>",
+                "        <value>false</value>",
+                "    </property>",
+                "    <property>",
+                "        <name>fs.s3a.impl</name>",
+                "        <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>",
+                "    </property>",
+                "    <property>",
+                "        <name>fs.s3a.aws.credentials.provider</name>",
+                "        <value>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider</value>",
+                "    </property>",
+                "</configuration>",
+                "S3SITE"
+        );
+
+        ExecResult result = container.execInContainer("bash", "-l", "-c", script);
+        if (result.getExitCode() != 0) {
+            throw new RuntimeException(
+                    "Endpoint-only S3 server configuration failed (exit " + result.getExitCode() + "):\n"
+                            + result.getStdout() + "\n" + result.getStderr());
+        }
+
+        restartPxf();
+        System.out.println("[PXFApplication] Endpoint-only PXF server '" + serverName + "' configured");
+    }
+
+    public void clearGpadminAwsCredentials() throws IOException, InterruptedException {
+        runContainerScript("rm -f /home/gpadmin/.aws/credentials", "Cleared gpadmin AWS credentials file");
+    }
+
+    public void removeServerDirectory(String serverName) throws IOException, InterruptedException {
+        runContainerScript(
+                "rm -rf \"${PXF_BASE}/servers/" + serverName + "\"",
+                "Removed PXF server directory '" + serverName + "'");
+    }
+
+    // Removes all Hadoop site files from the default PXF server (no HDFS cluster configured).
+    public void stripDefaultServerHdfsConfig() throws IOException, InterruptedException {
+        runDefaultServerScript(
+                "rm -f \"${SERVER_DIR}\"/hdfs-site.xml \"${SERVER_DIR}\"/mapred-site.xml"
+                        + " \"${SERVER_DIR}\"/yarn-site.xml \"${SERVER_DIR}\"/core-site.xml"
+                        + " \"${SERVER_DIR}\"/hbase-site.xml \"${SERVER_DIR}\"/hive-site.xml"
+                        + " \"${SERVER_DIR}\"/s3-site.xml",
+                "Stripped Hadoop/S3 site config from default PXF server");
+        clearGpadminAwsCredentials();
+    }
+
+    // Restores Hadoop site files on the default PXF server from PXF templates.
+    public void restoreDefaultServerHdfsConfig() throws IOException, InterruptedException {
+        runDefaultServerScript(
+                "cp \"${TEMPLATES_DIR}\"/hdfs-site.xml \"${SERVER_DIR}/\""
+                        + " && cp \"${TEMPLATES_DIR}\"/mapred-site.xml \"${SERVER_DIR}/\""
+                        + " && cp \"${TEMPLATES_DIR}\"/yarn-site.xml \"${SERVER_DIR}/\""
+                        + " && cp \"${TEMPLATES_DIR}\"/core-site.xml \"${SERVER_DIR}/\""
+                        + " && cp \"${TEMPLATES_DIR}\"/hbase-site.xml \"${SERVER_DIR}/\""
+                        + " && cp \"${TEMPLATES_DIR}\"/hive-site.xml \"${SERVER_DIR}/\"",
+                "Restored Hadoop config on default PXF server");
+    }
+
     public void restartPxf() throws IOException, InterruptedException {
         String script = String.join("\n",
                 "set -e",
@@ -101,5 +183,31 @@ public class PXFApplication {
                             + result.getStdout() + "\n" + result.getStderr());
         }
         System.out.println("[PXFApplication] PXF restarted");
+    }
+
+    private void runDefaultServerScript(String serverDirAction, String logMessage)
+            throws IOException, InterruptedException {
+        String script = String.join("\n",
+                "set -e",
+                "source " + SCRIPTS_PREFIX + "/pxf-env.sh",
+                "TEMPLATES_DIR=${PXF_HOME}/templates",
+                "SERVER_DIR=${PXF_BASE}/servers/default",
+                serverDirAction
+        );
+        runContainerScript(script, logMessage);
+    }
+
+    private void runContainerScript(String body, String logMessage) throws IOException, InterruptedException {
+        ExecResult result = container.execInContainer("bash", "-l", "-c", body);
+        if (result.getExitCode() != 0) {
+            throw new RuntimeException(
+                    logMessage + " failed (exit " + result.getExitCode() + "):\n"
+                            + result.getStdout() + "\n" + result.getStderr());
+        }
+
+        if (body.contains("SERVER_DIR") || body.contains("servers/")) {
+            restartPxf();
+        }
+        System.out.println("[PXFApplication] " + logMessage);
     }
 }

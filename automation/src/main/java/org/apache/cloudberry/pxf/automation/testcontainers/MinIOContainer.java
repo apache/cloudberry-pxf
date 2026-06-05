@@ -19,31 +19,19 @@ package org.apache.cloudberry.pxf.automation.testcontainers;
  * under the License.
  */
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * TestContainers wrapper around MinIO for S3 / S3 Select automation tests.
  * The container joins a shared Docker network with alias minio, so PXF inside the
  * Cloudberry container can reach it at http://minio:9000.
+ *
+ * This class only manages the container lifecycle and exposes endpoint /
+ * credential accessors. S3 API access (buckets, objects) lives in
+ * {@link org.apache.cloudberry.pxf.automation.applications.S3Application}.
  */
 public class MinIOContainer extends GenericContainer<MinIOContainer> {
 
@@ -57,8 +45,6 @@ public class MinIOContainer extends GenericContainer<MinIOContainer> {
     public static final String SECRET_KEY = "password";
     public static final String DEFAULT_BUCKET = "gpdb-ud-scratch";
 
-    private AmazonS3 s3Client;
-
     public MinIOContainer(Network network) {
         super(DockerImageName.parse(DEFAULT_IMAGE));
 
@@ -70,21 +56,6 @@ public class MinIOContainer extends GenericContainer<MinIOContainer> {
                 .withEnv("MINIO_API_SELECT_PARQUET", "on")
                 .withCommand("server", "/data", "--console-address", ":" + CONSOLE_PORT)
                 .waitingFor(Wait.forHttp("/minio/health/live").forPort(API_PORT));
-    }
-
-    @Override
-    public void start() {
-        super.start();
-        s3Client = buildS3Client(getHostEndpoint());
-    }
-
-    @Override
-    public void stop() {
-        if (s3Client != null) {
-            s3Client.shutdown();
-            s3Client = null;
-        }
-        super.stop();
     }
 
     /** S3 API endpoint reachable from the test JVM (mapped port). */
@@ -103,42 +74,5 @@ public class MinIOContainer extends GenericContainer<MinIOContainer> {
 
     public String getSecretKey() {
         return SECRET_KEY;
-    }
-
-    public void createBucket(String bucket) {
-        if (!s3Client.doesBucketExistV2(bucket)) {
-            s3Client.createBucket(bucket);
-        }
-    }
-
-    public void putObject(String bucket, String key, Path localFile) throws IOException {
-        s3Client.putObject(new PutObjectRequest(bucket, key, localFile.toFile()));
-    }
-
-    public void deletePrefix(String bucket, String prefix) {
-        ListObjectsV2Request request = new ListObjectsV2Request()
-                .withBucketName(bucket)
-                .withPrefix(prefix);
-        ListObjectsV2Result listing;
-        do {
-            listing = s3Client.listObjectsV2(request);
-            List<String> keys = new ArrayList<>();
-            for (S3ObjectSummary summary : listing.getObjectSummaries()) {
-                keys.add(summary.getKey());
-            }
-            if (!keys.isEmpty()) {
-                s3Client.deleteObjects(new DeleteObjectsRequest(bucket).withKeys(keys.toArray(new String[0])));
-            }
-            request.setContinuationToken(listing.getNextContinuationToken());
-        } while (listing.isTruncated());
-    }
-
-    private static AmazonS3 buildS3Client(String endpoint) {
-        return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, "us-east-1"))
-                .withPathStyleAccessEnabled(true)
-                .withCredentials(new AWSStaticCredentialsProvider(
-                        new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY)))
-                .build();
     }
 }
