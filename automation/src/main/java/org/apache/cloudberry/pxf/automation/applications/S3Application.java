@@ -26,7 +26,13 @@ import org.testcontainers.containers.Container.ExecResult;
 import java.io.IOException;
 
 /**
- * Manages PXF S3 server configuration inside the Cloudberry test container.
+ * Runtime PXF server-config mutations needed by CloudAccess automation tests.
+ *
+ * The stable servers ({@code s3}, {@code s3-invalid}) are pre-baked into the
+ * container image by entrypoint.sh. This class only handles things that must
+ * change between tests: creating/removing the {@code s3-non-existent} server
+ * with endpoint-only config, stripping or restoring the default server's
+ * Hadoop XMLs, and clearing the gpadmin AWS credentials file.
  */
 public class S3Application {
 
@@ -37,128 +43,6 @@ public class S3Application {
 
     public S3Application(PXFCloudberryContainer container) {
         this.container = container;
-    }
-
-    // Writes s3-site.xml and mapred-site.xml for the named PXF server and restarts PXF.
-    public void configureS3Server(MinIOContainer minio, String serverName) throws IOException, InterruptedException {
-        String endpoint = minio.getInternalEndpoint();
-        String accessKey = minio.getAccessKey();
-        String secretKey = minio.getSecretKey();
-
-        System.out.println("[S3Application] Configuring PXF server '" + serverName + "' (endpoint=" + endpoint + ")...");
-
-        String script = String.join("\n",
-                "set -e",
-                "source " + SCRIPTS_PREFIX + "/pxf-env.sh",
-                "PXF_BASE_SERVERS=${PXF_BASE}/servers",
-                "TEMPLATES_DIR=${PXF_HOME}/templates",
-                "SERVER_DIR=${PXF_BASE_SERVERS}/" + serverName,
-                "mkdir -p \"${SERVER_DIR}\"",
-                "cp \"${TEMPLATES_DIR}/mapred-site.xml\" \"${SERVER_DIR}/\"",
-                "cat > \"${SERVER_DIR}/s3-site.xml\" <<'S3SITE'",
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-                "<configuration>",
-                "    <property>",
-                "        <name>fs.s3a.endpoint</name>",
-                "        <value>" + endpoint + "</value>",
-                "    </property>",
-                "    <property>",
-                "        <name>fs.s3a.access.key</name>",
-                "        <value>" + accessKey + "</value>",
-                "    </property>",
-                "    <property>",
-                "        <name>fs.s3a.secret.key</name>",
-                "        <value>" + secretKey + "</value>",
-                "    </property>",
-                "    <property>",
-                "        <name>fs.s3a.path.style.access</name>",
-                "        <value>true</value>",
-                "    </property>",
-                "    <property>",
-                "        <name>fs.s3a.connection.ssl.enabled</name>",
-                "        <value>false</value>",
-                "    </property>",
-                "    <property>",
-                "        <name>fs.s3a.impl</name>",
-                "        <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>",
-                "    </property>",
-                "    <property>",
-                "        <name>fs.s3a.aws.credentials.provider</name>",
-                "        <value>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider</value>",
-                "    </property>",
-                "</configuration>",
-                "S3SITE"
-        );
-
-        ExecResult result = container.execInContainer("bash", "-l", "-c", script);
-        if (result.getExitCode() != 0) {
-            throw new RuntimeException(
-                    "S3 server configuration failed (exit " + result.getExitCode() + "):\n"
-                            + result.getStdout() + "\n" + result.getStderr());
-        }
-
-        new PXFApplication(container).restartPxf();
-        System.out.println("[S3Application] PXF server '" + serverName + "' configured and PXF restarted");
-    }
-
-    // Writes s3-site.xml with invalid credentials for negative credential-resolution tests.
-    public void configureInvalidS3Server(MinIOContainer minio, String serverName) throws IOException, InterruptedException {
-        String endpoint = minio.getInternalEndpoint();
-
-        System.out.println("[S3Application] Configuring invalid PXF server '" + serverName + "'...");
-
-        String script = String.join("\n",
-                "set -e",
-                "source " + SCRIPTS_PREFIX + "/pxf-env.sh",
-                "TEMPLATES_DIR=${PXF_HOME}/templates",
-                "PXF_BASE_SERVERS=${PXF_BASE}/servers",
-                "SERVER_DIR=${PXF_BASE_SERVERS}/" + serverName,
-                "mkdir -p \"${SERVER_DIR}\"",
-                "cp \"${TEMPLATES_DIR}/mapred-site.xml\" \"${SERVER_DIR}/\"",
-                "cat > \"${SERVER_DIR}/s3-site.xml\" <<'S3SITE'",
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-                "<configuration>",
-                "    <property>",
-                "        <name>fs.s3a.endpoint</name>",
-                "        <value>" + endpoint + "</value>",
-                "    </property>",
-                "    <property>",
-                "        <name>fs.s3a.access.key</name>",
-                "        <value>invalid-access-key</value>",
-                "    </property>",
-                "    <property>",
-                "        <name>fs.s3a.secret.key</name>",
-                "        <value>invalid-secret-key</value>",
-                "    </property>",
-                "    <property>",
-                "        <name>fs.s3a.path.style.access</name>",
-                "        <value>true</value>",
-                "    </property>",
-                "    <property>",
-                "        <name>fs.s3a.connection.ssl.enabled</name>",
-                "        <value>false</value>",
-                "    </property>",
-                "    <property>",
-                "        <name>fs.s3a.impl</name>",
-                "        <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>",
-                "    </property>",
-                "    <property>",
-                "        <name>fs.s3a.aws.credentials.provider</name>",
-                "        <value>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider</value>",
-                "    </property>",
-                "</configuration>",
-                "S3SITE"
-        );
-
-        ExecResult result = container.execInContainer("bash", "-l", "-c", script);
-        if (result.getExitCode() != 0) {
-            throw new RuntimeException(
-                    "Invalid S3 server configuration failed (exit " + result.getExitCode() + "):\n"
-                            + result.getStdout() + "\n" + result.getStderr());
-        }
-
-        new PXFApplication(container).restartPxf();
-        System.out.println("[S3Application] Invalid PXF server '" + serverName + "' configured");
     }
 
     // Writes s3-site.xml with endpoint only (no credentials) for credential-via-URL tests.

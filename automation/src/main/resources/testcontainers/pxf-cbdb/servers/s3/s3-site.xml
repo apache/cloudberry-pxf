@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Pre-baked PXF server 's3' configuration for testcontainers automation.
+
+    Pointed at the MinIO sidecar that joins the shared Docker network with
+    alias 'minio' (see MinIOContainer). Endpoint, credentials and bucket are
+    fixed constants of the testcontainers environment, so this file is shipped
+    as-is and copied into ${PXF_BASE}/servers/s3/ by entrypoint.sh.
+
+    Used by tests that pass server=s3 in the external table (all S3SelectTest
+    cases, the *ServerNoCredsValidConfig* cases in CloudAccessTest).
+-->
+<configuration>
+    <property>
+        <name>fs.s3a.endpoint</name>
+        <value>http://minio:9000</value>
+    </property>
+    <property>
+        <name>fs.s3a.access.key</name>
+        <value>admin</value>
+    </property>
+    <property>
+        <name>fs.s3a.secret.key</name>
+        <value>password</value>
+    </property>
+    <property>
+        <name>fs.s3a.path.style.access</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>fs.s3a.connection.ssl.enabled</name>
+        <value>false</value>
+    </property>
+    <property>
+        <name>fs.s3a.impl</name>
+        <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
+    </property>
+    <property>
+        <name>fs.s3a.aws.credentials.provider</name>
+        <value>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider</value>
+    </property>
+</configuration>

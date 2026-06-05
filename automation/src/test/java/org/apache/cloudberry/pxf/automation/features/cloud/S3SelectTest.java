@@ -20,7 +20,6 @@ package org.apache.cloudberry.pxf.automation.features.cloud;
  */
 
 import org.apache.cloudberry.pxf.automation.AbstractTestcontainersTest;
-import org.apache.cloudberry.pxf.automation.applications.S3Application;
 import org.apache.cloudberry.pxf.automation.structures.tables.pxf.ReadableExternalTable;
 import org.apache.cloudberry.pxf.automation.testcontainers.MinIOContainer;
 import org.testng.annotations.Test;
@@ -77,7 +76,6 @@ public class S3SelectTest extends AbstractTestcontainersTest {
         s3Path = MinIOContainer.DEFAULT_BUCKET + "/" + objectKeyPrefix;
 
         S3SelectFixtureLoader.uploadAll(s3Server, MinIOContainer.DEFAULT_BUCKET, objectKeyPrefix);
-        new S3Application(container).configureS3Server(s3Server, "s3");
     }
 
     @Override

@@ -70,9 +70,9 @@ public class CloudAccessTest extends AbstractTestcontainersTest {
         s3PathRead = MinIOContainer.DEFAULT_BUCKET + "/" + readObjectKeyPrefix;
         s3PathWrite = MinIOContainer.DEFAULT_BUCKET + "/" + writeObjectKeyPrefix;
 
+        // Servers 's3' and 's3-invalid' are pre-baked into the container image
+        // by entrypoint.sh — nothing to configure at runtime.
         s3Application = new S3Application(container);
-        s3Application.configureS3Server(s3Server, "s3");
-        s3Application.configureInvalidS3Server(s3Server, "s3-invalid");
     }
 
     @Override
