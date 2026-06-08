@@ -21,8 +21,17 @@ import java.io.IOException;
 @Component
 public class PxfContextMdcLogEnhancerFilter extends OncePerRequestFilter {
 
+    // sessionId: composite PXF request identifier formed as "<X-GP-XID>:<X-GP-OPTIONS-SERVER>",
+    // where XID is the Greenplum transaction id and the server name defaults to "default".
+    // Groups all log records produced while serving a single PXF request.
     private static final String MDC_SESSION_ID = "sessionId";
+    // segmentId: the Greenplum segment id (X-GP-SEGMENT-ID) that issued the PXF request.
     private static final String MDC_SEGMENT_ID = "segmentId";
+    // ssid: query session identifier from pg_stat_activity system view.
+    private static final String MDC_SSID = "ssid";
+    // ccnt: the command number within this session as shown by gp_command_count.
+    // All records associated with the query will have the same ccnt.
+    private static final String MDC_CCNT = "ccnt";
 
     private final HttpHeaderDecoder decoder;
 
@@ -60,10 +69,16 @@ public class PxfContextMdcLogEnhancerFilter extends OncePerRequestFilter {
         String serverName = StringUtils.defaultIfBlank(decoder.getHeaderValue("X-GP-OPTIONS-SERVER", request, encoded), "default");
         String sessionId = String.format("%s:%s", xid, serverName);
         String segmentId = decoder.getHeaderValue("X-GP-SEGMENT-ID", request, encoded);
+        String gpSessionId = decoder.getHeaderValue("X-GP-SESSION-ID", request, encoded);
+        String gpCommandCount = decoder.getHeaderValue("X-GP-COMMAND-COUNT", request, encoded);
         MDC.put(MDC_SESSION_ID, sessionId);
         MDC.put(MDC_SEGMENT_ID, segmentId);
-        log.debug("MDC: Added {}={}", MDC_SESSION_ID, sessionId);
-        log.debug("MDC: Added {}={}", MDC_SEGMENT_ID, segmentId);
+        MDC.put(MDC_SSID, gpSessionId);
+        MDC.put(MDC_CCNT, gpCommandCount);
+        log.trace("MDC: Added {}={}", MDC_SESSION_ID, sessionId);
+        log.trace("MDC: Added {}={}", MDC_SEGMENT_ID, segmentId);
+        log.trace("MDC: Added {}={}", MDC_SSID, gpSessionId);
+        log.trace("MDC: Added {}={}", MDC_CCNT, gpCommandCount);
     }
 
     /**
@@ -73,5 +88,7 @@ public class PxfContextMdcLogEnhancerFilter extends OncePerRequestFilter {
         // removing possibly non-existent item is OK
         MDC.remove(MDC_SEGMENT_ID);
         MDC.remove(MDC_SESSION_ID);
+        MDC.remove(MDC_SSID);
+        MDC.remove(MDC_CCNT);
     }
 }
