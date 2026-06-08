@@ -42,6 +42,8 @@ class PxfContextMdcLogEnhancerFilterTest {
         // always removes
         verify(mdcMock).remove("segmentId");
         verify(mdcMock).remove("sessionId");
+        verify(mdcMock).remove("ssid");
+        verify(mdcMock).remove("ccnt");
         verifyNoMoreInteractions(mdcMock);
     }
 
@@ -54,9 +56,13 @@ class PxfContextMdcLogEnhancerFilterTest {
 
         verify(mdcMock).put("sessionId", "transaction:id:default");
         verify(mdcMock).put("segmentId", "5");
+        verify(mdcMock).put("ssid", null);
+        verify(mdcMock).put("ccnt", null);
 
         verify(mdcMock).remove("segmentId");
         verify(mdcMock).remove("sessionId");
+        verify(mdcMock).remove("ssid");
+        verify(mdcMock).remove("ccnt");
         verifyNoMoreInteractions(mdcMock);
     }
 
@@ -70,9 +76,34 @@ class PxfContextMdcLogEnhancerFilterTest {
 
         verify(mdcMock).put("sessionId", "transaction:id:s3");
         verify(mdcMock).put("segmentId", "5");
+        verify(mdcMock).put("ssid", null);
+        verify(mdcMock).put("ccnt", null);
 
         verify(mdcMock).remove("segmentId");
         verify(mdcMock).remove("sessionId");
+        verify(mdcMock).remove("ssid");
+        verify(mdcMock).remove("ccnt");
+        verifyNoMoreInteractions(mdcMock);
+    }
+
+    @Test
+    void testPxfContextRequestWithGpSessionId() throws ServletException, IOException {
+
+        mockRequest.addHeader("X-GP-XID", "transaction:id");
+        mockRequest.addHeader("X-GP-SEGMENT-ID", "5");
+        mockRequest.addHeader("X-GP-SESSION-ID", "12345");
+        mockRequest.addHeader("X-GP-COMMAND-COUNT", "7");
+        filter.doFilter(mockRequest, mockResponse, mockFilterChain);
+
+        verify(mdcMock).put("sessionId", "transaction:id:default");
+        verify(mdcMock).put("segmentId", "5");
+        verify(mdcMock).put("ssid", "12345");
+        verify(mdcMock).put("ccnt", "7");
+
+        verify(mdcMock).remove("segmentId");
+        verify(mdcMock).remove("sessionId");
+        verify(mdcMock).remove("ssid");
+        verify(mdcMock).remove("ccnt");
         verifyNoMoreInteractions(mdcMock);
     }
 
@@ -86,9 +117,13 @@ class PxfContextMdcLogEnhancerFilterTest {
 
         verify(mdcMock).put("sessionId", "transaction:id:default");
         verify(mdcMock).put("segmentId", "5");
+        verify(mdcMock).put("ssid", null);
+        verify(mdcMock).put("ccnt", null);
 
         verify(mdcMock).remove("segmentId");
         verify(mdcMock).remove("sessionId");
+        verify(mdcMock).remove("ssid");
+        verify(mdcMock).remove("ccnt");
         verifyNoMoreInteractions(mdcMock);
     }
 }
