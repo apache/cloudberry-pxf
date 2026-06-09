@@ -1,0 +1,10 @@
+{
+  "label": "Administering PXF",
+  "link": {
+    "type": "generated-index",
+    "description": "Configure, start, manage, and monitor the Apache Cloudberry Platform Extension Framework (PXF) service."
+  },
+  "position": 20,
+  "collapsible": true,
+  "collapsed": true
+}

@@ -1,0 +1,10 @@
+{
+  "label": "Accessing Hadoop with PXF",
+  "link": {
+    "type": "doc",
+    "id": "access-hadoop/access_hdfs"
+  },
+  "position": 30,
+  "collapsible": true,
+  "collapsed": true
+}
