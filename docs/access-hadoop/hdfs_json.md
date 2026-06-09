@@ -188,13 +188,14 @@ The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL 
 
 | Keyword  | Value |
 |-------|-------------------------------------|
-| \<path&#8209;to&#8209;hdfs&#8209;file\>    | The path to the directory or file in the HDFS data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxf-fs-basepath-property) property setting, PXF considers \<path&#8209;to&#8209;hdfs&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;hdfs&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
+| \<path&#8209;to&#8209;hdfs&#8209;file\>    | The path to the directory or file in the HDFS data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxffsbasepath-property) property setting, PXF considers \<path&#8209;to&#8209;hdfs&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;hdfs&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
 | PROFILE    | The `PROFILE` keyword must specify `hdfs:json`. |
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. PXF uses the `default` server if not specified. |
 | \<custom&#8209;option\>  | \<custom-option\>s for read and write operations are identified below.|
 | FORMAT 'CUSTOM' | Use `FORMAT` '`CUSTOM`' with `(FORMATTER='pxfwritable_export')` (write) or `(FORMATTER='pxfwritable_import')` (read). |
 
-<a id="customopts"></a>
+### Custom Options
+
 PXF supports reading from and writing to JSON files that contain either an object per row (the default) or that contain a JSON single object. When the JSON file(s) that you want to read or write contains a single object, you must provide an `IDENTIFIER` \<custom-option\> and value. Use this option to identify the name of a field whose parent JSON object you want PXF to return or write as an individual tuple.
 
 The `hdfs:json` profile supports the following custom **read** options:

@@ -18,7 +18,7 @@ The identity with which PXF accesses a Kerberos-secured Hadoop depends on the se
 | pxf.service.kerberos.ticket-renew-window| The minimum elapsed lifespan (as a percentage) after which PXF attempts to renew/refresh a Kerberos ticket. Value range is from 0 (PXF generates a new ticket for all requests) to 1 (PXF renews after full ticket lifespan). | 0.8 (80%) |
 | pxf.service.user.name | (Optional) The user name with which PXF connects to a remote Kerberos-secured cluster if user impersonation is deactivated and using the `pxf.service.kerberos.principal` is not desired. | None |
 
-You configure these setting for a Hadoop PXF server via the `pxf-site.xml` configuration file. Refer to [About the pxf-site.xml Configuration File](../cfg_server.md#about-the-pxf-site-xml-configuration-file) for more information about the configuration properties in this file.
+You configure these setting for a Hadoop PXF server via the `pxf-site.xml` configuration file. Refer to [About the pxf-site.xml Configuration File](../cfg_server.md#about-the-pxf-sitexml-configuration-file) for more information about the configuration properties in this file.
 
 **Note:** PXF supports simultaneous access to multiple Kerberos-secured Hadoop clusters.
 
@@ -340,7 +340,7 @@ On the Apache Cloudberry coordinator host, complete the configuration of the PXF
 1. If you want to access Hadoop as the Apache Cloudberry user:
 
     1. Activate user impersonation as described in [Configure PXF User Impersonation](./pxfuserimpers.md#configure-pxf-user-impersonation) (this is the default setting).
-    1. *If you want to use Kerberos constrained delegation*, [activate](#enable_kdc) it for the server, and configure AD or IPA to provide the PXF Kerberos principal with the delegation rights for the Apache Cloudberry end users.
+    1. *If you want to use Kerberos constrained delegation*, [activate](#activating-kerberos-constrained-delegation) it for the server, and configure AD or IPA to provide the PXF Kerberos principal with the delegation rights for the Apache Cloudberry end users.
     2. *If you did not activate Kerberos constrained delegation*, configure Hadoop proxying for the *primary* component of the Kerberos principal as described in [Configure Hadoop Proxying](./pxfuserimpers.md#configure-hadoop-proxying). For example, if your principal is `gpadmin/_HOST@EXAMPLE.COM`, configure proxying for the Hadoop user `gpadmin`.
 
 1. If you want to access Hadoop using the identity of the Kerberos principal, deactivate user impersonation as described in [Configure PXF User Impersonation](./pxfuserimpers.md#configure-pxf-user-impersonation).

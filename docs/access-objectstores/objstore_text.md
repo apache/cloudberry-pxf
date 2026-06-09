@@ -56,7 +56,7 @@ The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL 
 
 | Keyword  | Value |
 |-------|-------------------------------------|
-| \<path&#8209;to&#8209;file\>    | The path to the directory or file in the object store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxf-fs-basepath-property) property setting, PXF considers \<path&#8209;to&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
+| \<path&#8209;to&#8209;file\>    | The path to the directory or file in the object store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxffsbasepath-property) property setting, PXF considers \<path&#8209;to&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
 | PROFILE=\<objstore\>:text<br/> PROFILE=\<objstore\>:csv    | The `PROFILE` keyword must identify the specific object store. For example, `s3:text`. |
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. |
 | IGNORE_MISSING_PATH=\<boolean\> | Specify the action to take when \<path-to-file\> is missing or invalid. The default value is `false`, PXF returns an error in this situation. When the value is `true`, PXF ignores missing path errors and returns an empty fragment. |
@@ -167,7 +167,7 @@ The specific keywords and values used in the [CREATE EXTERNAL TABLE](https://clo
 
 | Keyword  | Value |
 |-------|-------------------------------------|
-| \<path&#8209;to&#8209;file\>    | The path to the directory or file in the data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxf-fs-basepath-property) property setting, PXF considers \<path&#8209;to&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
+| \<path&#8209;to&#8209;file\>    | The path to the directory or file in the data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxffsbasepath-property) property setting, PXF considers \<path&#8209;to&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
 | PROFILE=\<objstore\>:text:multi    | The `PROFILE` keyword must identify the specific object store. For example, `s3:text:multi`. |
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. |
 | IGNORE_MISSING_PATH=\<boolean\> | Specify the action to take when \<path-to-file\> is missing or invalid. The default value is `false`, PXF returns an error in this situation. When the value is `true`, PXF ignores missing path errors and returns an empty fragment. |
@@ -271,7 +271,7 @@ The specific keywords and values used in the [CREATE EXTERNAL TABLE](https://clo
 
 | Keyword  | Value |
 |-------|-------------------------------------|
-| \<path&#8209;to&#8209;dir\>    | The path to the directory in the data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxf-fs-basepath-property) property setting, PXF considers \<path&#8209;to&#8209;dir\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;dir\> must not specify a relative path nor include the dollar sign (`$`) character. |
+| \<path&#8209;to&#8209;dir\>    | The path to the directory in the data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxffsbasepath-property) property setting, PXF considers \<path&#8209;to&#8209;dir\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;dir\> must not specify a relative path nor include the dollar sign (`$`) character. |
 | PROFILE=\<objstore\>:text<br/> PROFILE=\<objstore\>:csv    | The `PROFILE` keyword must identify the specific object store. For example, `s3:text`. |
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. |
 | \<custom&#8209;option\>=\<value\>  | \<custom-option\>s are described below.|

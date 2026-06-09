@@ -41,7 +41,7 @@ This procedure will typically be performed by the Apache Cloudberry administrato
     ```
 
 1. Download the Trino JDBC driver and place it under `$PXF_BASE/lib`.
-   If you [relocated $PXF_BASE](../administering/configuring/about_pxf_dir.md#relocating-pxf-base), make sure you use the updated location.
+   If you [relocated $PXF_BASE](../administering/configuring/about_pxf_dir.md#relocating-pxfbase), make sure you use the updated location.
    See [Trino Documentation - JDBC Driver](https://trino.io/docs/current/client/jdbc.html#installing) for instructions on downloading the Trino JDBC driver.
    The following example downloads the driver and places it under `$PXF_BASE/lib`:
 

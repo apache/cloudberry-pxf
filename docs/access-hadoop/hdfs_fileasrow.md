@@ -35,7 +35,7 @@ The keywords and values used in the Apache Cloudberry [CREATE EXTERNAL TABLE](ht
 
 | Keyword  | Value |
 |-------|-------------------------------------|
-| \<path&#8209;to&#8209;files\>    | The path to the directory or files in the HDFS data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxf-fs-basepath-property) property setting, PXF considers \<path&#8209;to&#8209;hdfs&#8209;files\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;files\> must not specify a relative path nor include the dollar sign (`$`) character. |
+| \<path&#8209;to&#8209;files\>    | The path to the directory or files in the HDFS data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxffsbasepath-property) property setting, PXF considers \<path&#8209;to&#8209;hdfs&#8209;files\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;files\> must not specify a relative path nor include the dollar sign (`$`) character. |
 | PROFILE    | The `PROFILE` keyword must specify `hdfs:text:multi`. |
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. PXF uses the `default` server if not specified. |
 | FILE\_AS\_ROW=true    | The required option that instructs PXF to read each file into a single table row. |

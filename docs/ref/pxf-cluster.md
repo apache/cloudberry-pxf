@@ -41,7 +41,7 @@ The `pxf cluster` utility command manages PXF on the coordinator host, standby c
 
 `pxf cluster` requires a running Apache Cloudberry cluster. You must run the utility on the Apache Cloudberry coordinator host.
 
-If you want to manage the PXF Service instance on a specific segment host, use the `pxf` utility. See [`pxf`](./pxf.md#topic1).
+If you want to manage the PXF Service instance on a specific segment host, use the `pxf` utility. See [`pxf`](./pxf.md).
 
 ## Commands
 
@@ -102,4 +102,4 @@ $ pxf cluster sync --delete
 
 ## See Also
 
-[`pxf`](./pxf.md#topic1)
+[`pxf`](./pxf.md)

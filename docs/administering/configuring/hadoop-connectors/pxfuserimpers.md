@@ -10,7 +10,7 @@ When user impersonation is activated (the default), PXF accesses non-secured Had
 
 When user impersonation is deactivated, PXF runs all Hadoop service requests as the PXF process owner (usually `gpadmin`) or the Hadoop user identity that you specify. This behavior provides no means to control access to Hadoop services for different Apache Cloudberry users. It requires that this user have access to all files and directories in HDFS, and all tables in Hive and HBase that are referenced in PXF external table definitions.
 
-You configure the Hadoop user and PXF user impersonation setting for a server via the `pxf-site.xml` server configuration file. Refer to [About the pxf-site.xml Configuration File](../cfg_server.md#about-the-pxf-site-xml-configuration-file) for more information about the configuration properties in this file.
+You configure the Hadoop user and PXF user impersonation setting for a server via the `pxf-site.xml` server configuration file. Refer to [About the pxf-site.xml Configuration File](../cfg_server.md#about-the-pxf-sitexml-configuration-file) for more information about the configuration properties in this file.
 
 ## Use Cases and Configuration Scenarios
 

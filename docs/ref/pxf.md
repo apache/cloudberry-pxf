@@ -39,7 +39,7 @@ The `pxf` utility manages the PXF configuration and the PXF Service instance on 
 - Copy the PXF extension control file from a PXF installation on the host to the Apache Cloudberry installation on the host after an Apache Cloudberry upgrade.
 - Prepare a new `$PXF_BASE` runtime configuration directory on the host.
 
-(Use the [`pxf cluster`](./pxf-cluster.md#topic1) command to prepare a new `$PXF_BASE` on all hosts, copy the PXF extension control file to `$GPHOME` on all hosts, synchronize the PXF configuration to the Apache Cloudberry cluster, or to start, stop, or display the status of the PXF Service instance on all hosts in the cluster.)
+(Use the [`pxf cluster`](./pxf-cluster.md) command to prepare a new `$PXF_BASE` on all hosts, copy the PXF extension control file to `$GPHOME` on all hosts, synchronize the PXF configuration to the Apache Cloudberry cluster, or to start, stop, or display the status of the PXF Service instance on all hosts in the cluster.)
 
 ## Commands
 
@@ -102,4 +102,4 @@ $ pxf start
 
 ## See Also
 
-[`pxf cluster`](./pxf-cluster.md#topic1)
+[`pxf cluster`](./pxf-cluster.md)

@@ -25,7 +25,7 @@ under the License.
 
 In this example, you:
 
-- Install the ClickHouse JDBC driver on the Apache Cloudberry coordinator (see [JDBC driver installation](./jdbc_pxf.md#cfg_jdbc_driver))
+- Install the ClickHouse JDBC driver on the Apache Cloudberry coordinator (see [JDBC driver installation](#jdbc-driver))
 - Create a ClickHouse table, and insert data into the table
 - Create a PXF readable external table that references the ClickHouse table using `JDBC_DRIVER` and `DB_URL` in the `LOCATION` clause (no separate PXF server configuration directory is required)
 - Read the data in the ClickHouse table using PXF

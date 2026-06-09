@@ -106,7 +106,7 @@ The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL 
 
 | Keyword  | Value |
 |-------|-------------------------------------|
-| \<file&#8209;path\>    | The path to a directory or file on the network file system. PXF considers this file or path as being relative to the [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxf-fs-basepath-property) property value specified in \<server_name\>'s server configuration.  \<file&#8209;path\> must not specify a relative path nor include the dollar sign (`$`) character. |
+| \<file&#8209;path\>    | The path to a directory or file on the network file system. PXF considers this file or path as being relative to the [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxffsbasepath-property) property value specified in \<server_name\>'s server configuration.  \<file&#8209;path\> must not specify a relative path nor include the dollar sign (`$`) character. |
 | PROFILE    | The `PROFILE` keyword value must specify a `file:<file-type>` identified in the table above. |
 | SERVER=\<server_name\>   | The named server configuration that PXF uses to access the network file system. PXF uses the `default` server if not specified. |
 | \<custom&#8209;option\>=\<value\>  | \<custom-option\> is profile-specific.|
@@ -221,5 +221,5 @@ Perform the following procedure to insert some data into the `ex1` directory and
 
 If you use the `file:parquet` profile to write to an external table that references a Parquet file and you want to provide the Parquet schema, specify the `SCHEMA` custom option in the `LOCATION` clause when you create the writable external table. Refer to the [Creating the External Table](../access-hadoop/hdfs_parquet.md#creating-the-external-table) discussion in the PXF HDFS Parquet documentation for more information on the options available when you create an external table.
 
-You must set `SCHEMA` to the location of the Parquet schema file on the file system of the specified `SERVER=<server_name>`. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxf-fs-basepath-property) property setting, PXF considers the schema file that you specify to be relative to the mount point specified.
+You must set `SCHEMA` to the location of the Parquet schema file on the file system of the specified `SERVER=<server_name>`. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxffsbasepath-property) property setting, PXF considers the schema file that you specify to be relative to the mount point specified.
 

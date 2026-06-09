@@ -37,7 +37,7 @@ The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL 
 
 | Keyword  | Value |
 |-------|-------------------------------------|
-| \<path&#8209;to&#8209;file\>    | The path to the directory or file in the object store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxf-fs-basepath-property) property setting, PXF considers \<path&#8209;to&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
+| \<path&#8209;to&#8209;file\>    | The path to the directory or file in the object store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxffsbasepath-property) property setting, PXF considers \<path&#8209;to&#8209;file\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;file\> must not specify a relative path nor include the dollar sign (`$`) character. |
 | PROFILE=\<objstore\>:fixedwidth | The `PROFILE` must identify the specific object store. For example, `s3:fixedwidth`. |
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. PXF uses the `default` server if not specified. |
 | NEWLINE=\<bytecode\>    | When the `line_delim` formatter option contains `\r`, `\r\n`, or a set of custom escape characters, you must set `<bytecode>` to `CR`, `CRLF`, or the set of bytecode characters, respectively. |
@@ -48,7 +48,7 @@ The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL 
 
 **Note**: PXF does not support the `(HEADER)` formatter option in the `CREATE EXTERNAL TABLE` command.
 
-If you are accessing an S3 object store, you can provide S3 credentials via custom options in the `CREATE EXTERNAL TABLE` command as described in [Overriding the S3 Server Configuration for External Tables](./access_s3.md#s3_override_ext_ext).
+If you are accessing an S3 object store, you can provide S3 credentials via custom options in the `CREATE EXTERNAL TABLE` command as described in [Overriding the S3 Server Configuration for External Tables](./access_s3.md#overriding-the-s3-server-configuration-for-external-tables).
 
 ## About Specifying field_name and width
 
@@ -156,7 +156,7 @@ The specific keywords and values used in the [CREATE EXTERNAL TABLE](https://clo
 
 | Keyword  | Value |
 |-------|-------------------------------------|
-| \<path&#8209;to&#8209;dir\>    | The path to the directory in the data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxf-fs-basepath-property) property setting, PXF considers \<path&#8209;to&#8209;dir\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;dir\> must not specify a relative path nor include the dollar sign (`$`) character. |
+| \<path&#8209;to&#8209;dir\>    | The path to the directory in the data store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxffsbasepath-property) property setting, PXF considers \<path&#8209;to&#8209;dir\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;dir\> must not specify a relative path nor include the dollar sign (`$`) character. |
 | PROFILE=\<objstore\>:fixedwidth | The `PROFILE` must identify the specific object store. For example, `s3:fixedwidth`. |
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. PXF uses the `default` server if not specified. |
 | NEWLINE=\<bytecode\>    | When the `line_delim` formatter option contains `\r`, `\r\n`, or a set of custom escape characters, you must set `<bytecode>` to `CR`, `CRLF`, or the set of bytecode characters, respectively. |

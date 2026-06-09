@@ -27,7 +27,7 @@ After you upgrade the operating system and install, configure, and verify Apache
 
 1. Install PXF for the upgraded OS on all Apache Cloudberry hosts.
 
-1. Copy the PXF configuration files from the original cluster to `/usr/local/cloudberry-pxf` on the upgraded OS Apache Cloudberry coordinator host. If you choose to [relocate $PXF_BASE](../administering/configuring/about_pxf_dir.md#relocating-pxf-base), copy the configuration to that directory instead.
+1. Copy the PXF configuration files from the original cluster to `/usr/local/cloudberry-pxf` on the upgraded OS Apache Cloudberry coordinator host. If you choose to [relocate $PXF_BASE](../administering/configuring/about_pxf_dir.md#relocating-pxfbase), copy the configuration to that directory instead.
 
 1. Synchronize the PXF configuration to all hosts in the Apache Cloudberry cluster:
 

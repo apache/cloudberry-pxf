@@ -39,14 +39,14 @@ The specific keywords and values used in the Apache Cloudberry [CREATE EXTERNAL 
 
 | Keyword  | Value |
 |-------|-------------------------------------|
-| \<path&#8209;to&#8209;files\>    | The path to the directory or files in the object store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxf-fs-basepath-property) property setting, PXF considers \<path&#8209;to&#8209;files\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;files\> must not specify a relative path nor include the dollar sign (`$`) character. |
+| \<path&#8209;to&#8209;files\>    | The path to the directory or files in the object store. When the `<server_name>` configuration includes a [`pxf.fs.basePath`](../administering/configuring/cfg_server.md#about-the-pxffsbasepath-property) property setting, PXF considers \<path&#8209;to&#8209;files\> to be relative to the base path specified. Otherwise, PXF considers it to be an absolute path. \<path&#8209;to&#8209;files\> must not specify a relative path nor include the dollar sign (`$`) character. |
 | PROFILE=\<objstore\>:text:multi    | The `PROFILE` keyword must identify the specific object store. For example, `s3:text:multi`. |
 | SERVER=\<server_name\>    | The named server configuration that PXF uses to access the data. |
 | IGNORE_MISSING_PATH=\<boolean\> | Specify the action to take when \<path-to-files\> is missing or invalid. The default value is `false`, PXF returns an error in this situation. When the value is `true`, PXF ignores missing path errors and returns an empty fragment. |
 | FILE\_AS\_ROW=true    | The required option that instructs PXF to read each file into a single table row. |
 | FORMAT | The `FORMAT` must specify `'CSV'`.  |
 
-If you are accessing an S3 object store, you can provide S3 credentials via custom options in the `CREATE EXTERNAL TABLE` command as described in [Overriding the S3 Server Configuration for External Tables](./access_s3.md#s3_override_ext_ext).
+If you are accessing an S3 object store, you can provide S3 credentials via custom options in the `CREATE EXTERNAL TABLE` command as described in [Overriding the S3 Server Configuration for External Tables](./access_s3.md#overriding-the-s3-server-configuration-for-external-tables).
 
 ## Example
 

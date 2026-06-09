@@ -11,7 +11,7 @@ This documentation uses `<PXF_INSTALL_DIR>` to refer to the PXF installation dir
 
 `<PXF_INSTALL_DIR>` includes both the PXF executables and the PXF runtime configuration files and directories. PXF does not require an initialization step: `$PXF_BASE` identifies the runtime configuration directory, and the default `$PXF_BASE` is `<PXF_INSTALL_DIR>`.
 
-If you want to store your configuration and runtime files in a different location, see [Relocating $PXF_BASE](#relocating-pxf_base).
+If you want to store your configuration and runtime files in a different location, see [Relocating $PXF_BASE](#relocating-pxfbase).
 
 > <b>Note:</b> This documentation uses <code>&lt;PXF_INSTALL_DIR></code> to reference the PXF installation directory. This documentation uses the `$PXF_BASE` environment variable to reference the PXF runtime configuration directory. PXF uses the variable internally. It only needs to be set in your shell environment if you explicitly relocate the directory.
 
