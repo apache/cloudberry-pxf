@@ -84,7 +84,7 @@ You must create a JDBC server configuration for Oracle, download the Oracle driv
 
 This procedure will typically be performed by the Apache Cloudberry administrator.
 
-1. Download the Oracle JDBC driver and place it under `$PXF_BASE/lib` of your Apache Cloudberry coordinator host. If you [relocated $PXF_BASE](../administering/configuring/about_pxf_dir.md#relocating-pxfbase), make sure you use the updated location. You can download a Oracle JDBC driver from your preferred download location. The following example places a driver downloaded from Oracle webiste under `$PXF_BASE/lib` of the Apache Cloudberry coordinator:
+1. Download the Oracle JDBC driver and place it under `$PXF_BASE/lib` of your Apache Cloudberry coordinator host. If you [relocated $PXF_BASE](../administering/configuring/about_pxf_dir.md#relocating-pxf_base), make sure you use the updated location. You can download a Oracle JDBC driver from your preferred download location. The following example places a driver downloaded from Oracle webiste under `$PXF_BASE/lib` of the Apache Cloudberry coordinator:
 
     1. If you did not relocate `$PXF_BASE`, run the following from the Cloudberry coordinator:
 
