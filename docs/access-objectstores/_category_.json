@@ -1,0 +1,10 @@
+{
+  "label": "Accessing Object Stores with PXF",
+  "link": {
+    "type": "doc",
+    "id": "access-objectstores/access_objstore"
+  },
+  "position": 40,
+  "collapsible": true,
+  "collapsed": true
+}

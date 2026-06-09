@@ -1,0 +1,10 @@
+{
+  "label": "Upgrading PXF",
+  "link": {
+    "type": "doc",
+    "id": "upgrade/upgrade_landing"
+  },
+  "position": 80,
+  "collapsible": true,
+  "collapsed": true
+}

@@ -1,0 +1,10 @@
+{
+  "label": "Troubleshooting PXF",
+  "link": {
+    "type": "doc",
+    "id": "troubleshooting/troubleshooting_pxf"
+  },
+  "position": 70,
+  "collapsible": true,
+  "collapsed": true
+}

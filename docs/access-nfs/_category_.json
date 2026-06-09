@@ -1,0 +1,10 @@
+{
+  "label": "Accessing Files on a Network File System with PXF",
+  "link": {
+    "type": "doc",
+    "id": "access-nfs/nfs_pxf"
+  },
+  "position": 60,
+  "collapsible": true,
+  "collapsed": true
+}
