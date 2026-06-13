@@ -33,10 +33,7 @@ import java.util.List;
 /**
  * Shared test-data fixtures for Testcontainers-based tests.
  *
- * <p>Used via composition (not inheritance): a test holds an instance and delegates to it.
- * Mirrors the data layout of {@link BaseFunctionality} (which lives in a different base-class
- * hierarchy) so that Testcontainers tests can share the same small-data layout without
- * depending on the legacy component stack.
+ * Mirrors the data layout of {@link BaseFunctionality}
  */
 public class SmallDataFactory {
 

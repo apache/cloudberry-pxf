@@ -14,12 +14,9 @@
     Pre-baked PXF server 's3' configuration for testcontainers automation.
 
     Pointed at the MinIO sidecar that joins the shared Docker network with
-    alias 'minio' (see MinIOContainer). Endpoint, credentials and bucket are
-    fixed constants of the testcontainers environment, so this file is shipped
-    as-is and copied into ${PXF_BASE}/servers/s3/ by entrypoint.sh.
+    alias 'minio' (see MinIOContainer).
 
-    Used by tests that pass server=s3 in the external table (all S3SelectTest
-    cases, the *ServerNoCredsValidConfig* cases in CloudAccessTest).
+    Shipped as-is and copied into ${PXF_BASE}/servers/s3/ by entrypoint.sh.
 -->
 <configuration>
     <property>
