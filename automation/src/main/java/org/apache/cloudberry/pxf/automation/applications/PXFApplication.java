@@ -147,29 +147,6 @@ public class PXFApplication {
                 "Removed PXF server directory '" + serverName + "'");
     }
 
-    // Removes all Hadoop site files from the default PXF server (no HDFS cluster configured).
-    public void stripDefaultServerHdfsConfig() throws IOException, InterruptedException {
-        runDefaultServerScript(
-                "rm -f \"${SERVER_DIR}\"/hdfs-site.xml \"${SERVER_DIR}\"/mapred-site.xml"
-                        + " \"${SERVER_DIR}\"/yarn-site.xml \"${SERVER_DIR}\"/core-site.xml"
-                        + " \"${SERVER_DIR}\"/hbase-site.xml \"${SERVER_DIR}\"/hive-site.xml"
-                        + " \"${SERVER_DIR}\"/s3-site.xml",
-                "Stripped Hadoop/S3 site config from default PXF server");
-        clearGpadminAwsCredentials();
-    }
-
-    // Restores Hadoop site files on the default PXF server from PXF templates.
-    public void restoreDefaultServerHdfsConfig() throws IOException, InterruptedException {
-        runDefaultServerScript(
-                "cp \"${TEMPLATES_DIR}\"/hdfs-site.xml \"${SERVER_DIR}/\""
-                        + " && cp \"${TEMPLATES_DIR}\"/mapred-site.xml \"${SERVER_DIR}/\""
-                        + " && cp \"${TEMPLATES_DIR}\"/yarn-site.xml \"${SERVER_DIR}/\""
-                        + " && cp \"${TEMPLATES_DIR}\"/core-site.xml \"${SERVER_DIR}/\""
-                        + " && cp \"${TEMPLATES_DIR}\"/hbase-site.xml \"${SERVER_DIR}/\""
-                        + " && cp \"${TEMPLATES_DIR}\"/hive-site.xml \"${SERVER_DIR}/\"",
-                "Restored Hadoop config on default PXF server");
-    }
-
     public void restartPxf() throws IOException, InterruptedException {
         String script = String.join("\n",
                 "set -e",

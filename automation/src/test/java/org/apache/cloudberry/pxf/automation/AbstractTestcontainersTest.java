@@ -94,7 +94,7 @@ public class AbstractTestcontainersTest {
         // redirect "clean" logs to log file
         CustomAutomationLogger.redirectStdoutStreamToFile(getClass().getSimpleName(), "clean");
         try {
-            // run user's aafter class
+            // run user's after class
             afterClass();
             if (cloudberry != null) {
                 cloudberry.close();
