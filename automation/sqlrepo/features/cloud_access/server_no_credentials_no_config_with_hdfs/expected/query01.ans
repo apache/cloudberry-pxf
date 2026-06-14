@@ -6,7 +6,7 @@
 --
 -- # create a match/subs
 --
--- m/PXF server error.*(doesBucketExist|com.amazonaws).*/
+-- m/PXF server error.*(com.amazonaws.AmazonClientException: No AWS Credentials provided by BasicAWSCredentialsProvider).*/
 -- s/PXF server error.*/PXF server error : com.amazonaws.AmazonClientException: No AWS Credentials provided by BasicAWSCredentialsProvider/
 --
 -- m/Check the PXF logs located in the.*/
@@ -21,6 +21,9 @@
 -- m/pxf:\/\/(.*)\/pxf_automation_data/
 -- s/pxf:\/\/.*PROFILE/pxf:\/\/pxf_automation_data?PROFILE/
 --
+-- m/CONTEXT:.*line.*/
+-- s/line \d* of //g
+--
 -- m/CONTEXT:.*External table.*/
 -- s/CONTEXT:.*External table.*//
 --
@@ -30,3 +33,7 @@
 -- end_matchsubs
 SELECT *  FROM cloudaccess_server_no_credentials_no_config_with_hdfs;
 ERROR:  PXF server error : com.amazonaws.AmazonClientException: No AWS Credentials provided by BasicAWSCredentialsProvider
+-- start_ignore
+HINT:  Check the PXF logs located in the 'logs-dir' directory on host 'mdw' or 'set client_min_messages=LOG' for additional details.
+-- end_ignore
+DETAIL:  External table cloudaccess_server_no_credentials_no_config_with_hdfs, file pxf_automation_data

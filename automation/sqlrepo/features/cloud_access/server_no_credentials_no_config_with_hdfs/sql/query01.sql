@@ -6,7 +6,7 @@
 --
 -- # create a match/subs
 --
--- m/PXF server error.*(doesBucketExist|com.amazonaws).*/
+-- m/PXF server error.*(com.amazonaws.AmazonClientException: No AWS Credentials provided by BasicAWSCredentialsProvider).*/
 -- s/PXF server error.*/PXF server error : com.amazonaws.AmazonClientException: No AWS Credentials provided by BasicAWSCredentialsProvider/
 --
 -- m/Check the PXF logs located in the.*/
@@ -20,6 +20,9 @@
 --
 -- m/pxf:\/\/(.*)\/pxf_automation_data/
 -- s/pxf:\/\/.*PROFILE/pxf:\/\/pxf_automation_data?PROFILE/
+--
+-- m/CONTEXT:.*line.*/
+-- s/line \d* of //g
 --
 -- m/CONTEXT:.*External table.*/
 -- s/CONTEXT:.*External table.*//

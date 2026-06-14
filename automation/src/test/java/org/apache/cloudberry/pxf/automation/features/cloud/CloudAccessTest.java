@@ -124,31 +124,37 @@ public class CloudAccessTest extends AbstractTestcontainersTest {
      * make sense in the environment with Kerberized Hadoop, where the tests in the "security" group would run
      */
 
+    // TODO: pxf_regress shows diff for this test. Should be fixed.
     @Test(enabled = false, groups = {"s3"})
     public void testCloudAccessFailsWhenNoServerNoCredsSpecified() throws Exception {
         runTestScenario("no_server_no_credentials", null, false);
     }
 
+    // TODO: pxf_regress shows diff for this test. Should be fixed.
     @Test(enabled = false, groups = {"s3"})
     public void testCloudAccessFailsWhenServerNoCredsNoConfigFileExists() throws Exception {
         runTestScenario("server_no_credentials_no_config", "s3-non-existent", false);
     }
 
+    // TODO: pxf_regress shows diff for this test. Should be fixed.
     @Test(enabled = false, groups = {"s3"})
     public void testCloudAccessOkWhenNoServerCredsNoConfigFileExists() throws Exception {
         runTestScenario("no_server_credentials_no_config", null, true);
     }
 
+    // TODO: pxf_regress shows diff for this test. Should be fixed.
     @Test(enabled = false, groups = {"s3"})
     public void testCloudAccessFailsWhenServerNoCredsInvalidConfigFileExists() throws Exception {
         runTestScenario("server_no_credentials_invalid_config", "s3-invalid", false);
     }
 
+    // TODO: pxf_regress shows diff for this test. Should be fixed.
     @Test(enabled = false, groups = {"s3"})
     public void testCloudAccessOkWhenServerCredsInvalidConfigFileExists() throws Exception {
         runTestScenario("server_credentials_invalid_config", "s3-invalid", true);
     }
 
+    // TODO: pxf_regress shows diff for this test. Should be fixed.
     @Test(enabled = false, groups = {"s3"})
     public void testCloudAccessOkWhenServerCredsNoConfigFileExists() throws Exception {
         runTestScenario("server_credentials_no_config", "s3-non-existent", true);

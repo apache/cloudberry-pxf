@@ -185,17 +185,6 @@ XML
     sed -i 's#</configuration>#  <property>\n    <name>pxf.service.user.name</name>\n    <value>foobar</value>\n  </property>\n  <property>\n    <name>pxf.service.user.impersonation</name>\n    <value>false</value>\n  </property>\n</configuration>#' "$PXF_BASE/servers/default-no-impersonation/pxf-site.xml"
   fi
 
-  # Pre-bake PXF servers used by S3 / S3 Select automation tests against MinIO.
-  # The XML files ship with the repo and contain only stable testcontainer
-  # constants (endpoint http://minio:9000, fixed creds); no templating needed.
-  local s3_servers_src="${REPO_DIR}/automation/src/main/resources/testcontainers/pxf-cbdb/servers"
-  for server_name in s3 s3-invalid; do
-    local server_dir="$PXF_BASE/servers/${server_name}"
-    mkdir -p "$server_dir"
-    cp -v "${s3_servers_src}/${server_name}/s3-site.xml" "$server_dir/s3-site.xml"
-    cp -v "$PXF_HOME/templates/mapred-site.xml" "$server_dir/mapred-site.xml"
-  done
-
   # Configure pxf-profiles.xml for Parquet and test profiles
   cat > "$PXF_BASE/conf/pxf-profiles.xml" <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -245,6 +234,13 @@ EOF
 </profiles>
 EOF
 
+  # Configure pxf servers for S3 tests
+  local s3_servers_src="${REPO_DIR}/automation/src/main/resources/testcontainers/pxf-cbdb/servers"
+  for server_name in s3 s3-invalid; do
+    local server_dir="$PXF_BASE/servers/${server_name}"
+    mkdir -p "$server_dir"
+    cp -v "${s3_servers_src}/${server_name}/s3-site.xml" "$server_dir/s3-site.xml"
+  done
 }
 
 main() {
