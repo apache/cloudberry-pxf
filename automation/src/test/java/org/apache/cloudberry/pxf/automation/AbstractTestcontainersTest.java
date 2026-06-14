@@ -28,9 +28,13 @@ import org.apache.cloudberry.pxf.automation.testcontainers.PXFCloudberryContaine
 import org.apache.cloudberry.pxf.automation.utils.system.FDWUtils;
 import org.apache.cloudberry.pxf.automation.utils.system.ProtocolUtils;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Listeners;
 import reporters.CustomAutomationReport;
+
+import java.lang.reflect.Method;
 
 @Listeners({CustomAutomationLogger.class, CustomAutomationReport.class, FDWSkipTestAnalyzer.class})
 public class AbstractTestcontainersTest {
@@ -74,7 +78,7 @@ public class AbstractTestcontainersTest {
 
             regress = new RegressApplication(container);
 
-            // run users before class
+            // run user's before class
             beforeClass();
         } finally {
             CustomAutomationLogger.revertStdoutStream();
@@ -87,8 +91,11 @@ public class AbstractTestcontainersTest {
         if (ProtocolUtils.getPxfTestKeepData().equals("true")) {
             return;
         }
+        // redirect "clean" logs to log file
         CustomAutomationLogger.redirectStdoutStreamToFile(getClass().getSimpleName(), "clean");
         try {
+            // run user's after class
+            afterClass();
             if (cloudberry != null) {
                 cloudberry.close();
             }
@@ -96,6 +103,56 @@ public class AbstractTestcontainersTest {
             CustomAutomationLogger.revertStdoutStream();
         }
     }
+
+
+    /**
+     * will be called before each test method start
+     *
+     * @throws Exception
+     */
+    @BeforeMethod(alwaysRun = true)
+    public void runBeforeMethod() throws Exception {
+        // check if "beforeMethod exists and if so open log file and run it
+        if (checkMethodImplExists("beforeMethod")) {
+            // redirect "runBeforeMethod" logs to log file
+            CustomAutomationLogger.redirectStdoutStreamToFile(getClass().getSimpleName(), "beforeMethod");
+            try {
+                beforeMethod();
+            } catch (Throwable t) {
+                // in case of failure write stack trace to file stream and throw the exception
+                t.printStackTrace(System.out);
+                throw t;
+            } finally {
+                // anyways revert System.out to original stream
+                CustomAutomationLogger.revertStdoutStream();
+            }
+        }
+    }
+
+    /**
+     * will be called after each test method ended
+     *
+     * @throws Exception
+     */
+    @AfterMethod(alwaysRun = true)
+    public void runAfterMethod() throws Exception {
+        // check if "afterMethod exists and if so open log file and run it
+        if (checkMethodImplExists("afterMethod")) {
+            // redirect "runAfterMethod" logs to log file
+            CustomAutomationLogger.redirectStdoutStreamToFile(getClass().getSimpleName(), "afterMethod");
+            try {
+                afterMethod();
+            } catch (Throwable t) {
+                // in case of failure write stack trace to file stream and throw the exception
+                t.printStackTrace(System.out);
+                throw t;
+            } finally {
+                // anyways revert System.out to original stream
+                CustomAutomationLogger.revertStdoutStream();
+            }
+        }
+    }
+
 
     /**
      * clean up after the class finished
@@ -135,5 +192,26 @@ public class AbstractTestcontainersTest {
         bootstrap.createDatabase("pxfautomation_encoding");
         bootstrap.runQuery("SELECT 1");
         System.out.println("[" + getClass().getSimpleName() + "] Test databases created");
+    }
+
+    /**
+     * Check if the test writer used given method and return true if so.
+     *
+     * @param methodName to check
+     * @return true if method exists in declared methods
+     * @throws NoSuchMethodException
+     * @throws SecurityException
+     */
+    private boolean checkMethodImplExists(String methodName) throws NoSuchMethodException, SecurityException {
+        // get all declared methods
+        Method[] methods = getClass().getDeclaredMethods();
+        // run over methods and look for methodName
+        for (Method method : methods) {
+
+            if (method.getName().equals(methodName)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

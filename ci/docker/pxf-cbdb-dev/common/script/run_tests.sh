@@ -166,15 +166,6 @@ ensure_hive_ready() {
   return 1
 }
 
-ensure_minio_bucket() {
-  local mc_bin="/home/gpadmin/workspace/mc"
-  if [ -x "${mc_bin}" ]; then
-    ${mc_bin} alias set local http://localhost:9000 admin password >/dev/null 2>&1 || true
-    ${mc_bin} mb local/gpdb-ud-scratch --ignore-existing >/dev/null 2>&1 || true
-    ${mc_bin} policy set download local/gpdb-ud-scratch >/dev/null 2>&1 || true
-  fi
-}
-
 set_xml_property() {
   local file="$1" name="$2" value="$3"
   if [ ! -f "${file}" ]; then
@@ -199,196 +190,6 @@ ensure_yarn_vmem_settings() {
   local yarn_site="${HADOOP_CONF_DIR}/yarn-site.xml"
   set_xml_property "${yarn_site}" "yarn.nodemanager.vmem-check-enabled" "false"
   set_xml_property "${yarn_site}" "yarn.nodemanager.vmem-pmem-ratio" "4.0"
-}
-
-ensure_hadoop_s3a_config() {
-  local core_site="${HADOOP_CONF_DIR}/core-site.xml"
-  if [ -f "${core_site}" ] && ! grep -q "fs.s3a.endpoint" "${core_site}"; then
-    perl -0777 -pe '
-s#</configuration>#  <property>
-    <name>fs.s3a.endpoint</name>
-    <value>http://localhost:9000</value>
-  </property>
-  <property>
-    <name>fs.s3a.path.style.access</name>
-    <value>true</value>
-  </property>
-  <property>
-    <name>fs.s3a.connection.ssl.enabled</name>
-    <value>false</value>
-  </property>
-  <property>
-    <name>fs.s3a.access.key</name>
-    <value>'"${AWS_ACCESS_KEY_ID}"'</value>
-  </property>
-  <property>
-    <name>fs.s3a.secret.key</name>
-    <value>'"${AWS_SECRET_ACCESS_KEY}"'</value>
-  </property>
-  <property>
-    <name>fs.s3a.aws.credentials.provider</name>
-    <value>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider</value>
-  </property>
-</configuration>#' -i "${core_site}"
-  fi
-}
-
-# Configure dedicated PXF server "s3" pointing to local MinIO;
-# used by tests that explicitly set server=s3
-configure_pxf_s3_server() {
-  local server_dir="${PXF_BASE}/servers/s3"
-  mkdir -p "${server_dir}"
-  cat > "${server_dir}/s3-site.xml" <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-  <property>
-    <name>fs.s3a.endpoint</name>
-    <value>http://localhost:9000</value>
-  </property>
-  <property>
-    <name>fs.s3a.path.style.access</name>
-    <value>true</value>
-  </property>
-  <property>
-    <name>fs.s3a.connection.ssl.enabled</name>
-    <value>false</value>
-  </property>
-  <property>
-    <name>fs.s3a.impl</name>
-    <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
-  </property>
-  <property>
-    <name>fs.s3a.aws.credentials.provider</name>
-    <value>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider</value>
-  </property>
-  <property>
-    <name>fs.s3a.access.key</name>
-    <value>${AWS_ACCESS_KEY_ID}</value>
-  </property>
-  <property>
-    <name>fs.s3a.secret.key</name>
-    <value>${AWS_SECRET_ACCESS_KEY}</value>
-  </property>
-</configuration>
-EOF
-  cat > "${server_dir}/core-site.xml" <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-  <property>
-    <name>fs.defaultFS</name>
-    <value>s3a://</value>
-  </property>
-  <property>
-    <name>fs.s3a.path.style.access</name>
-    <value>true</value>
-  </property>
-  <property>
-    <name>fs.s3a.connection.ssl.enabled</name>
-    <value>false</value>
-  </property>
-  <property>
-    <name>fs.s3a.endpoint</name>
-    <value>http://localhost:9000</value>
-  </property>
-  <property>
-    <name>fs.s3a.impl</name>
-    <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
-  </property>
-  <property>
-    <name>fs.s3a.aws.credentials.provider</name>
-    <value>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider</value>
-  </property>
-  <property>
-    <name>fs.s3a.access.key</name>
-    <value>${AWS_ACCESS_KEY_ID}</value>
-  </property>
-  <property>
-    <name>fs.s3a.secret.key</name>
-    <value>${AWS_SECRET_ACCESS_KEY}</value>
-  </property>
-</configuration>
-EOF
-}
-
-# Configure default PXF server to point to local MinIO with explicit creds;
-# used by tests that do NOT pass a server=name parameter (default server path)
-configure_pxf_default_s3_server() {
-  export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-admin}
-  export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-password}
-  local default_s3_site="${PXF_BASE}/servers/default/s3-site.xml"
-  if [ -f "${default_s3_site}" ]; then
-    cat > "${default_s3_site}" <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-  <property>
-    <name>fs.s3a.endpoint</name>
-    <value>http://localhost:9000</value>
-  </property>
-  <property>
-    <name>fs.s3a.path.style.access</name>
-    <value>true</value>
-  </property>
-  <property>
-    <name>fs.s3a.connection.ssl.enabled</name>
-    <value>false</value>
-  </property>
-  <property>
-    <name>fs.s3a.impl</name>
-    <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
-  </property>
-  <property>
-    <name>fs.s3a.access.key</name>
-    <value>${AWS_ACCESS_KEY_ID}</value>
-  </property>
-  <property>
-    <name>fs.s3a.secret.key</name>
-    <value>${AWS_SECRET_ACCESS_KEY}</value>
-  </property>
-</configuration>
-EOF
-    cat > "${PXF_BASE}/servers/default/core-site.xml" <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-  <property>
-    <name>fs.defaultFS</name>
-    <value>s3a://</value>
-  </property>
-  <property>
-    <name>fs.s3a.path.style.access</name>
-    <value>true</value>
-  </property>
-  <property>
-    <name>fs.s3a.connection.ssl.enabled</name>
-    <value>false</value>
-  </property>
-  <property>
-    <name>fs.s3a.endpoint</name>
-    <value>http://localhost:9000</value>
-  </property>
-  <property>
-    <name>fs.s3a.impl</name>
-    <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
-  </property>
-  <property>
-    <name>fs.s3a.aws.credentials.provider</name>
-    <value>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider</value>
-  </property>
-  <property>
-    <name>fs.s3a.access.key</name>
-    <value>${AWS_ACCESS_KEY_ID}</value>
-  </property>
-  <property>
-    <name>fs.s3a.secret.key</name>
-    <value>${AWS_SECRET_ACCESS_KEY}</value>
-  </property>
-</configuration>
-EOF
-    # hide HDFS/Hive configs so default server is treated as S3-only
-    for f in hdfs-site.xml mapred-site.xml yarn-site.xml hive-site.xml hbase-site.xml; do
-      [ -f "${PXF_BASE}/servers/default/${f}" ] && rm -f "${PXF_BASE}/servers/default/${f}"
-    done
-    "${PXF_HOME}/bin/pxf" restart >/dev/null
-  fi
 }
 
 # Ensure proxy tests can login as testuser from localhost.
@@ -429,7 +230,6 @@ ensure_testuser_pg_hba() {
 }
 
 base_test(){
-  # keep PROTOCOL empty so tests use HDFS; we'll set minio only for s3 later
   export PROTOCOL=
   # ensure gpdb connections target localhost over IPv4 for proxy tests
   export PGHOST=127.0.0.1
@@ -484,16 +284,6 @@ base_test(){
   make GROUP="unused" || true
   save_test_reports "unused"
   echo "[run_tests] GROUP=unused finished"
-
-  ensure_minio_bucket
-  ensure_hadoop_s3a_config
-  configure_pxf_s3_server
-  configure_pxf_default_s3_server
-  export PROTOCOL=s3
-  export HADOOP_OPTIONAL_TOOLS=hadoop-aws
-  make GROUP="s3" || true
-  save_test_reports "s3"
-  echo "[run_tests] GROUP=s3 finished"
 }
 
 # Restore default PXF server to local HDFS/Hive/HBase configuration
@@ -571,14 +361,7 @@ feature_test(){
   cleanup_hive_state
   cleanup_hbase_state
 
-  # Prepare MinIO/S3 and restore default server to local HDFS/Hive/HBase
-  ensure_minio_bucket
-  ensure_hadoop_s3a_config
-  configure_pxf_s3_server
   configure_pxf_default_hdfs_server
-  # Only set default server to MinIO when explicitly running S3 groups; keeping
-  # it HDFS-backed avoids hijacking Hive/HDFS tests with fs.defaultFS=s3a://
-  #configure_pxf_default_s3_server
 
   export PROTOCOL=
   make GROUP="features" || true
@@ -758,7 +541,7 @@ generate_test_summary() {
 
     local group=$(basename "$group_dir")
     # Skip if it's not a test group directory
-    [[ "$group" =~ ^(smoke|hcatalog|hcfs|hdfs|hive|gpdb|sanity|hbase|profile|jdbc|proxy|unused|s3|features|load|performance|pxfExtensionVersion2|pxfExtensionVersion2_1|pxfFdwExtensionVersion1|pxfFdwExtensionVersion2|fdw|gpdb_fdw)$ ]] || continue
+    [[ "$group" =~ ^(smoke|hcatalog|hcfs|hdfs|hive|gpdb|sanity|hbase|profile|jdbc|proxy|unused|features|load|performance|pxfExtensionVersion2|pxfExtensionVersion2_1|pxfFdwExtensionVersion1|pxfFdwExtensionVersion2|fdw|gpdb_fdw)$ ]] || continue
 
     echo "Processing $group test reports from $group_dir"
 
@@ -916,16 +699,6 @@ run_single_group() {
       make GROUP="hbase"
       save_test_reports "hbase"
       ;;
-    s3)
-      ensure_minio_bucket
-      ensure_hadoop_s3a_config
-      configure_pxf_s3_server
-      configure_pxf_default_s3_server
-      export PROTOCOL=s3
-      export HADOOP_OPTIONAL_TOOLS=hadoop-aws
-      make GROUP="s3"
-      save_test_reports "s3"
-      ;;
     features)
       feature_test
       ;;
@@ -956,7 +729,7 @@ run_single_group() {
       ;;
     *)
       echo "Unknown test group: $group"
-      echo "Available groups: cli, external-table, fdw, server, sanity, smoke, hdfs, hcatalog, hcfs, hive, hbase, profile, jdbc, proxy, unused, s3, features, gpdb, gpdb_fdw, load, performance, bench, pxf_extension"
+      echo "Available groups: cli, external-table, fdw, server, sanity, smoke, hdfs, hcatalog, hcfs, hive, hbase, profile, jdbc, proxy, unused, features, gpdb, gpdb_fdw, load, performance, bench, pxf_extension"
       exit 1
       ;;
   esac
