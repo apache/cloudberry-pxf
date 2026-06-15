@@ -31,8 +31,8 @@ import org.testcontainers.containers.wait.strategy.AbstractWaitStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
+import org.apache.cloudberry.pxf.automation.utils.AutomationUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -137,7 +137,7 @@ public class PXFCloudberryContainer extends GenericContainer<PXFCloudberryContai
      */
     public static synchronized PXFCloudberryContainer getInstance() {
         if (instance == null) {
-            String repo = resolveProperty("pxf.test.repo.path", findRepoPath());
+            String repo = resolveProperty("pxf.test.repo.path", AutomationUtils.findRepoRoot().toString());
             String distro = resolveDistro();
             String imageName = "pxf/cbdb-testcontainer-" + distro + ":1";
             String baseImage = BASE_IMAGES.getOrDefault(distro, BASE_IMAGES.get("ubuntu"));
@@ -203,21 +203,6 @@ public class PXFCloudberryContainer extends GenericContainer<PXFCloudberryContai
         String value = System.getProperty(key);
         return (value != null && !value.isEmpty()) ? value : fallback;
     }
-
-    private static String findRepoPath() {
-        File dir = new File(System.getProperty("user.dir"));
-        for (int i = 0; i < 5; i++) {
-            if (new File(dir, "automation/pom.xml").exists()) {
-                return dir.getAbsolutePath();
-            }
-            dir = dir.getParentFile();
-            if (dir == null)
-                break;
-        }
-        throw new IllegalStateException(
-                "Cannot auto-detect cloudberry-pxf repo root. Set -Dpxf.test.repo.path=...");
-    }
-
 
     public Network getSharedNetwork() {
         return network;

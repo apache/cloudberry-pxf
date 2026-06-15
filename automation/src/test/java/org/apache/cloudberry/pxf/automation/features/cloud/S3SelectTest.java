@@ -1,27 +1,41 @@
 package org.apache.cloudberry.pxf.automation.features.cloud;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs;
-import org.apache.cloudberry.pxf.automation.features.BaseFeature;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import org.apache.cloudberry.pxf.automation.AbstractTestcontainersTest;
+import org.apache.cloudberry.pxf.automation.applications.S3Application;
 import org.apache.cloudberry.pxf.automation.structures.tables.pxf.ReadableExternalTable;
-import org.apache.cloudberry.pxf.automation.utils.system.ProtocolEnum;
-import org.apache.cloudberry.pxf.automation.utils.system.ProtocolUtils;
+import org.apache.cloudberry.pxf.automation.testcontainers.MinIOContainer;
+import org.apache.cloudberry.pxf.automation.utils.AutomationUtils;
 import org.testng.annotations.Test;
 
-import java.net.URI;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 import static org.apache.cloudberry.pxf.automation.features.tpch.LineItem.LINEITEM_SCHEMA;
 
-/**
- * Functional S3 Select Test
- */
-public class S3SelectTest extends BaseFeature {
-
-    private static final String PROTOCOL_S3 = "s3a://";
-    private static final String S3_ENDPOINT =
-            System.getProperty("S3_ENDPOINT", System.getenv().getOrDefault("S3_ENDPOINT", "http://localhost:9000"));
+/** Functional S3 Select Test */
+public class S3SelectTest extends AbstractTestcontainersTest {
 
     private static final String[] PXF_S3_SELECT_INVALID_COLS = {
             "invalid_orderkey       BIGINT",
@@ -42,8 +56,10 @@ public class S3SelectTest extends BaseFeature {
             "invalid_comment        VARCHAR(44)"
     };
 
-    private Hdfs s3Server;
+    private MinIOContainer s3Server;
+    private S3Application s3Application;
     private String s3Path;
+    private String objectKeyPrefix;
 
     private static final String sampleCsvFile = "sample.csv";
     private static final String sampleGzippedCsvFile = "sample.csv.gz";
@@ -53,145 +69,149 @@ public class S3SelectTest extends BaseFeature {
     private static final String sampleParquetSnappyFile = "sample.snappy.parquet";
     private static final String sampleParquetGzipFile = "sample.gz.parquet";
 
+    private static final String[] FIXTURE_FILES = {
+            sampleCsvFile,
+            sampleCsvNoHeaderFile,
+            sampleGzippedCsvFile,
+            sampleBzip2CsvFile,
+            sampleParquetFile,
+            sampleParquetSnappyFile,
+            sampleParquetGzipFile,
+    };
+
+    private static final String FIXTURES_SUBDIR = "s3select";
+
     /**
      * Prepare all server configurations and components
      */
     @Override
     public void beforeClass() throws Exception {
-        if (ProtocolUtils.getProtocol() == ProtocolEnum.HDFS) {
-            return;
-        }
-        // Initialize server objects
-        s3Path = String.format("gpdb-ud-scratch/tmp/pxf_automation_data/%s/s3select/", UUID.randomUUID().toString());
-        Configuration s3Configuration = new Configuration();
-        s3Configuration.set("fs.s3a.access.key", ProtocolUtils.getAccess());
-        s3Configuration.set("fs.s3a.secret.key", ProtocolUtils.getSecret());
-        applyS3Defaults(s3Configuration);
+        s3Server = new MinIOContainer(container.getSharedNetwork());
+        s3Server.start();
+        s3Application = new S3Application(s3Server);
+        s3Application.createBucket(MinIOContainer.DEFAULT_BUCKET);
 
-        FileSystem fs2 = FileSystem.get(URI.create(PROTOCOL_S3 + s3Path + fileName), s3Configuration);
-        s3Server = new Hdfs(fs2, s3Configuration, true);
+        String uuid = UUID.randomUUID().toString();
+        objectKeyPrefix = "tmp/pxf_automation_data/" + uuid + "/s3select/";
+        s3Path = MinIOContainer.DEFAULT_BUCKET + "/" + objectKeyPrefix;
+
+        uploadFixtures(MinIOContainer.DEFAULT_BUCKET, objectKeyPrefix);
+        // Server 's3' is pre-baked into the container image by entrypoint.sh.
     }
 
     @Override
-    protected void afterClass() throws Exception {
-        super.afterClass();
+    public void afterClass() throws Exception {
+        if (s3Application != null && objectKeyPrefix != null) {
+            s3Application.deletePrefix(MinIOContainer.DEFAULT_BUCKET, objectKeyPrefix);
+            s3Application.shutdown();
+        }
         if (s3Server != null) {
-            s3Server.removeDirectory(PROTOCOL_S3 + s3Path);
+            s3Server.stop();
         }
     }
 
-    // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = {"s3"})
+    // Uploads committed S3 Select fixture files from src/test/resources/data/s3select/ into MinIO.
+    private void uploadFixtures(String bucket, String objectKeyPrefix) throws IOException {
+        Path fixturesDir = resolveFixturesDirectory();
+        for (String filename : FIXTURE_FILES) {
+            Path localFile = fixturesDir.resolve(filename);
+            if (!Files.isRegularFile(localFile)) {
+                throw new IOException("Missing S3 Select fixture: " + localFile);
+            }
+            String key = objectKeyPrefix + filename;
+            System.out.println("[S3SelectTest] Uploading " + localFile + " -> s3://" + bucket + "/" + key);
+            s3Application.putObject(bucket, key, localFile);
+        }
+    }
+
+    private static Path resolveFixturesDirectory() throws IOException {
+        Path relative = Paths.get("src/test/resources/data", FIXTURES_SUBDIR);
+        if (Files.isDirectory(relative)) {
+            return relative.toAbsolutePath().normalize();
+        }
+        Path fromRepo = AutomationUtils.findRepoRoot()
+                .resolve("automation/src/test/resources/data")
+                .resolve(FIXTURES_SUBDIR);
+        if (Files.isDirectory(fromRepo)) {
+            return fromRepo;
+        }
+        throw new IOException("Cannot find s3select fixtures directory (tried "
+                + relative.toAbsolutePath() + " and " + fromRepo + ")");
+    }
+
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testPlainCsvWithHeaders() throws Exception {
         String[] userParameters = {"FILE_HEADER=IGNORE", "S3_SELECT=ON"};
-        runTestScenario("csv", "s3", "csv", s3Path,
-                localDataResourcesFolder + "/s3select/", sampleCsvFile,
-                "|", userParameters);
+        runTestScenario("csv", "s3", "csv", sampleCsvFile, "|", userParameters);
     }
 
-    // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = {"s3"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testPlainCsvWithHeadersUsingHeaderInfo() throws Exception {
         String[] userParameters = {"FILE_HEADER=USE", "S3_SELECT=ON"};
-        runTestScenario("csv_use_headers", "s3", "csv", s3Path,
-                localDataResourcesFolder + "/s3select/", sampleCsvFile,
-                "|", userParameters);
+        runTestScenario("csv_use_headers", "s3", "csv", sampleCsvFile, "|", userParameters);
     }
 
-    // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = {"s3"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testCsvWithHeadersUsingHeaderInfoWithWrongColumnNames() throws Exception {
         String[] userParameters = {"FILE_HEADER=USE", "S3_SELECT=ON"};
-        runTestScenario("errors/", "csv_use_headers_with_wrong_col_names", "s3", "csv", s3Path,
-                localDataResourcesFolder + "/s3select/", sampleCsvFile, "/" + s3Path + sampleCsvFile,
+        runTestScenario("errors/", "csv_use_headers_with_wrong_col_names", "s3", "csv",
+                sampleCsvFile, "/" + s3Path + sampleCsvFile,
                 "|", userParameters, PXF_S3_SELECT_INVALID_COLS);
     }
 
-    // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = {"s3"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testPlainCsvWithNoHeaders() throws Exception {
         String[] userParameters = {"FILE_HEADER=NONE", "S3_SELECT=ON"};
-        runTestScenario("csv_noheaders", "s3", "csv", s3Path,
-                localDataResourcesFolder + "/s3select/", sampleCsvNoHeaderFile,
-                "|", userParameters);
+        runTestScenario("csv_noheaders", "s3", "csv", sampleCsvNoHeaderFile, "|", userParameters);
     }
 
-    // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = {"s3"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testGzipCsvWithHeadersUsingHeaderInfo() throws Exception {
         String[] userParameters = {"FILE_HEADER=USE", "S3_SELECT=ON", "COMPRESSION_CODEC=gzip"};
-        runTestScenario("gzip_csv_use_headers", "s3", "csv", s3Path,
-                localDataResourcesFolder + "/s3select/", sampleGzippedCsvFile,
-                "|", userParameters);
+        runTestScenario("gzip_csv_use_headers", "s3", "csv", sampleGzippedCsvFile, "|", userParameters);
     }
 
-    // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = {"s3"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testBzip2CsvWithHeadersUsingHeaderInfo() throws Exception {
         String[] userParameters = {"FILE_HEADER=USE", "S3_SELECT=ON", "COMPRESSION_CODEC=bzip2"};
-        runTestScenario("bzip2_csv_use_headers", "s3", "csv", s3Path,
-                localDataResourcesFolder + "/s3select/", sampleBzip2CsvFile,
-                "|", userParameters);
+        runTestScenario("bzip2_csv_use_headers", "s3", "csv", sampleBzip2CsvFile, "|", userParameters);
     }
 
-    // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = {"s3"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testParquet() throws Exception {
         String[] userParameters = {"S3_SELECT=ON"};
-        runTestScenario("parquet", "s3", "parquet", s3Path,
-                localDataResourcesFolder + "/s3select/", sampleParquetFile,
-                null, userParameters);
+        runTestScenario("parquet", "s3", "parquet", sampleParquetFile, null, userParameters);
     }
 
-    // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = {"s3"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testParquetWildcardLocation() throws Exception {
         String[] userParameters = {"S3_SELECT=ON"};
-        runTestScenario("", "parquet", "s3", "parquet", s3Path,
-                localDataResourcesFolder + "/s3select/", sampleParquetFile, "/" + s3Path + "*e.parquet",
+        runTestScenario("", "parquet", "s3", "parquet", sampleParquetFile, "/" + s3Path + "*e.parquet",
                 null, userParameters, LINEITEM_SCHEMA);
     }
 
-    // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = {"s3"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testSnappyParquet() throws Exception {
         String[] userParameters = {"S3_SELECT=ON"};
-        runTestScenario("parquet_snappy", "s3", "parquet", s3Path,
-                localDataResourcesFolder + "/s3select/", sampleParquetSnappyFile,
-                null, userParameters);
+        runTestScenario("parquet_snappy", "s3", "parquet", sampleParquetSnappyFile, null, userParameters);
     }
 
-    // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = {"s3"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testGzipParquet() throws Exception {
         String[] userParameters = {"S3_SELECT=ON"};
-        runTestScenario("parquet_gzip", "s3", "parquet", s3Path,
-                localDataResourcesFolder + "/s3select/", sampleParquetGzipFile,
-                null, userParameters);
+        runTestScenario("parquet_gzip", "s3", "parquet", sampleParquetGzipFile, null, userParameters);
     }
 
     private void runTestScenario(
             String name,
             String server,
             String format,
-            String s3Path,
-            String srcPath,
             String filename,
             String delimiter,
             String[] userParameters)
             throws Exception {
-
-        runTestScenario("",
-                name,
-                server,
-                format,
-                s3Path,
-                srcPath,
-                filename,
-                "/" + s3Path + filename,
-                delimiter,
-                userParameters,
-                LINEITEM_SCHEMA);
+        runTestScenario("", name, server, format, filename, "/" + s3Path + filename,
+                delimiter, userParameters, LINEITEM_SCHEMA);
     }
 
     private void runTestScenario(
@@ -199,40 +219,27 @@ public class S3SelectTest extends BaseFeature {
             String name,
             String server,
             String format,
-            String s3Path,
-            String srcPath,
             String filename,
             String locationPath,
             String delimiter,
             String[] userParameters,
             String[] fields)
             throws Exception {
-
         String tableName = "s3select_" + name;
-        String serverParam = (server == null) ? null : "server=" + server;
-
-        s3Server.copyFromLocal(srcPath + filename, PROTOCOL_S3 + s3Path + filename);
-
-        exTable = new ReadableExternalTable(tableName, fields, locationPath, "CSV");
+        ReadableExternalTable exTable = new ReadableExternalTable(tableName, fields, locationPath, "CSV");
         exTable.setProfile("s3:" + format);
-        exTable.setServer(serverParam);
+        exTable.setServer("server=" + server);
+        exTable.setHost(pxfHost);
+        exTable.setPort(pxfPort);
 
-        if (delimiter != null)
+        if (delimiter != null) {
             exTable.setDelimiter(delimiter);
-        if (userParameters != null)
+        }
+        if (userParameters != null) {
             exTable.setUserParameters(userParameters);
+        }
 
-        gpdb.createTableAndVerify(exTable);
-
-        runSqlTest(String.format("features/s3_select/%s%s", qualifier, name));
-    }
-
-    private void applyS3Defaults(Configuration configuration) {
-        configuration.set("fs.s3a.endpoint", S3_ENDPOINT);
-        configuration.set("fs.s3a.path.style.access", "true");
-        configuration.set("fs.s3a.connection.ssl.enabled", "false");
-        configuration.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
-        configuration.set("fs.s3a.aws.credentials.provider",
-                "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
+        cloudberry.createTableAndVerify(exTable);
+        regress.runSqlTest(String.format("features/s3_select/%s%s", qualifier, name));
     }
 }

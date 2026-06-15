@@ -330,7 +330,6 @@ jobs:
           - jdbc
           - proxy
           - unused
-          - s3
           - features
           - gpdb
           - gpdb_fdw
@@ -501,7 +500,6 @@ jobs:
           - jdbc
           - proxy
           - unused
-          - s3
           - features
           - gpdb
           - gpdb_fdw
@@ -659,6 +657,7 @@ jobs:
       matrix:
         tc_group:
           - 'pxf-jdbc'
+          - 'pxf-s3'
         use_fdw:
           - 'false'
           - 'true'

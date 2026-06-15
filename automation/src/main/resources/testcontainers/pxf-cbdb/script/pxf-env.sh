@@ -59,15 +59,6 @@ export COORDINATOR_DATA_DIRECTORY=${COORDINATOR_DATA_DIRECTORY:-/home/gpadmin/wo
 export PGTZ=UTC
 
 # --------------------------------------------------------------------
-# Minio defaults
-# --------------------------------------------------------------------
-export AWS_ACCESS_KEY_ID=admin
-export AWS_SECRET_ACCESS_KEY=password
-export PROTOCOL=minio
-export ACCESS_KEY_ID=admin
-export SECRET_ACCESS_KEY=password
-
-# --------------------------------------------------------------------
 # PXF defaults
 # --------------------------------------------------------------------
 export PXF_JVM_OPTS=${PXF_JVM_OPTS:-"-Xmx512m -Xms256m"}

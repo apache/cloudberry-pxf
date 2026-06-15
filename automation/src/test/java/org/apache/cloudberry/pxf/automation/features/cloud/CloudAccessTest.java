@@ -1,28 +1,44 @@
 package org.apache.cloudberry.pxf.automation.features.cloud;
 
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 import annotations.WorksWithFDW;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.cloudberry.pxf.automation.components.hdfs.Hdfs;
-import org.apache.cloudberry.pxf.automation.features.BaseFeature;
-import org.apache.cloudberry.pxf.automation.structures.tables.basic.Table;
+import org.apache.cloudberry.pxf.automation.AbstractTestcontainersTest;
+import org.apache.cloudberry.pxf.automation.SmallDataFactory;
+import org.apache.cloudberry.pxf.automation.applications.PXFApplication;
+import org.apache.cloudberry.pxf.automation.applications.S3Application;
+import org.apache.cloudberry.pxf.automation.structures.tables.pxf.ExternalTable;
 import org.apache.cloudberry.pxf.automation.structures.tables.utils.TableFactory;
-import org.apache.cloudberry.pxf.automation.utils.system.ProtocolUtils;
-import org.apache.cloudberry.pxf.automation.utils.system.ProtocolEnum;
+import org.apache.cloudberry.pxf.automation.testcontainers.MinIOContainer;
 import org.testng.annotations.Test;
 
-import java.net.URI;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.UUID;
 
 /**
  * Functional CloudAccess Test
  */
 @WorksWithFDW
-public class CloudAccessTest extends BaseFeature {
-
-    private static final String PROTOCOL_S3 = "s3a://";
-    private static final String S3_ENDPOINT =
-            System.getProperty("S3_ENDPOINT", System.getenv().getOrDefault("S3_ENDPOINT", "http://localhost:9000"));
+public class CloudAccessTest extends AbstractTestcontainersTest {
 
     private static final String[] PXF_MULTISERVER_COLS = {
             "name text",
@@ -37,53 +53,69 @@ public class CloudAccessTest extends BaseFeature {
             "score integer"
     };
 
-    private Hdfs s3Server;
-    private String s3PathRead, s3PathWrite;
+    private static final String fileName = "data.txt";
 
-    /**
-     * Prepare all server configurations and components
-     */
+    private final SmallDataFactory dataFactory = new SmallDataFactory();
+
+    private MinIOContainer s3Server;
+    private S3Application s3Application;
+    private String s3PathRead;
+    private String s3PathWrite;
+    private String readObjectKeyPrefix;
+    private String writeObjectKeyPrefix;
+
     @Override
     public void beforeClass() throws Exception {
-        // Initialize server objects
+        s3Server = new MinIOContainer(container.getSharedNetwork());
+        s3Server.start();
+        s3Application = new S3Application(s3Server);
+        s3Application.createBucket(MinIOContainer.DEFAULT_BUCKET);
+
         String random = UUID.randomUUID().toString();
-        s3PathRead  = String.format("gpdb-ud-scratch/tmp/pxf_automation_data_read/%s/" , random);
-        s3PathWrite = String.format("gpdb-ud-scratch/tmp/pxf_automation_data_write/%s/", random);
+        readObjectKeyPrefix = String.format("tmp/pxf_automation_data_read/%s/", random);
+        writeObjectKeyPrefix = String.format("tmp/pxf_automation_data_write/%s/", random);
+        s3PathRead = MinIOContainer.DEFAULT_BUCKET + "/" + readObjectKeyPrefix;
+        s3PathWrite = MinIOContainer.DEFAULT_BUCKET + "/" + writeObjectKeyPrefix;
+    }
 
-        Configuration s3Configuration = new Configuration();
-        s3Configuration.set("fs.s3a.access.key", ProtocolUtils.getAccess());
-        s3Configuration.set("fs.s3a.secret.key", ProtocolUtils.getSecret());
-        applyS3Defaults(s3Configuration);
-
-        FileSystem fs2 = FileSystem.get(URI.create(PROTOCOL_S3 + s3PathRead + fileName), s3Configuration);
-        s3Server = new Hdfs(fs2, s3Configuration, true);
+    @Override
+    public void afterClass() throws Exception {
+        if (s3Application != null) {
+            if (readObjectKeyPrefix != null) {
+                s3Application.deletePrefix(MinIOContainer.DEFAULT_BUCKET, readObjectKeyPrefix);
+            }
+            if (writeObjectKeyPrefix != null) {
+                s3Application.deletePrefix(MinIOContainer.DEFAULT_BUCKET, writeObjectKeyPrefix);
+            }
+            s3Application.shutdown();
+        }
+        if (s3Server != null) {
+            s3Server.stop();
+        }
     }
 
     @Override
     protected void beforeMethod() throws Exception {
-        if (ProtocolUtils.getProtocol() == ProtocolEnum.HDFS) {
-            return;
+        uploadSmallCsvFixture(MinIOContainer.DEFAULT_BUCKET, readObjectKeyPrefix + fileName);
+    }
+
+    // Uploads small CSV test data (see BaseTCFunctionality#getSmallData()) to the given S3 object.
+    private void uploadSmallCsvFixture(String bucket, String objectKey) throws IOException {
+        Path tempFile = dataFactory.writeTableToCsv(dataFactory.getSmallData(), ",");
+        try {
+            System.out.println("[CloudAccessTest] Uploading " + tempFile + " -> s3://" + bucket + "/" + objectKey);
+            s3Application.putObject(bucket, objectKey, tempFile);
+        } finally {
+            Files.deleteIfExists(tempFile);
         }
-        super.beforeMethod();
-        prepareData();
     }
 
     @Override
     protected void afterMethod() throws Exception {
-        super.afterMethod();
-        if (s3Server != null) {
-            s3Server.removeDirectory(PROTOCOL_S3 + s3PathRead);
-            s3Server.removeDirectory(PROTOCOL_S3 + s3PathWrite);
+        if (s3Application != null) {
+            s3Application.deletePrefix(MinIOContainer.DEFAULT_BUCKET, readObjectKeyPrefix);
+            s3Application.deletePrefix(MinIOContainer.DEFAULT_BUCKET, writeObjectKeyPrefix);
         }
-    }
-
-    protected void prepareData() throws Exception {
-        // Prepare data in table
-        Table dataTable = getSmallData();
-
-        // Create Data for s3Server
-        s3Server.writeTableToFile(PROTOCOL_S3 + s3PathRead + fileName, dataTable, ",");
-        s3Server.createDirectory(PROTOCOL_S3 + s3PathWrite);
     }
 
     /*
@@ -133,68 +165,66 @@ public class CloudAccessTest extends BaseFeature {
      * both without and with Kerberos security, testing that cloud access works in presence of "default" server
      */
 
-    @Test(groups = {"gpdb", "security"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testCloudAccessWithHdfsFailsWhenNoServerNoCredsSpecified() throws Exception {
         runTestScenario("no_server_no_credentials_with_hdfs", null, false);
     }
 
-    // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = {"gpdb", "security"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testCloudAccessWithHdfsOkWhenServerNoCredsValidConfigFileExists() throws Exception {
         runTestScenario("server_no_credentials_valid_config_with_hdfs", "s3", false);
     }
 
-    @Test(groups = {"gpdb", "security"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testCloudWriteWithHdfsOkWhenServerNoCredsValidConfigFileExists() throws Exception {
         runTestScenarioForWrite("server_no_credentials_valid_config_with_hdfs_write", "s3", false);
     }
 
-    @Test(groups = {"gpdb", "security"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testCloudAccessWithHdfsFailsWhenServerNoCredsNoConfigFileExists() throws Exception {
         runTestScenario("server_no_credentials_no_config_with_hdfs", "s3-non-existent", false);
     }
 
-    @Test(groups = {"gpdb", "security"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testCloudAccessWithHdfsFailsWhenNoServerCredsNoConfigFileExists() throws Exception {
         runTestScenario("no_server_credentials_no_config_with_hdfs", null, true);
     }
 
-    @Test(groups = {"gpdb", "security"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testCloudAccessWithHdfsFailsWhenServerNoCredsInvalidConfigFileExists() throws Exception {
         runTestScenario("server_no_credentials_invalid_config_with_hdfs", "s3-invalid", false);
     }
 
-    // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = {"gpdb", "security"})
+    @Test(groups = {"testcontainers", "pxf-s3"})
     public void testCloudAccessWithHdfsOkWhenServerCredsInvalidConfigFileExists() throws Exception {
         runTestScenario("server_credentials_invalid_config_with_hdfs", "s3-invalid", true);
     }
 
     private void runTestScenario(String name, String server, boolean creds) throws Exception {
         String tableName = "cloudaccess_" + name;
-        exTable = TableFactory.getPxfReadableTextTable(tableName, PXF_MULTISERVER_COLS, s3PathRead + fileName, ",");
+        ExternalTable exTable = TableFactory.getPxfReadableTextTable(tableName, PXF_MULTISERVER_COLS, s3PathRead + fileName, ",");
         exTable.setProfile("s3:text");
         String serverParam = (server == null) ? null : "server=" + server;
         exTable.setServer(serverParam);
         if (creds) {
-            exTable.setUserParameters(new String[]{"accesskey=" + ProtocolUtils.getAccess(), "secretkey=" + ProtocolUtils.getSecret()});
+            exTable.setUserParameters(new String[]{"accesskey=" + MinIOContainer.ACCESS_KEY, "secretkey=" + MinIOContainer.SECRET_KEY});
         }
-        gpdb.createTableAndVerify(exTable);
+        cloudberry.createTableAndVerify(exTable);
 
-        runSqlTest("features/cloud_access/" + name);
+        regress.runSqlTest("features/cloud_access/" + name);
     }
 
     private void runTestScenarioForWrite(String name, String server, boolean creds) throws Exception {
         // create writable external table to write to S3
         String tableName = "cloudwrite_" + name;
-        exTable = TableFactory.getPxfWritableTextTable(tableName, PXF_WRITE_COLS, s3PathWrite, ",");
+        ExternalTable exTable = TableFactory.getPxfWritableTextTable(tableName, PXF_WRITE_COLS, s3PathWrite, ",");
         exTable.setProfile("s3:text");
         String serverParam = (server == null) ? null : "server=" + server;
         exTable.setServer(serverParam);
         if (creds) {
-            exTable.setUserParameters(new String[]{"accesskey=" + ProtocolUtils.getAccess(), "secretkey=" + ProtocolUtils.getSecret()});
+            exTable.setUserParameters(new String[]{"accesskey=" + MinIOContainer.ACCESS_KEY, "secretkey=" + MinIOContainer.SECRET_KEY});
         }
-        gpdb.createTableAndVerify(exTable);
+        cloudberry.createTableAndVerify(exTable);
 
         // create readable external table to read back from S3, making sure previous insert made it all the way to S3
         tableName = "cloudaccess_" + name;
@@ -202,19 +232,10 @@ public class CloudAccessTest extends BaseFeature {
         exTable.setProfile("s3:text");
         exTable.setServer(serverParam);
         if (creds) {
-            exTable.setUserParameters(new String[]{"accesskey=" + ProtocolUtils.getAccess(), "secretkey=" + ProtocolUtils.getSecret()});
+            exTable.setUserParameters(new String[]{"accesskey=" + MinIOContainer.ACCESS_KEY, "secretkey=" + MinIOContainer.SECRET_KEY});
         }
-        gpdb.createTableAndVerify(exTable);
+        cloudberry.createTableAndVerify(exTable);
 
-        runSqlTest("features/cloud_access/" + name);
-    }
-
-    private void applyS3Defaults(Configuration configuration) {
-        configuration.set("fs.s3a.endpoint", S3_ENDPOINT);
-        configuration.set("fs.s3a.path.style.access", "true");
-        configuration.set("fs.s3a.connection.ssl.enabled", "false");
-        configuration.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
-        configuration.set("fs.s3a.aws.credentials.provider",
-                "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
+        regress.runSqlTest("features/cloud_access/" + name);
     }
 }

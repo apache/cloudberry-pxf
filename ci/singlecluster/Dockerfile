@@ -104,20 +104,6 @@ RUN set -e; \
     wget -O go.tgz -q "https://go.dev/dl/go${GO_VERSION}.linux-${go_arch}.tar.gz" && \
     sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go.tgz && rm go.tgz
 
-# Install MinIO and mc
-RUN set -e; \
-    arch="${TARGETARCH:-$(uname -m)}"; \
-    case "$arch" in \
-      amd64|x86_64) minio_arch="amd64" ;; \
-      arm64|aarch64) minio_arch="arm64" ;; \
-      *) echo "Unsupported architecture: ${arch}"; exit 1 ;; \
-    esac; \
-    mkdir -p /home/gpadmin/workspace && \
-    wget -O /home/gpadmin/workspace/minio "https://dl.min.io/server/minio/release/linux-${minio_arch}/minio" && \
-    wget -O /home/gpadmin/workspace/mc "https://dl.min.io/client/mc/release/linux-${minio_arch}/mc" && \
-    chmod +x /home/gpadmin/workspace/minio /home/gpadmin/workspace/mc
-
-
 COPY ./templates $GPHD_ROOT
 COPY ./conf $GPHD_ROOT/conf
 COPY ./bin $GPHD_ROOT/bin

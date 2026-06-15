@@ -310,65 +310,6 @@ setup_ssl_material() {
   sudo chown gpadmin:gpadmin "${SSL_KEYSTORE}" "${SSL_TRUSTSTORE}"
 }
 
-deploy_minio() {
-  log "deploying MinIO (for S3 tests)"
-  bash "${PXF_SCRIPTS}/start_minio.bash"
-}
-
-configure_pxf_s3() {
-  log "configuring S3 server definitions for PXF"
-  local servers_base=${PXF_BASE:-/home/gpadmin/pxf-base}
-  local pxf_conf=/usr/local/pxf/conf
-  local s3_sites=(
-    "${servers_base}/servers/s3/s3-site.xml"
-    "${servers_base}/servers/default/s3-site.xml"
-    "${pxf_conf}/servers/s3/s3-site.xml"
-  )
-  for s3_site in "${s3_sites[@]}"; do
-    mkdir -p "$(dirname "${s3_site}")"
-    cat > "${s3_site}" <<'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-    <property>
-        <name>fs.s3a.endpoint</name>
-        <value>http://localhost:9000</value>
-    </property>
-    <property>
-        <name>fs.s3a.access.key</name>
-        <value>admin</value>
-    </property>
-    <property>
-        <name>fs.s3a.secret.key</name>
-        <value>password</value>
-    </property>
-    <property>
-        <name>fs.s3a.path.style.access</name>
-        <value>true</value>
-    </property>
-    <property>
-        <name>fs.s3a.connection.ssl.enabled</name>
-        <value>false</value>
-    </property>
-    <property>
-        <name>fs.s3a.impl</name>
-        <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
-    </property>
-    <property>
-        <name>fs.s3a.aws.credentials.provider</name>
-        <value>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider</value>
-    </property>
-</configuration>
-EOF
-  done
-
-  mkdir -p /home/gpadmin/.aws/
-  cat > "/home/gpadmin/.aws/credentials" <<'EOF'
-[default]
-aws_access_key_id = admin
-aws_secret_access_key = password
-EOF
-}
-
 prepare_sut() {
   # Generate SUT pointing to container FQDN and overwrite build outputs to avoid localhost.
   local host_fqdn_local=$1
@@ -456,7 +397,7 @@ prepare_hadoop_conf_for_tests() {
   local conf_dir=${HADOOP_CONF_DIR:-/home/gpadmin/workspace/singlecluster/hadoop/etc/hadoop}
   local target_base=${REPO_ROOT}/automation/target
   mkdir -p "${target_base}/test-classes" "${target_base}/classes"
-  for f in core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml ssl-client.xml ssl-server.xml s3-site.xml; do
+  for f in core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml ssl-client.xml ssl-server.xml; do
     if [ -f "${conf_dir}/${f}" ]; then
       cp "${conf_dir}/${f}" "${target_base}/test-classes/${f}"
       cp "${conf_dir}/${f}" "${target_base}/classes/${f}"
@@ -467,12 +408,6 @@ prepare_hadoop_conf_for_tests() {
   if [ -f "${hbase_site}" ]; then
     cp "${hbase_site}" "${target_base}/test-classes/hbase-site.xml"
     cp "${hbase_site}" "${target_base}/classes/hbase-site.xml"
-  fi
-  # Add PXF server S3 configs to the classpath for automation tests.
-  local pxf_s3="${PXF_BASE:-/home/gpadmin/pxf-base}/servers/s3/s3-site.xml"
-  if [ -f "${pxf_s3}" ]; then
-    cp "${pxf_s3}" "${target_base}/test-classes/s3-site.xml"
-    cp "${pxf_s3}" "${target_base}/classes/s3-site.xml"
   fi
 }
 
@@ -507,12 +442,6 @@ configure_hadoop() {
   <property><name>hadoop.proxyuser.gpadmin.groups</name><value>*</value></property>
   <property><name>hadoop.proxyuser.porter.hosts</name><value>*</value></property>
   <property><name>hadoop.proxyuser.porter.groups</name><value>*</value></property>
-  <property><name>fs.s3a.endpoint</name><value>http://localhost:9000</value></property>
-  <property><name>fs.s3a.path.style.access</name><value>true</value></property>
-  <property><name>fs.s3a.connection.ssl.enabled</name><value>false</value></property>
-  <property><name>fs.s3a.access.key</name><value>${AWS_ACCESS_KEY_ID:-admin}</value></property>
-  <property><name>fs.s3a.secret.key</name><value>${AWS_SECRET_ACCESS_KEY:-password}</value></property>
-  <property><name>fs.s3a.aws.credentials.provider</name><value>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider</value></property>
 </configuration>
 EOF
 
@@ -1102,14 +1031,11 @@ init_test_env() {
   export KRB5CCNAME=${KRB5CCNAME:-/tmp/krb5cc_pxf_automation}
   export PXF_TEST_KEEP_DATA=${PXF_TEST_KEEP_DATA:-true}
   unset HADOOP_USER_NAME
-  local s3_opts="-Dfs.s3a.endpoint=http://localhost:9000 -Dfs.s3a.path.style.access=true -Dfs.s3a.connection.ssl.enabled=false -Dfs.s3a.access.key=${AWS_ACCESS_KEY_ID:-admin} -Dfs.s3a.secret.key=${AWS_SECRET_ACCESS_KEY:-password}"
   export HDFS_URI="hdfs://${HOST_FQDN_LOCAL}:8020"
-  export HADOOP_OPTS="-Dfs.defaultFS=${HDFS_URI} -Dhadoop.security.authentication=kerberos ${s3_opts}"
+  export HADOOP_OPTS="-Dfs.defaultFS=${HDFS_URI} -Dhadoop.security.authentication=kerberos"
   export HADOOP_CLIENT_OPTS="${HADOOP_OPTS}"
-  export MAVEN_OPTS="-Dfs.defaultFS=${HDFS_URI} -Dhadoop.security.authentication=kerberos ${s3_opts} -Dpxf.host=${PXF_HOST} -Dpxf.port=${PXF_PORT}"
+  export MAVEN_OPTS="-Dfs.defaultFS=${HDFS_URI} -Dhadoop.security.authentication=kerberos -Dpxf.host=${PXF_HOST} -Dpxf.port=${PXF_PORT}"
   export PGOPTIONS="${PGOPTIONS:---client-min-messages=error}"
-  export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-admin}
-  export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-password}
   export EXCLUDE_GROUPS_LOCAL=${EXCLUDED_GROUPS:-multiClusterSecurity}
   DEFAULT_MAVEN_TEST_OPTS="-Dpxf.host=${PXF_HOST} -Dpxf.port=${PXF_PORT} -DPXF_SINGLE_NODE=true -DexcludedGroups=${EXCLUDE_GROUPS_LOCAL}"
 }
@@ -1278,8 +1204,6 @@ main() {
   configure_hbase
   configure_pxf
   configure_pxf_servers
-  configure_pxf_s3
-  deploy_minio
   configure_pg_hba
   start_hdfs_secure
   start_hive_secure
