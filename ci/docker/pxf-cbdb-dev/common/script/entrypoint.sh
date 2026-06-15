@@ -334,52 +334,6 @@ EOF
 </profiles>
 EOF
 
-  # Configure S3 settings
-  mkdir -p "$PXF_BASE/servers/s3" "$PXF_HOME/servers/s3"
-
-  for s3_site in "$PXF_BASE/servers/s3/s3-site.xml" "$PXF_BASE/servers/default/s3-site.xml" "$PXF_HOME/servers/s3/s3-site.xml"; do
-    mkdir -p "$(dirname "$s3_site")"
-    cat > "$s3_site" <<'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-    <property>
-        <name>fs.s3a.endpoint</name>
-        <value>http://localhost:9000</value>
-    </property>
-    <property>
-        <name>fs.s3a.access.key</name>
-        <value>admin</value>
-    </property>
-    <property>
-        <name>fs.s3a.secret.key</name>
-        <value>password</value>
-    </property>
-    <property>
-        <name>fs.s3a.path.style.access</name>
-        <value>true</value>
-    </property>
-    <property>
-        <name>fs.s3a.connection.ssl.enabled</name>
-        <value>false</value>
-    </property>
-    <property>
-        <name>fs.s3a.impl</name>
-        <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
-    </property>
-    <property>
-        <name>fs.s3a.aws.credentials.provider</name>
-        <value>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider</value>
-    </property>
-</configuration>
-EOF
-  done
-  mkdir -p /home/gpadmin/.aws/
-  cat > "/home/gpadmin/.aws/credentials" <<'EOF'
-[default]
-aws_access_key_id = admin
-aws_secret_access_key = password
-EOF
-
 }
 
 wait_for_datanode() {
@@ -556,11 +510,6 @@ start_hive_services() {
   done
 }
 
-deploy_minio() {
-  log "deploying MinIO"
-  bash "${COMMON_SCRIPTS}/start_minio.bash"
-}
-
 main() {
   detect_java_paths
   setup_locale_and_packages
@@ -570,7 +519,6 @@ main() {
   build_pxf
   configure_pxf
   prepare_hadoop_stack
-  deploy_minio
   health_check
   log "entrypoint finished; environment ready for tests"
 }
