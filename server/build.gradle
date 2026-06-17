@@ -102,7 +102,8 @@ configure(javaProjects) {
             dependency("org.apache.htrace:htrace-core:3.1.0-incubating")
             dependency("org.apache.htrace:htrace-core4:4.2.0-incubating")
 
-            dependency("org.apache.zookeeper:zookeeper:3.4.6")
+            dependency("org.apache.zookeeper:zookeeper:3.8.6")
+            dependency("org.apache.zookeeper:zookeeper-jute:3.8.6")
             dependency("org.codehaus.woodstox:stax2-api:3.1.4")
             dependency("org.datanucleus:datanucleus-api-jdo:4.2.4")
             dependency("org.datanucleus:datanucleus-core:4.1.17")
@@ -151,7 +152,7 @@ configure(javaProjects) {
                 entry("hbase-metrics-api")
                 entry("hbase-metrics")
             }
-            dependencySet(group:"org.apache.hbase.thirdparty", version:"3.3.0") {
+            dependencySet(group:"org.apache.hbase.thirdparty", version:"4.1.13") {
                 entry("hbase-shaded-protobuf")
                 entry("hbase-shaded-miscellaneous")
                 entry("hbase-shaded-gson")
