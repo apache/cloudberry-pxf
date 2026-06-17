@@ -159,7 +159,7 @@ configure(javaProjects) {
                 entry("hbase-shaded-netty")
                 entry("hbase-unsafe")
             }
-            dependency("org.apache.yetus:audience-annotations:0.5.0")
+            dependency("org.apache.yetus:audience-annotations:0.13.0")
             dependency("io.opentelemetry:opentelemetry-api:1.49.0")
             dependency("io.opentelemetry:opentelemetry-context:1.49.0")
             dependency("io.opentelemetry.semconv:opentelemetry-semconv:1.29.0-alpha")
