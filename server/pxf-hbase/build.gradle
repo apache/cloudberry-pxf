@@ -33,6 +33,7 @@ dependencies {
     implementation("org.apache.hbase.thirdparty:hbase-shaded-miscellaneous") { transitive = false }
     implementation("org.apache.hbase.thirdparty:hbase-shaded-gson")          { transitive = false }
     implementation("org.apache.hbase.thirdparty:hbase-shaded-netty")         { transitive = false }
+    implementation("org.apache.hbase.thirdparty:hbase-unsafe")               { transitive = false }
     implementation("org.apache.commons:commons-lang3")                       { transitive = false }
     implementation("org.apache.commons:commons-crypto")                      { transitive = false }
     implementation("org.apache.hadoop:hadoop-common")                        { transitive = false }
@@ -45,6 +46,7 @@ dependencies {
     implementation("org.apache.hbase:hbase-protocol")                        { transitive = false }
     implementation("com.google.protobuf:protobuf-java")                      { transitive = false }
     implementation("org.apache.zookeeper:zookeeper")                         { transitive = false }
+    implementation("org.apache.zookeeper:zookeeper-jute")                    { transitive = false }
     implementation("io.netty:netty-common")                                  { transitive = false }
     implementation("io.netty:netty-transport")                               { transitive = false }
 //  skip JRuby - it is part of interactive shell
