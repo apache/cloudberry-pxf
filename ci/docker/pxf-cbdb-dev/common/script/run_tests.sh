@@ -668,6 +668,9 @@ run_single_group() {
     gpdb)
       gpdb_test "false"
       ;;
+    pxf_extension)
+      pxf_extension_test
+      ;;
     load)
       bench_prepare_env
       load_test
