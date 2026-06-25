@@ -1,0 +1,125 @@
+apply plugin: "java-library"
+
+jar {
+    enabled = true
+}
+
+dependencies {
+    /*******************************
+     * API Dependencies
+     *******************************/
+
+    api(project(':pxf-api'))
+    api("org.apache.iceberg:iceberg-api")                                { transitive = false }
+
+    /*******************************
+     * Compile Only Dependencies
+     *******************************/
+
+    compileOnly("org.apache.hadoop:hadoop-annotations")                  { transitive = false }
+
+    /*******************************
+     * Implementation Dependencies
+     *******************************/
+
+    // Iceberg core and format support
+    implementation("org.apache.iceberg:iceberg-common")                    { transitive = false }
+    implementation("org.apache.iceberg:iceberg-core")                    { transitive = false }
+    implementation("org.apache.iceberg:iceberg-data")                    { transitive = false }
+    implementation("org.apache.iceberg:iceberg-parquet")                 { transitive = false }
+    implementation("org.apache.iceberg:iceberg-orc")                     { transitive = false }
+    implementation("org.apache.iceberg:iceberg-bundled-guava")           { transitive = false }
+
+    // Iceberg catalog support
+    implementation("org.apache.iceberg:iceberg-hive-metastore")          { transitive = false }
+    implementation("org.apache.iceberg:iceberg-aws")                     { transitive = false }
+
+    // Hadoop filesystem (HDFS, S3A, Kerberos)
+    implementation("org.apache.hadoop:hadoop-common")                    { transitive = false }
+    implementation("org.apache.hadoop:hadoop-hdfs-client")               { transitive = false }
+    implementation("org.apache.hadoop:hadoop-aws")                       { transitive = false }
+    implementation("org.apache.hadoop:hadoop-auth")                      { transitive = false }
+    implementation("org.apache.hadoop:hadoop-yarn-api")                  { transitive = false } // Kerberos dependency
+    implementation("org.apache.hadoop:hadoop-mapreduce-client-core")     { transitive = false }
+    implementation("org.apache.hadoop.thirdparty:hadoop-shaded-guava")   { transitive = false }
+    implementation("org.apache.hadoop.thirdparty:hadoop-shaded-protobuf_3_7") { transitive = false }
+    implementation("org.apache.htrace:htrace-core4")                     { transitive = false }
+    implementation("com.fasterxml.woodstox:woodstox-core")               { transitive = false }
+    implementation("org.codehaus.woodstox:stax2-api")                    { transitive = false }
+
+    // Parquet format (required by iceberg-parquet)
+    implementation("org.apache.parquet:parquet-avro")                    { transitive = false }
+    implementation("org.apache.parquet:parquet-column")                  { transitive = false }
+    implementation("org.apache.parquet:parquet-common")                  { transitive = false }
+    implementation("org.apache.parquet:parquet-encoding")                { transitive = false }
+    implementation("org.apache.parquet:parquet-format-structures")       { transitive = false }
+    implementation("org.apache.parquet:parquet-hadoop")                  { transitive = false }
+    implementation("org.apache.parquet:parquet-jackson")                 { transitive = false }
+    implementation("org.apache.parquet:parquet-generator")               { transitive = false }
+
+    // ORC format (required by iceberg-orc)
+    implementation("org.apache.orc:orc-core")                            { transitive = false }
+    implementation("org.apache.orc:orc-shims")                           { transitive = false }
+    implementation("io.arenadata.hive:hive-common")                      { transitive = false }
+    implementation("com.google.protobuf:protobuf-java")                  { transitive = false }
+    implementation("org.threeten:threeten-extra")                        { transitive = false }
+
+    // Avro (Iceberg manifest/metadata files are Avro-encoded)
+    implementation("org.apache.avro:avro")                               { transitive = false }
+
+    // Hive Metastore client (required by iceberg-hive-metastore)
+    implementation("io.arenadata.hive:hive-metastore")                   { transitive = false }
+    implementation("io.arenadata.hive:hive-exec:${hiveVersion}:core")    { transitive = false }
+    implementation("io.arenadata.hive:hive-serde")                       { transitive = false }
+    implementation("org.apache.thrift:libthrift")                        { transitive = false }
+    implementation("javax.jdo:jdo-api")                                  { transitive = false }
+
+    // AWS SDK v2 (required by iceberg-aws for S3FileIO and Glue catalog)
+    // transitive deps (utils, aws-core, http-client-spi, etc.) are needed by S3FileIO at runtime
+    implementation("software.amazon.awssdk:s3")
+    implementation("software.amazon.awssdk:sts")
+    implementation("software.amazon.awssdk:kms")
+    implementation("software.amazon.awssdk:glue")
+    implementation("software.amazon.awssdk:dynamodb")
+    implementation("software.amazon.awssdk:url-connection-client")
+    implementation("software.amazon.awssdk:auth")
+    implementation("software.amazon.awssdk:sdk-core")
+    implementation("software.amazon.awssdk:regions")
+
+    // Iceberg internal dependencies
+    implementation("com.github.ben-manes.caffeine:caffeine")             { transitive = false }
+    implementation("org.roaringbitmap:RoaringBitmap")                    { transitive = false }
+    implementation("io.airlift:aircompressor")                           { transitive = false }
+    implementation("dev.failsafe:failsafe")                              { transitive = false }
+    implementation("org.apache.httpcomponents.client5:httpclient5")      { transitive = false } // REST catalog
+
+    // Compression codecs
+    implementation("org.apache.commons:commons-compress")                { transitive = false }
+    implementation("com.github.luben:zstd-jni")                          { transitive = false }
+    implementation("org.lz4:lz4-java")                                   { transitive = false }
+    implementation("org.xerial.snappy:snappy-java")                      { transitive = false }
+
+    // Common utilities
+    implementation("com.google.guava:guava")
+    implementation("io.github.resilience4j:resilience4j-retry")
+    implementation("commons-io:commons-io")
+    implementation("commons-lang:commons-lang")
+    implementation("org.apache.commons:commons-lang3")
+    implementation("org.slf4j:slf4j-api")
+    implementation("org.slf4j:log4j-over-slf4j")                         { transitive = false }
+
+    // https://projectlombok.org
+    compileOnly("org.projectlombok:lombok")
+    annotationProcessor("org.projectlombok:lombok")
+
+    /*******************************
+     * Test Dependencies
+     *******************************/
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+}
+
+test {
+    useJUnitPlatform()
+}
