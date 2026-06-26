@@ -61,6 +61,7 @@ dependencies {
     implementation("org.apache.orc:orc-core")                            { transitive = false }
     implementation("org.apache.orc:orc-shims")                           { transitive = false }
     implementation("io.arenadata.hive:hive-common")                      { transitive = false }
+    implementation("org.apache.hive:hive-storage-api")                   { transitive = false } // SearchArgument, VectorizedRowBatch, HiveDecimal
     implementation("com.google.protobuf:protobuf-java")                  { transitive = false }
     implementation("org.threeten:threeten-extra")                        { transitive = false }
 
