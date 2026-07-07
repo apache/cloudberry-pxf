@@ -99,7 +99,7 @@ dependencies {
     testCompileOnly("org.apache.hadoop:hadoop-annotations")
 
     testImplementation("io.airlift:aircompressor")       // for HcfsTypeTest for testing write URI with LzopCodec
-    testImplementation("org.apache.parquet:parquet-pig") // for parquet tests
+    testImplementation("org.apache.parquet:parquet-pig")             { transitive = false } // for parquet tests
     testImplementation('org.springframework.boot:spring-boot-starter-test')
 }
 
