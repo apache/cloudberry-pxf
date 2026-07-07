@@ -57,6 +57,7 @@ dependencies {
     implementation("org.tukaani:xz")                                 { transitive = false }
     implementation("com.github.luben:zstd-jni")                      { transitive = false }
     implementation("org.xerial.snappy:snappy-java")                  { transitive = false }
+    implementation("io.airlift:aircompressor")                       { transitive = false }
 
 
     // Hadoop 2.10.1 uses log4j:1.2.17, but since we are using slf4j
@@ -99,7 +100,6 @@ dependencies {
 
     testCompileOnly("org.apache.hadoop:hadoop-annotations")
 
-    testImplementation("io.airlift:aircompressor")       // for HcfsTypeTest for testing write URI with LzopCodec
     testImplementation("org.apache.parquet:parquet-pig")             { transitive = false } // for parquet tests
     testImplementation('org.springframework.boot:spring-boot-starter-test')
 }
