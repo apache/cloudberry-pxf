@@ -291,7 +291,7 @@ GPHDUri_verify_no_duplicate_options(GPHDUri *uri)
 	{
 		OptionData *data = (OptionData *) lfirst(option);
 
-		Value	   *key = makeString(asc_toupper(data->key, strlen(data->key)));
+		String	   *key = makeString(asc_toupper(data->key, strlen(data->key)));
 
 		if (!list_member(previousKeys, key))
 			previousKeys = lappend(previousKeys, key);
@@ -308,7 +308,7 @@ GPHDUri_verify_no_duplicate_options(GPHDUri *uri)
 		initStringInfo(&duplicates);
 		foreach(key, duplicateKeys)
 		{
-			char	   *keyname = strVal((Value *) lfirst(key));
+			char	   *keyname = strVal((String *) lfirst(key));
 
 			if (!first)
 				appendStringInfoString(&duplicates, ", ");

@@ -45,6 +45,7 @@
 #include "utils/syscache.h"
 #include "utils/lsyscache.h"
 
+#include <arpa/inet.h>
 #include <unistd.h>
 #include "access/external.h"
 
