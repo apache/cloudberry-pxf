@@ -56,6 +56,7 @@ dependencies {
     implementation("org.apache.commons:commons-compress")            { transitive = false }
     implementation("org.tukaani:xz")                                 { transitive = false }
     implementation("com.github.luben:zstd-jni")                      { transitive = false }
+    implementation("org.xerial.snappy:snappy-java")                  { transitive = false }
 
 
     // Hadoop 2.10.1 uses log4j:1.2.17, but since we are using slf4j
