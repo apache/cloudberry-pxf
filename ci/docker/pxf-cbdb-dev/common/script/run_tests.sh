@@ -504,7 +504,7 @@ generate_test_summary() {
 
     local group=$(basename "$group_dir")
     # Skip if it's not a test group directory
-    [[ "$group" =~ ^(smoke|hcatalog|hcfs|hdfs|hive|gpdb|sanity|hbase|profile|jdbc|proxy|unused|features|load|performance|pxfExtension|pxfFdwExtension|fdw|gpdb_fdw)$ ]] || continue
+    [[ "$group" =~ ^(smoke|hcatalog|hcfs|hdfs|hive|gpdb|sanity|hbase|profile|jdbc|proxy|unused|features|load|performance|fdw|gpdb_fdw)$ ]] || continue
 
     echo "Processing $group test reports from $group_dir"
 

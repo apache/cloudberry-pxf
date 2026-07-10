@@ -656,8 +656,8 @@ jobs:
         tc_group:
           - 'pxf-jdbc'
           - 'pxf-s3'
-          - 'pxfExtension'
-          - 'pxfFdwExtension'
+          - 'pxf-extension'
+          - 'pxf-fdw-extension'
         use_fdw:
           - 'false'
           - 'true'
@@ -665,9 +665,9 @@ jobs:
           - 'ubuntu'
           - 'rocky9'
         exclude:
-          - tc_group: 'pxfExtension'
+          - tc_group: 'pxf-extension'
             use_fdw: 'true'
-          - tc_group: 'pxfFdwExtension'
+          - tc_group: 'pxf-fdw-extension'
             use_fdw: 'false'
     steps:
       - name: Checkout PXF source

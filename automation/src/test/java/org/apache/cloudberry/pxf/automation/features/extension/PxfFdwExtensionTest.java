@@ -50,19 +50,19 @@ public class PxfFdwExtensionTest extends AbstractTestcontainersTest {
         extensionDb.runQuery("DROP EXTENSION IF EXISTS pxf_fdw CASCADE", true);
     }
 
-    @Test(groups = {"testcontainers", "pxfFdwExtension"})
+    @Test(groups = {"testcontainers", "pxf-fdw-extension"})
     public void testPxfCreateExtension() throws Exception {
         extensionDb.runQuery("CREATE EXTENSION pxf_fdw VERSION '2.0'");
         regress.runSqlTest("features/fdw_extension_tests/create_extension");
     }
 
-    @Test(groups = {"testcontainers", "pxfFdwExtension"})
+    @Test(groups = {"testcontainers", "pxf-fdw-extension"})
     public void testPxfCreateExtensionOldRPM() throws Exception {
         extensionDb.runQuery("CREATE EXTENSION pxf_fdw VERSION '1.0'");
         regress.runSqlTest("features/fdw_extension_tests/create_extension_rpm");
     }
 
-    @Test(groups = {"testcontainers", "pxfFdwExtension"})
+    @Test(groups = {"testcontainers", "pxf-fdw-extension"})
     public void testPxfUpgrade() throws Exception {
         extensionDb.runQuery("CREATE EXTENSION pxf_fdw VERSION '1.0'");
         regress.runSqlTest("features/fdw_extension_tests/upgrade/step_1_create_extension_with_older_pxf_version");
@@ -71,7 +71,7 @@ public class PxfFdwExtensionTest extends AbstractTestcontainersTest {
         regress.runSqlTest("features/fdw_extension_tests/upgrade/step_2_after_alter_extension");
     }
 
-    @Test(groups = {"testcontainers", "pxfFdwExtension"})
+    @Test(groups = {"testcontainers", "pxf-fdw-extension"})
     public void testPxfDowngradeThenUpgradeAgain() throws Exception {
         extensionDb.runQuery("CREATE EXTENSION pxf_fdw VERSION '2.0'");
         regress.runSqlTest("features/fdw_extension_tests/downgrade_then_upgrade/step_1_check_extension");

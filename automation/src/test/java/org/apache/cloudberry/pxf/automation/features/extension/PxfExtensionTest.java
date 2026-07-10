@@ -50,19 +50,19 @@ public class PxfExtensionTest extends AbstractTestcontainersTest {
         extensionDb.runQuery("DROP EXTENSION IF EXISTS pxf CASCADE", true);
     }
 
-    @Test(groups = {"testcontainers", "pxfExtension"})
+    @Test(groups = {"testcontainers", "pxf-extension"})
     public void testPxfCreateExtension() throws Exception {
         extensionDb.runQuery("CREATE EXTENSION pxf VERSION '2.1'");
         regress.runSqlTest("features/extension_tests/create_extension");
     }
 
-    @Test(groups = {"testcontainers", "pxfExtension"})
+    @Test(groups = {"testcontainers", "pxf-extension"})
     public void testPxfCreateExtensionOldRPM() throws Exception {
         extensionDb.runQuery("CREATE EXTENSION pxf VERSION '2.0'");
         regress.runSqlTest("features/extension_tests/create_extension_rpm");
     }
 
-    @Test(groups = {"testcontainers", "pxfExtension"})
+    @Test(groups = {"testcontainers", "pxf-extension"})
     public void testPxfUpgrade() throws Exception {
         extensionDb.runQuery("CREATE EXTENSION pxf VERSION '2.0'");
         regress.runSqlTest("features/extension_tests/upgrade/step_1_create_extension_with_older_pxf_version");
@@ -71,7 +71,7 @@ public class PxfExtensionTest extends AbstractTestcontainersTest {
         regress.runSqlTest("features/extension_tests/upgrade/step_2_after_alter_extension");
     }
 
-    @Test(groups = {"testcontainers", "pxfExtension"})
+    @Test(groups = {"testcontainers", "pxf-extension"})
     public void testPxfExplicitUpgrade() throws Exception {
         extensionDb.runQuery("CREATE EXTENSION pxf VERSION '2.0'");
         regress.runSqlTest("features/extension_tests/explicit_upgrade/step_1_create_extension_with_older_pxf_version");
@@ -80,7 +80,7 @@ public class PxfExtensionTest extends AbstractTestcontainersTest {
         regress.runSqlTest("features/extension_tests/explicit_upgrade/step_2_after_alter_extension");
     }
 
-    @Test(groups = {"testcontainers", "pxfExtension"})
+    @Test(groups = {"testcontainers", "pxf-extension"})
     public void testPxfDowngrade() throws Exception {
         extensionDb.runQuery("CREATE EXTENSION pxf VERSION '2.1'");
         regress.runSqlTest("features/extension_tests/downgrade/step_1_create_extension");
@@ -89,7 +89,7 @@ public class PxfExtensionTest extends AbstractTestcontainersTest {
         regress.runSqlTest("features/extension_tests/downgrade/step_2_after_alter_extension_downgrade");
     }
 
-    @Test(groups = {"testcontainers", "pxfExtension"})
+    @Test(groups = {"testcontainers", "pxf-extension"})
     public void testPxfDowngradeThenUpgradeAgain() throws Exception {
         extensionDb.runQuery("CREATE EXTENSION pxf VERSION '2.1'");
         regress.runSqlTest("features/extension_tests/downgrade_then_upgrade/step_1_check_extension");
