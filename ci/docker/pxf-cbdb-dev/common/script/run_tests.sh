@@ -408,43 +408,6 @@ gpdb_test() {
   echo "[run_tests] GROUP=gpdb $extra_args finished"
 }
 
-pxf_extension_test(){
-  local sudo_cmd=""
-  if [ "$(id -u)" -ne 0 ]; then
-    sudo_cmd="sudo -n"
-  fi
-  local extension_dir="${GPHOME}/share/postgresql/extension"
-  local pxf_fdw_control="${extension_dir}/pxf_fdw.control"
-  if [ -d "${REPO_ROOT}/fdw" ] && [ -d "${extension_dir}" ]; then
-    for sql in pxf_fdw--2.0.sql pxf_fdw--1.0--2.0.sql pxf_fdw--2.0--1.0.sql; do
-      if [ -f "${REPO_ROOT}/fdw/${sql}" ]; then
-        ${sudo_cmd} cp -f "${REPO_ROOT}/fdw/${sql}" "${extension_dir}/${sql}"
-      fi
-    done
-  fi
-
-  set_pxf_fdw_default_version() {
-    local version="$1"
-    if [ -f "${pxf_fdw_control}" ]; then
-      ${sudo_cmd} sed -i "s/^default_version = '.*'/default_version = '${version}'/" "${pxf_fdw_control}"
-    fi
-  }
-
-  set_pxf_fdw_default_version "2.0"
-  make GROUP="pxfExtensionVersion2" || true
-  save_test_reports "pxfExtensionVersion2"
-  make GROUP="pxfExtensionVersion2_1" || true
-  save_test_reports "pxfExtensionVersion2_1"
-
-  set_pxf_fdw_default_version "1.0"
-  make GROUP="pxfFdwExtensionVersion1" || true
-  save_test_reports "pxfFdwExtensionVersion1"
-
-  set_pxf_fdw_default_version "2.0"
-  make GROUP="pxfFdwExtensionVersion2" || true
-  save_test_reports "pxfFdwExtensionVersion2"
-}
-
 bench_prepare_env() {
   export HADOOP_HEAPSIZE=${HADOOP_HEAPSIZE:-2048}
   export JAVA_HOME="${JAVA_HADOOP}"
@@ -541,7 +504,7 @@ generate_test_summary() {
 
     local group=$(basename "$group_dir")
     # Skip if it's not a test group directory
-    [[ "$group" =~ ^(smoke|hcatalog|hcfs|hdfs|hive|gpdb|sanity|hbase|profile|jdbc|proxy|unused|features|load|performance|pxfExtensionVersion2|pxfExtensionVersion2_1|pxfFdwExtensionVersion1|pxfFdwExtensionVersion2|fdw|gpdb_fdw)$ ]] || continue
+    [[ "$group" =~ ^(smoke|hcatalog|hcfs|hdfs|hive|gpdb|sanity|hbase|profile|jdbc|proxy|unused|features|load|performance|pxfExtension|pxfFdwExtension|fdw|gpdb_fdw)$ ]] || continue
 
     echo "Processing $group test reports from $group_dir"
 
@@ -705,9 +668,6 @@ run_single_group() {
     gpdb)
       gpdb_test "false"
       ;;
-    pxf_extension)
-      pxf_extension_test
-      ;;
     load)
       bench_prepare_env
       load_test
@@ -729,7 +689,7 @@ run_single_group() {
       ;;
     *)
       echo "Unknown test group: $group"
-      echo "Available groups: cli, external-table, fdw, server, sanity, smoke, hdfs, hcatalog, hcfs, hive, hbase, profile, jdbc, proxy, unused, features, gpdb, gpdb_fdw, load, performance, bench, pxf_extension"
+      echo "Available groups: cli, external-table, fdw, server, sanity, smoke, hdfs, hcatalog, hcfs, hive, hbase, profile, jdbc, proxy, unused, features, gpdb, gpdb_fdw, load, performance, bench"
       exit 1
       ;;
   esac
