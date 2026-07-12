@@ -19,6 +19,7 @@
 #
 # --------------------------------------------------------------------
 # Build Cloudberry from source — works on both Ubuntu and Rocky/RHEL
+set -euo pipefail
 
 # Install sudo & git
 if command -v apt-get >/dev/null 2>&1; then
@@ -182,8 +183,27 @@ cd ~/workspace/cloudberry
             --with-includes=/usr/include/xercesc
 
 # Build and install Cloudberry and its contrib modules
+# generated-headers recreates the lwlocknames.h/catalog/utils header
+# symlinks that "make install" copies but doesn't itself recreate; a prior
+# "make distclean" or a from-scratch checkout leaves them missing, which
+# fails install-include-recurse. -B is required: make's dependency
+# tracking only looks at the source file's mtime, so if the symlink
+# itself was deleted but its source is unchanged, a plain
+# `make generated-headers` reports "Nothing to be done" without
+# recreating it.
+make -B -C ~/workspace/cloudberry/src/backend generated-headers
 make -j$(nproc) -C ~/workspace/cloudberry
 make -j$(nproc) -C ~/workspace/cloudberry/contrib
+# src/include/parser/gram.h -> src/backend/parser/gram.h is *not* covered
+# by any "generated-headers"-style Make target in this tree; it's expected
+# to persist across builds and is only ever created here, once, out of
+# band. A from-scratch checkout (or anything that runs distclean) has no
+# such symlink, which fails "make install"'s header-copy loop with
+# "cannot stat './parser/gram.h'" (a dangling symlink still matches a
+# glob, so install() tries and fails to stat() through it). Real CI never
+# hits this because it installs from a pre-built .deb instead of building
+# from source here.
+ln -sf ../../backend/parser/gram.h ~/workspace/cloudberry/src/include/parser/gram.h
 make install -C ~/workspace/cloudberry
 make install -C ~/workspace/cloudberry/contrib
 
