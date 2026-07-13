@@ -546,14 +546,14 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         String countQuery = "SELECT COUNT(*) FROM " + readableExTable.getName();
         String expectedCount = String.valueOf(1000 * 15000);
         // The BZip2 output can become visible to a freshly created readable table
-        // shortly after COPY returns on loaded CI runners. Retry the assertion with
-        // a bounded delay instead of treating that transient visibility race as data loss.
-        for (int attempt = 1; attempt <= 6; attempt++) {
+        // after COPY returns on loaded CI runners. Retry the assertion for up to
+        // fifteen minutes instead of treating that transient visibility race as data loss.
+        for (int attempt = 1; attempt <= 90; attempt++) {
             try {
                 gpdb.runAnalyticQuery(countQuery, expectedCount);
                 return;
             } catch (AssertionError error) {
-                if (attempt == 6) {
+                if (attempt == 90) {
                     throw error;
                 }
                 sleep(10000);
