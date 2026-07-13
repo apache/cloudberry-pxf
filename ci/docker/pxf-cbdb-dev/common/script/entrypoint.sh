@@ -68,7 +68,7 @@ setup_locale_and_packages() {
     sudo locale-gen en_US.UTF-8 ru_RU.CP1251 ru_RU.UTF-8
     sudo update-locale LANG=en_US.UTF-8
   else
-    sudo dnf install -y --nobest wget maven unzip openssh-server iproute sudo \
+    sudo dnf --disablerepo=hpc-common install -y --nobest wget maven unzip openssh-server iproute sudo \
       java-11-openjdk-headless java-1.8.0-openjdk-headless \
       glibc-langpack-en glibc-locale-source
     sudo localedef -c -i en_US -f UTF-8 en_US.UTF-8 || true
@@ -158,8 +158,8 @@ install_build_deps() {
       libperl-dev make pkg-config protobuf-compiler python3-dev python3-pip python3-setuptools \
       rsync libsnappy-dev
   else
-    sudo dnf install -y --nobest sudo git
-    sudo dnf install -y --nobest --allowerasing bison bzip2 cmake curl flex gcc gcc-c++ iproute iputils \
+    sudo dnf --disablerepo=hpc-common install -y --nobest sudo git
+    sudo dnf --disablerepo=hpc-common install -y --nobest --allowerasing bison bzip2 cmake curl flex gcc gcc-c++ iproute iputils \
       glibc-langpack-en glibc-locale-source apr-devel bzip2-devel libcurl-devel libevent-devel \
       krb5-devel perl-IPC-Run openldap-devel pam-devel protobuf-devel readline-devel \
       openssl-devel libuv-devel lz4-devel libxml2-devel libyaml-devel \
@@ -218,7 +218,7 @@ EOF
   if [ "$OS_FAMILY" = "deb" ]; then
     sudo dpkg -i "$pkg_file" || sudo apt-get install -f -y
   else
-    sudo rpm -Uvh --force "$pkg_file" || sudo dnf install -y "$pkg_file"
+    sudo rpm -Uvh --force "$pkg_file" || sudo dnf --disablerepo=hpc-common install -y "$pkg_file"
   fi
   log "Cloudberry installed from $pkg_file"
 
