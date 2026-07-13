@@ -42,6 +42,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
     private String hdfsWorkingDataDir;
     private ProtocolEnum protocol;
     private static final Comparator<List<String>> ROW_COMPARATOR = Comparator.comparing(row -> String.join("|", row));
+    private static final int BZIP2_MULTI_BLOCK_REPEAT_COUNT = 1_000;
     private static final int BZIP2_OUTPUT_VISIBILITY_MAX_ATTEMPTS = 90;
     private static final long BZIP2_OUTPUT_VISIBILITY_RETRY_DELAY_MS = 10_000;
 
@@ -526,6 +527,8 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
      *
      * @throws Exception if test fails to run
      */
+    // PXF FDW on GPDB 6 does not create BZip2 output through its native-table INSERT workaround.
+    @SkipForFDW
     @Test(groups = {"features", "gpdb", "hcfs", "security"})
     public void copyFromFileMultiBlockedDataBZip2() throws Exception {
 
@@ -533,7 +536,9 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         FileFormatsUtils.prepareData(new WritableDataPreparer(), 1000, data);
         // multiple it to file
         String multiBlockedLocalFilePath = dataTempFolder + "/multiBlockedData_bzip";
-        FileFormatsUtils.prepareDataFile(data, 15000, multiBlockedLocalFilePath);
+        // One million rows still exercises many 900 KiB BZip2 blocks without the
+        // unrecoverable partial write produced by the former 15-million-row fixture.
+        FileFormatsUtils.prepareDataFile(data, BZIP2_MULTI_BLOCK_REPEAT_COUNT, multiBlockedLocalFilePath);
 
         String hdfsPath = hdfsWritePath + "/copy_from_file_multi_block_bzip2";
         writableExTable = prepareWritableBZip2Table("pxf_text_multi_block_bzip2_w", hdfsPath);
@@ -547,7 +552,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
 
         readableExTable = prepareReadableTable("pxf_text_multi_block_bzip2_r", hdfsPath);
         String countQuery = "SELECT COUNT(*) FROM " + readableExTable.getName();
-        String expectedCount = String.valueOf(1000 * 15000);
+        String expectedCount = String.valueOf(1000 * BZIP2_MULTI_BLOCK_REPEAT_COUNT);
         // The BZip2 output can become visible to a freshly created readable table
         // after COPY returns on loaded CI runners. Retry the assertion for up to
         // fifteen minutes instead of treating that transient visibility race as data loss.
