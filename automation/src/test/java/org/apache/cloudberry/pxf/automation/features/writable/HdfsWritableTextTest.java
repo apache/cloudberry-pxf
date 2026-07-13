@@ -18,6 +18,7 @@ import org.apache.cloudberry.pxf.automation.utils.system.ProtocolEnum;
 import org.apache.cloudberry.pxf.automation.utils.system.ProtocolUtils;
 import org.apache.cloudberry.pxf.automation.utils.tables.ComparisonUtils;
 import org.junit.Assert;
+import org.postgresql.util.PSQLException;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -41,6 +42,8 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
     private String hdfsWorkingDataDir;
     private ProtocolEnum protocol;
     private static final Comparator<List<String>> ROW_COMPARATOR = Comparator.comparing(row -> String.join("|", row));
+    private static final int BZIP2_OUTPUT_VISIBILITY_MAX_ATTEMPTS = 90;
+    private static final long BZIP2_OUTPUT_VISIBILITY_RETRY_DELAY_MS = 10_000;
 
     private enum InsertionMethod {
         INSERT,
@@ -548,15 +551,19 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         // The BZip2 output can become visible to a freshly created readable table
         // after COPY returns on loaded CI runners. Retry the assertion for up to
         // fifteen minutes instead of treating that transient visibility race as data loss.
-        for (int attempt = 1; attempt <= 90; attempt++) {
+        for (int attempt = 1; attempt <= BZIP2_OUTPUT_VISIBILITY_MAX_ATTEMPTS; attempt++) {
             try {
                 gpdb.runAnalyticQuery(countQuery, expectedCount);
                 return;
-            } catch (AssertionError error) {
-                if (attempt == 90) {
+            } catch (AssertionError | PSQLException error) {
+                if (error instanceof PSQLException
+                        && !StringUtils.contains(error.getMessage(), "Input path does not exist")) {
                     throw error;
                 }
-                sleep(10000);
+                if (attempt == BZIP2_OUTPUT_VISIBILITY_MAX_ATTEMPTS) {
+                    throw error;
+                }
+                sleep(BZIP2_OUTPUT_VISIBILITY_RETRY_DELAY_MS);
             }
         }
     }
