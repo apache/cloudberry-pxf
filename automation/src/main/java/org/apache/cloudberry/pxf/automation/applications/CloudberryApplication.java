@@ -210,6 +210,10 @@ public class CloudberryApplication implements AutoCloseable {
         }
     }
 
+    public void dropDatabase(String dbName) throws Exception {
+        runQuery("DROP DATABASE IF EXISTS " + dbName, true);
+    }
+
     public void createExtension(String extensionName, boolean ignoreFail) throws Exception {
         runQuery("CREATE EXTENSION IF NOT EXISTS " + extensionName, ignoreFail);
     }
