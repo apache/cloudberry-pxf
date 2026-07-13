@@ -43,6 +43,7 @@ public class ShellSystemObject extends BaseSystemObject {
     public static final long _5_MINUTES = (_1_MINUTE * 5);
     public static final long _10_MINUTES = _5_MINUTES * 2;
     public static final long _30_MINUTES = _10_MINUTES * 3;
+    public static final long _60_MINUTES = _30_MINUTES * 2;
 
     public static final int MIN_COMMAND_TIMEOUT = 100;
 

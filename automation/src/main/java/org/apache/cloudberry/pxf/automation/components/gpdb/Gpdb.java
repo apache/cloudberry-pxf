@@ -486,10 +486,10 @@ public class Gpdb extends DbSystemObject {
 		String copyCmd = "\\COPY " + to + " FROM " + from + " " + copyParams + ";";
 
 		ShellSystemObject sso = openPsql();
-		// File-backed COPY operations can include large multi-block compressed data.
-		// The 10-minute limit can expire before the command completes on slower CI runners.
+		// File-backed COPY operations can include large multi-block data. On Rocky 9 CI,
+		// the uncompressed 15-million-row fixture can take longer than 30 minutes.
 		if (dataToCopy == null) {
-			sso.setCommandTimeout(ShellSystemObject._30_MINUTES);
+			sso.setCommandTimeout(ShellSystemObject._60_MINUTES);
 		}
 
 		runSqlCmd(sso, copyCmd, true);
