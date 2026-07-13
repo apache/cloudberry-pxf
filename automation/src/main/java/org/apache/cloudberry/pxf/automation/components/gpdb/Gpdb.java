@@ -417,22 +417,40 @@ public class Gpdb extends DbSystemObject {
 	 * @throws Exception
 	 */
 	public void copyFromFile(Table to, File path, String delim, boolean csv) throws Exception {
+		copyFromFile(to, path, delim, csv, null);
+	}
+
+	/**
+	 * Copy data file to "to" table from file "path" with an optional command timeout.
+	 *
+	 * @param to copy to required table
+	 * @param path file to copy
+	 * @param delim delimiter
+	 * @param csv is csv format - if it is, delimiter is not used.
+	 * @param commandTimeout command timeout in milliseconds, or null for the default
+	 * @throws Exception if the operation fails
+	 */
+	public void copyFromFile(Table to, File path, String delim, boolean csv, Long commandTimeout) throws Exception {
 		String from = "'" + path.getAbsolutePath() + "'";
 		copyLocalFileToRemoteGpdb(from);
-		copyWithOptionalCTAS(from, to, null, delim, null, csv);
+		copyWithOptionalCTAS(from, to, null, delim, null, csv, commandTimeout);
 	}
 
 	private void copyWithOptionalCTAS(String from, Table to, String dataToCopy, String delim, String nullChar, boolean csv) throws Exception {
+		copyWithOptionalCTAS(from, to, dataToCopy, delim, nullChar, csv, null);
+	}
+
+	private void copyWithOptionalCTAS(String from, Table to, String dataToCopy, String delim, String nullChar, boolean csv, Long commandTimeout) throws Exception {
 		// COPY TO <foreign table> is not supported in PXF FDW with GP6, so we will have to do a workaround by
 		// creating a native table, copying data from the file into it and then performing a CTAS into the foreign table
 		if (FDWUtils.useFDW && getVersion() < 7) {
 			Table nativeTable = createTableLike(to.getName() + "_native", to);
 			// copy data into the native table
-			copy(nativeTable.getName(), from, dataToCopy, delim, null, csv);
+			copy(nativeTable.getName(), from, dataToCopy, delim, null, csv, commandTimeout);
 			// CTAS into the foreign table
 			copyData(nativeTable, to, true);
 		} else {
-			copy(to.getName(), from, dataToCopy, delim, null, csv);
+			copy(to.getName(), from, dataToCopy, delim, null, csv, commandTimeout);
 		}
 	}
 
@@ -466,6 +484,10 @@ public class Gpdb extends DbSystemObject {
 	}
 
 	private void copy(String to, String from, String dataToCopy, String delim, String nullChar, boolean csv) throws Exception {
+		copy(to, from, dataToCopy, delim, nullChar, csv, null);
+	}
+
+	private void copy(String to, String from, String dataToCopy, String delim, String nullChar, boolean csv, Long commandTimeout) throws Exception {
 
 		ReportUtils.startLevel(report, getClass(), "Copy from " + from + " to " + to);
 
@@ -486,10 +508,8 @@ public class Gpdb extends DbSystemObject {
 		String copyCmd = "\\COPY " + to + " FROM " + from + " " + copyParams + ";";
 
 		ShellSystemObject sso = openPsql();
-		// File-backed COPY operations can include large multi-block data. On Rocky 9 CI,
-		// the uncompressed 15-million-row fixture can take longer than 30 minutes.
-		if (dataToCopy == null) {
-			sso.setCommandTimeout(ShellSystemObject._60_MINUTES);
+		if (commandTimeout != null) {
+			sso.setCommandTimeout(commandTimeout);
 		}
 
 		runSqlCmd(sso, copyCmd, true);

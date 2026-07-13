@@ -4,6 +4,7 @@ import annotations.FailsWithFDW;
 import annotations.SkipForFDW;
 import annotations.WorksWithFDW;
 import org.apache.commons.lang.StringUtils;
+import org.apache.cloudberry.pxf.automation.components.common.ShellSystemObject;
 import org.apache.cloudberry.pxf.automation.datapreparer.writable.WritableDataPreparer;
 import org.apache.cloudberry.pxf.automation.enums.EnumCompressionTypes;
 import org.apache.cloudberry.pxf.automation.features.BaseWritableFeature;
@@ -473,7 +474,8 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         String hdfsPath = hdfsWritePath + "/copy_from_file_multi_block_no_compression";
         writableExTable = prepareWritableTable("pxf_text_multi_block_no_compression_w", hdfsPath, null);
 
-        gpdb.copyFromFile(writableExTable, new File(multiBlockedLocalFilePath), ",", false);
+        gpdb.copyFromFile(writableExTable, new File(multiBlockedLocalFilePath), ",", false,
+                ShellSystemObject._60_MINUTES);
 
         // for HCFS on Cloud, wait a bit for async write in previous steps to finish
         if (protocol != ProtocolEnum.HDFS && protocol != ProtocolEnum.FILE) {
@@ -502,7 +504,8 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         String hdfsPath = hdfsWritePath + "/copy_from_file_multi_block_gzip";
         writableExTable = prepareWritableGzipTable("pxf_text_multi_block_gzip_w", hdfsPath);
 
-        gpdb.copyFromFile(writableExTable, new File(multiBlockedLocalFilePath), ",", false);
+        gpdb.copyFromFile(writableExTable, new File(multiBlockedLocalFilePath), ",", false,
+                ShellSystemObject._30_MINUTES);
 
         // for HCFS on Cloud, wait a bit for async write in previous steps to finish
         if (protocol != ProtocolEnum.HDFS && protocol != ProtocolEnum.FILE) {
