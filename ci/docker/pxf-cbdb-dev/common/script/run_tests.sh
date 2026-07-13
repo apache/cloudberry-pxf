@@ -20,6 +20,10 @@
 # --------------------------------------------------------------------
 set -euo pipefail
 
+# Keep shell tools and the PXF service on the same timezone during Parquet
+# regression tests. The PXF setting is persisted by entrypoint.sh.
+export TZ=UTC
+
 # Run automation tests only (assumes build/env already prepared)
 
 # Use a unique var name to avoid clobbering by sourced env scripts

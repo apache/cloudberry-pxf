@@ -20,6 +20,10 @@
 # --------------------------------------------------------------------
 set -euo pipefail
 
+# Parquet INT96 conversion uses the JVM's default timezone. Pin the service
+# process to UTC so its conversion is consistent with regression expectations.
+export TZ=UTC
+
 log() { echo "[entrypoint][$(date '+%F %T')] $*"; }
 die() { log "ERROR $*"; exit 1; }
 
@@ -262,9 +266,14 @@ configure_pxf() {
   log "configure PXF"
   source "${COMMON_SCRIPTS}/pxf-env.sh"
   export PATH="$PXF_HOME/bin:$PATH"
-  export PXF_JVM_OPTS="-Xmx512m -Xms256m"
+  export PXF_JVM_OPTS="-Xmx512m -Xms256m -Duser.timezone=UTC"
   export PXF_HOST=localhost
-  echo "JAVA_HOME=${JAVA_BUILD}" >> "$PXF_BASE/conf/pxf-env.sh"
+  # Persist the timezone settings so later `pxf restart` calls keep them.
+  cat >> "$PXF_BASE/conf/pxf-env.sh" <<EOF
+export JAVA_HOME=${JAVA_BUILD}
+export PXF_JVM_OPTS="${PXF_JVM_OPTS}"
+export TZ=${TZ}
+EOF
   sed -i 's/# server.address=localhost/server.address=0.0.0.0/' "$PXF_BASE/conf/pxf-application.properties"
   echo -e "\npxf.profile.dynamic.regex=test:.*" >> "$PXF_BASE/conf/pxf-application.properties"
   cp -v "$PXF_HOME"/templates/{hdfs,mapred,yarn,core,hbase,hive}-site.xml "$PXF_BASE/servers/default"
@@ -334,6 +343,11 @@ EOF
 </profiles>
 EOF
 
+  # build_pxf.sh starts PXF before this function writes its environment and
+  # server configuration. Restart it so the running JVM receives the UTC
+  # setting, including for test groups that do not restart PXF themselves.
+  log "restarting PXF with CI timezone and server configuration"
+  "${PXF_HOME}/bin/pxf" restart
 }
 
 wait_for_datanode() {
