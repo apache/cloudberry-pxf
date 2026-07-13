@@ -334,7 +334,6 @@ jobs:
           - gpdb
           - gpdb_fdw
           - load
-          - pxf_extension
     steps:
     - name: Free disk space
       run: |
@@ -504,7 +503,6 @@ jobs:
           - gpdb
           - gpdb_fdw
           - load
-          - pxf_extension
     steps:
     - name: Free disk space
       run: |
@@ -658,12 +656,19 @@ jobs:
         tc_group:
           - 'pxf-jdbc'
           - 'pxf-s3'
+          - 'pxf-extension'
+          - 'pxf-fdw-extension'
         use_fdw:
           - 'false'
           - 'true'
         distro:
           - 'ubuntu'
           - 'rocky9'
+        exclude:
+          - tc_group: 'pxf-extension'
+            use_fdw: 'true'
+          - tc_group: 'pxf-fdw-extension'
+            use_fdw: 'false'
     steps:
       - name: Checkout PXF source
         uses: actions/checkout@v4

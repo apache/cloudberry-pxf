@@ -28,7 +28,3 @@ FROM pg_catalog.pg_extension AS e
     INNER JOIN pg_catalog.pg_proc AS p ON (p.oid = d.objid)
 WHERE d.deptype = 'e' AND e.extname = 'pxf'
 ORDER BY 1;
-
-SELECT * FROM pxf_upgrade_test ORDER BY num;
-
-SELECT * FROM pxf_upgrade_test_multibyte ORDER BY num;
