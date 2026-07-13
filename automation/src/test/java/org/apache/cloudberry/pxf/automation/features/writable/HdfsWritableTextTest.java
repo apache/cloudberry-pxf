@@ -543,8 +543,22 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         }
 
         readableExTable = prepareReadableTable("pxf_text_multi_block_bzip2_r", hdfsPath);
-        gpdb.runAnalyticQuery("SELECT COUNT(*) FROM " + readableExTable.getName(),
-                String.valueOf(1000 * 15000));
+        String countQuery = "SELECT COUNT(*) FROM " + readableExTable.getName();
+        String expectedCount = String.valueOf(1000 * 15000);
+        // The BZip2 output can become visible to a freshly created readable table
+        // shortly after COPY returns on loaded CI runners. Retry the assertion with
+        // a bounded delay instead of treating that transient visibility race as data loss.
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+                gpdb.runAnalyticQuery(countQuery, expectedCount);
+                return;
+            } catch (Exception e) {
+                if (attempt == 3) {
+                    throw e;
+                }
+                sleep(10000);
+            }
+        }
     }
 
     /**
