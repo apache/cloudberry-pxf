@@ -44,6 +44,7 @@ static void
 test_pxfprotocol_validate_urls(void **state)
 {
 	/* setup call info with no call context */
+
 	PG_FUNCTION_ARGS = palloc0(sizeof(FunctionCallInfoData));
 	fcinfo->context = palloc0(sizeof(ExtProtocolValidatorData));
 	fcinfo->context->type = T_ExtProtocolValidatorData;
