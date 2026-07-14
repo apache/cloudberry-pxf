@@ -394,12 +394,18 @@ wait_for_datanode() {
 
     if [ "${_attempt}" -lt "${max_attempts}" ]; then
       log "Attempting to restart DataNode..."
-      # Stop any zombie DataNode processes
+      # hadoop-datanode.sh owns the per-node configuration and daemon lifecycle.
+      # Stop it before clearing a stale process/PID, otherwise a second direct
+      # hadoop-daemon invocation can race for the DataNode transfer port.
+      "${GPHD_ROOT}/bin/hadoop-datanode.sh" stop 0 2>&1 || true
+      # Stop any zombie DataNode process which can keep port 50010 occupied.
       pkill -f "proc_datanode" 2>/dev/null || true
+      pkill -f "org\.apache\.hadoop\.hdfs\.server\.datanode\.DataNode" 2>/dev/null || true
+      rm -f "${PIDS_ROOT}"/hadoop-*-datanode.pid 2>/dev/null || true
       sleep 2
-      # Restart DataNode via the singlecluster script
+      # Restart through the singlecluster script. It calls hadoop-daemon with
+      # the node-specific configuration, so do not start it a second time.
       "${GPHD_ROOT}/bin/hadoop-datanode.sh" start 0 2>&1 || true
-      "${HADOOP_ROOT}/sbin/hadoop-daemon.sh" --config "${GPHD_ROOT}/storage/hadoop/datanode0/etc/hadoop" start datanode 2>&1 || true
       log "DataNode restart issued, waiting again..."
     fi
   done
