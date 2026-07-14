@@ -43,6 +43,9 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
     private ProtocolEnum protocol;
     private static final Comparator<List<String>> ROW_COMPARATOR = Comparator.comparing(row -> String.join("|", row));
     private static final int LARGE_MULTI_BLOCK_REPEAT_COUNT = 15_000;
+    // 2,000 repetitions of the 1,000-row fixture are over 128 MiB, preserving
+    // multi-HDFS-block coverage without making an uncompressed COPY take an hour.
+    private static final int UNCOMPRESSED_MULTI_BLOCK_REPEAT_COUNT = 2_000;
     private static final int FDW_MULTI_BLOCK_REPEAT_COUNT = 1_000;
     private static final int BZIP2_MULTI_BLOCK_REPEAT_COUNT = 1_000;
     private static final int BZIP2_OUTPUT_VISIBILITY_MAX_ATTEMPTS = 90;
@@ -81,6 +84,10 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         // FDW writes through a native-table INSERT workaround, so use the bounded
         // one-million-row fixture while external tables retain the stress coverage.
         return FDWUtils.useFDW ? FDW_MULTI_BLOCK_REPEAT_COUNT : LARGE_MULTI_BLOCK_REPEAT_COUNT;
+    }
+
+    private int uncompressedMultiBlockRepeatCount() {
+        return FDWUtils.useFDW ? FDW_MULTI_BLOCK_REPEAT_COUNT : UNCOMPRESSED_MULTI_BLOCK_REPEAT_COUNT;
     }
 
     /**
@@ -481,14 +488,14 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         FileFormatsUtils.prepareData(new WritableDataPreparer(), 1000, data);
         // multiple it to file
         String multiBlockedLocalFilePath = dataTempFolder + "/multiBlockedData";
-        int repeatCount = multiBlockRepeatCount();
+        int repeatCount = uncompressedMultiBlockRepeatCount();
         FileFormatsUtils.prepareDataFile(data, repeatCount, multiBlockedLocalFilePath);
 
         String hdfsPath = hdfsWritePath + "/copy_from_file_multi_block_no_compression";
         writableExTable = prepareWritableTable("pxf_text_multi_block_no_compression_w", hdfsPath, null);
 
         gpdb.copyFromFile(writableExTable, new File(multiBlockedLocalFilePath), ",", false,
-                ShellSystemObject._60_MINUTES);
+                ShellSystemObject._30_MINUTES);
 
         // for HCFS on Cloud, wait a bit for async write in previous steps to finish
         if (protocol != ProtocolEnum.HDFS && protocol != ProtocolEnum.FILE) {
