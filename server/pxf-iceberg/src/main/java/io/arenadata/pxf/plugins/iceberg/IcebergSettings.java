@@ -2,6 +2,7 @@ package io.arenadata.pxf.plugins.iceberg;
 
 import io.arenadata.pxf.plugins.iceberg.catalog.CatalogType;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.apache.hadoop.conf.Configuration;
 import org.greenplum.pxf.api.model.RequestContext;
 
@@ -30,6 +31,10 @@ public class IcebergSettings {
     private final boolean ssl;
     private final String sslTrustStorePath;
     private final String sslTrustStorePassword;
+    // excluded from equals/hashCode: Configuration doesn't override equals(),
+    // so including it would make CatalogProvider treat every request as a cache miss
+    @EqualsAndHashCode.Exclude
+    private final Configuration configuration;
 
 
     public static IcebergSettings create(Configuration configuration, RequestContext context) {
@@ -42,7 +47,8 @@ public class IcebergSettings {
             context.getOption(FRAGMENT_SIZE_OPTION_NAME, 0L),
             Boolean.parseBoolean(configs.get(SSL_ENABLED)),
             configs.get(SSL_TRUSTSTORE_PATH),
-            configs.get(SSL_TRUSTSTORE_PASSWORD)
+            configs.get(SSL_TRUSTSTORE_PASSWORD),
+            configuration
         );
     }
 
