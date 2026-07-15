@@ -24,7 +24,7 @@ buildscript {
 }
 
 plugins {
-    id "io.freefair.lombok" version "6.6.3"
+    id "io.freefair.lombok" version "8.14.4"
     id "org.springframework.boot" version "${springBootVersion}" apply false
     id 'io.spring.dependency-management' version '1.0.15.RELEASE'
 }
@@ -234,6 +234,15 @@ configure(javaProjects) {
 
             dependency("org.apache.logging.log4j:log4j-spring-boot:2.25.4")
 
+            // JAVA 21 support
+            dependencySet(group:"org.mockito", version:"4.11.0") {
+                entry("mockito-core")
+                entry("mockito-inline")
+            }
+            dependencySet(group:"net.bytebuddy", version:"1.14.19") {
+                entry("byte-buddy")
+                entry("byte-buddy-agent")
+            }
         }
     }
 
