@@ -102,8 +102,10 @@ public class ConnectionManagerTest {
         assertTrue(conn2 instanceof HikariProxyConnection);
         assertSame(mockConnection2, conn2.unwrap(Connection.class));
 
-        verify(mockDriver, times(1)).connect("test-url", connProps);
-        verify(mockDriver2, times(1)).connect("test-url-2", connProps);
+        // Hikari may create additional idle connections asynchronously. The
+        // important contract here is that each registered driver is used.
+        verify(mockDriver, atLeast(1)).connect("test-url", connProps);
+        verify(mockDriver2, atLeast(1)).connect("test-url-2", connProps);
 
         DriverManager.deregisterDriver(mockDriver);
         DriverManager.deregisterDriver(mockDriver2);
@@ -253,4 +255,3 @@ public class ConnectionManagerTest {
         }
     }
 }
-
