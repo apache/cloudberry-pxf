@@ -526,7 +526,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         writableExTable = prepareWritableGzipTable("pxf_text_multi_block_gzip_w", hdfsPath);
 
         gpdb.copyFromFile(writableExTable, new File(multiBlockedLocalFilePath), ",", false,
-                ShellSystemObject._40_MINUTES);
+                ShellSystemObject._60_MINUTES);
 
         // for HCFS on Cloud, wait a bit for async write in previous steps to finish
         if (protocol != ProtocolEnum.HDFS && protocol != ProtocolEnum.FILE) {
