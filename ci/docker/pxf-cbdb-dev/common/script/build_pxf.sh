@@ -79,11 +79,29 @@ export PXF_HOME=/usr/local/pxf
 sudo mkdir -p "$PXF_HOME"
 sudo chown -R gpadmin:gpadmin "$PXF_HOME"
 
+retry_make() {
+  local attempt=1
+  local max_attempts=3
+  local delay_seconds=30
+
+  until make "$@"; do
+    if (( attempt >= max_attempts )); then
+      echo "Build command failed after ${max_attempts} attempts: make $*" >&2
+      return 1
+    fi
+
+    echo "Build command failed (attempt ${attempt}/${max_attempts}); retrying in ${delay_seconds}s: make $*" >&2
+    sleep "$delay_seconds"
+    ((attempt++))
+    ((delay_seconds *= 2))
+  done
+}
+
 # Build and Install PXF
-make -C external-table install
-make -C fdw install
-make -C cli install
-make -C server install-server
+retry_make -C external-table install
+retry_make -C fdw install
+retry_make -C cli install
+retry_make -C server install-server
 
 # Set up PXF environment
 
