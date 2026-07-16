@@ -48,8 +48,8 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
     private static final int UNCOMPRESSED_MULTI_BLOCK_REPEAT_COUNT = 2_000;
     private static final int FDW_MULTI_BLOCK_REPEAT_COUNT = 1_000;
     private static final int BZIP2_MULTI_BLOCK_REPEAT_COUNT = 1_000;
-    private static final int BZIP2_OUTPUT_VISIBILITY_MAX_ATTEMPTS = 90;
-    private static final long BZIP2_OUTPUT_VISIBILITY_RETRY_DELAY_MS = 10_000;
+    private static final int OUTPUT_VISIBILITY_MAX_ATTEMPTS = 90;
+    private static final long OUTPUT_VISIBILITY_RETRY_DELAY_MS = 10_000;
 
     private enum InsertionMethod {
         INSERT,
@@ -573,7 +573,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         // The BZip2 output can become visible to a freshly created readable table
         // after COPY returns on loaded CI runners. Retry the assertion for up to
         // fifteen minutes instead of treating that transient visibility race as data loss.
-        for (int attempt = 1; attempt <= BZIP2_OUTPUT_VISIBILITY_MAX_ATTEMPTS; attempt++) {
+        for (int attempt = 1; attempt <= OUTPUT_VISIBILITY_MAX_ATTEMPTS; attempt++) {
             try {
                 gpdb.runAnalyticQuery(countQuery, expectedCount);
                 return;
@@ -582,10 +582,10 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
                         && !StringUtils.contains(error.getMessage(), "Input path does not exist")) {
                     throw error;
                 }
-                if (attempt == BZIP2_OUTPUT_VISIBILITY_MAX_ATTEMPTS) {
+                if (attempt == OUTPUT_VISIBILITY_MAX_ATTEMPTS) {
                     throw error;
                 }
-                sleep(BZIP2_OUTPUT_VISIBILITY_RETRY_DELAY_MS);
+                sleep(OUTPUT_VISIBILITY_RETRY_DELAY_MS);
             }
         }
     }
@@ -655,9 +655,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
             throws Exception {
 
         String localResultFile = dataTempFolder + "/" + hdfsPath.replaceAll("/", "_");
-        // wait a bit for async write in previous steps to finish
-        hdfs.waitForFile(hdfsPath, 120);
-        List<String> files = hdfs.list(hdfsPath);
+        List<String> files = waitForOutputFiles(hdfsPath);
         Table resultTable = new Table("result_table", null);
         int index = 0;
         for (String file : files) {
@@ -672,6 +670,26 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         sanitizeAndSort(data, ROW_COMPARATOR);
         // compare and ignore '\' that returns from hdfs before comma for circle types
         ComparisonUtils.compareTables(data, resultTable, null, "\\\\", "\"");
+    }
+
+    /**
+     * Wait until a writable-table operation publishes at least one output file.
+     * The target directory is created before INSERT/COPY runs, so waiting only
+     * for the directory would allow a transient empty listing to be treated as
+     * an empty result table.
+     */
+    private List<String> waitForOutputFiles(String hdfsPath) throws Exception {
+        hdfs.waitForFile(hdfsPath, 120);
+        for (int attempt = 1; attempt <= OUTPUT_VISIBILITY_MAX_ATTEMPTS; attempt++) {
+            List<String> files = hdfs.list(hdfsPath);
+            if (!files.isEmpty()) {
+                return files;
+            }
+            if (attempt < OUTPUT_VISIBILITY_MAX_ATTEMPTS) {
+                sleep(OUTPUT_VISIBILITY_RETRY_DELAY_MS);
+            }
+        }
+        throw new AssertionError("No output files became visible in " + hdfsPath);
     }
 
     /**
