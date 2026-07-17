@@ -58,13 +58,13 @@ detect_java_paths() {
 setup_locale_and_packages() {
   log "install base packages and locales"
   if [ "$OS_FAMILY" = "deb" ]; then
-    sudo apt-get update
-    sudo apt-get install -y wget lsb-release locales maven unzip openssh-server iproute2 sudo \
+    retry sudo apt-get update
+    retry sudo apt-get install -y wget lsb-release locales maven unzip openssh-server iproute2 sudo \
       openjdk-11-jre-headless openjdk-8-jre-headless
     sudo locale-gen en_US.UTF-8 ru_RU.CP1251 ru_RU.UTF-8
     sudo update-locale LANG=en_US.UTF-8
   else
-    sudo dnf install -y --nobest wget maven unzip openssh-server iproute sudo \
+    retry sudo dnf install -y --nobest wget maven unzip openssh-server iproute sudo \
       java-11-openjdk-headless java-1.8.0-openjdk-headless \
       glibc-langpack-en glibc-locale-source
     sudo localedef -c -i en_US -f UTF-8 en_US.UTF-8 || true
@@ -145,17 +145,17 @@ EOF
 
 install_build_deps() {
   if [ "$OS_FAMILY" = "deb" ]; then
-    sudo apt update && sudo apt install -y sudo git
-    sudo apt update
-    sudo apt install -y bison bzip2 cmake curl flex gcc g++ iproute2 iputils-ping \
+    retry sudo apt update
+    retry sudo apt install -y sudo git
+    retry sudo apt install -y bison bzip2 cmake curl flex gcc g++ iproute2 iputils-ping \
       language-pack-en locales libapr1-dev libbz2-dev libcurl4-gnutls-dev libevent-dev \
       libkrb5-dev libipc-run-perl libldap2-dev libpam0g-dev libprotobuf-dev libreadline-dev \
       libssl-dev libuv1-dev liblz4-dev libxerces-c-dev libxml2-dev libyaml-dev libzstd-dev \
       libperl-dev make pkg-config protobuf-compiler python3-dev python3-pip python3-setuptools \
       rsync libsnappy-dev
   else
-    sudo dnf install -y --nobest sudo git
-    sudo dnf install -y --nobest --allowerasing bison bzip2 cmake curl flex gcc gcc-c++ iproute iputils \
+    retry sudo dnf install -y --nobest sudo git
+    retry sudo dnf install -y --nobest --allowerasing bison bzip2 cmake curl flex gcc gcc-c++ iproute iputils \
       glibc-langpack-en glibc-locale-source apr-devel bzip2-devel libcurl-devel libevent-devel \
       krb5-devel perl-IPC-Run openldap-devel pam-devel protobuf-devel readline-devel \
       openssl-devel libuv-devel lz4-devel libxml2-devel libyaml-devel \
@@ -341,8 +341,13 @@ wait_for_datanode() {
   local max_attempts=2
   for _attempt in $(seq 1 ${max_attempts}); do
     local dn_ready=false
-    # Wait up to 90s (45 tries * 2s) for DataNode to register
-    for _dn_try in $(seq 1 45); do
+    # Wait up to 180s (90 tries * 2s) for DataNode to register. GHA free-tier
+    # runners under I/O contention can take 90-180s for JVM cold-start +
+    # overlay2 block scan + NameNode handshake; the earlier 90s window was
+    # tight enough that Test PXF Rocky9 - smoke intermittently hit both
+    # attempts before DataNode came Live. Healthy runs still complete in
+    # 20-40s, so this only extends the tail — no cost on the happy path.
+    for _dn_try in $(seq 1 90); do
       if hdfs dfsadmin -report 2>/dev/null | grep -q "Live datanodes.*[1-9]"; then
         dn_ready=true
         break
@@ -356,7 +361,7 @@ wait_for_datanode() {
     fi
 
     # DataNode didn't come up; diagnose and attempt restart
-    log "DataNode not available after 90s (attempt ${_attempt}/${max_attempts})"
+    log "DataNode not available after 180s (attempt ${_attempt}/${max_attempts})"
     log "--- DataNode diagnostic info ---"
     # Check if DataNode process is alive
     if command -v jps >/dev/null 2>&1; then
