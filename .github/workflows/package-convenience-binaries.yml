@@ -38,18 +38,18 @@
 #   2. verify-cloudberry-source
 #      Same, for the Cloudberry source release tarball.
 #
-#   3. build-cloudberry (matrix: 6 platforms)
+#   3. build-cloudberry (matrix: 10 platforms)
 #      Builds Cloudberry from verified source inside the official
 #      Cloudberry build container.  Tars up /usr/local/cloudberry-db
 #      and uploads it as a per-platform workflow artifact.
 #
-#   4. build-pxf (matrix: 6 platforms)
+#   4. build-pxf (matrix: 10 platforms)
 #      Downloads the Cloudberry artifact (from job 3) and the PXF
 #      source artifact.  Extracts Cloudberry, then builds PXF
 #      (`make rpm` on Rocky, `make deb` on Ubuntu).  Generates .sha512
 #      checksums and uploads per-platform package artifacts.
 #
-#   5. test-pxf (matrix: 6 platforms)
+#   5. test-pxf (matrix: 10 platforms)
 #      Downloads both the Cloudberry artifact and the PXF package
 #      artifact into a FRESH container.  Installs Java, installs the
 #      PXF package, spins up gpdemo, and runs PXF smoke tests.
@@ -454,14 +454,18 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          # Rocky 8 / 9
+          # Rocky 8 / 9 / 10
           - {target_os: rocky8,  target_arch: x86_64, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
           - {target_os: rocky8,  target_arch: arm64,  runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
           - {target_os: rocky9,  target_arch: x86_64, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
           - {target_os: rocky9,  target_arch: arm64,  runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
-          # Ubuntu 22.04
+          - {target_os: rocky10, target_arch: x86_64, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
+          - {target_os: rocky10, target_arch: arm64,  runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
+          # Ubuntu 22.04 / 24.04
           - {target_os: ubuntu22.04, target_arch: x86_64, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
           - {target_os: ubuntu22.04, target_arch: arm64,  runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
+          - {target_os: ubuntu24.04, target_arch: x86_64, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
+          - {target_os: ubuntu24.04, target_arch: arm64,  runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
 
     steps:
       - name: Free disk space
@@ -582,14 +586,18 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          # RPM — Rocky Linux 8/9
+          # RPM — Rocky Linux 8/9/10
           - {target_os: rocky8,  target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
           - {target_os: rocky8,  target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
           - {target_os: rocky9,  target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
           - {target_os: rocky9,  target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
-          # DEB — Ubuntu 22.04
+          - {target_os: rocky10, target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
+          - {target_os: rocky10, target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
+          # DEB — Ubuntu 22.04/24.04
           - {target_os: ubuntu22.04, target_arch: x86_64, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
           - {target_os: ubuntu22.04, target_arch: arm64,  package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
+          - {target_os: ubuntu24.04, target_arch: x86_64, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
+          - {target_os: ubuntu24.04, target_arch: arm64,  package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
 
     steps:
       - name: Free disk space
@@ -745,14 +753,18 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          # RPM — Rocky Linux 8/9
+          # RPM — Rocky Linux 8/9/10
           - {target_os: rocky8,  target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
           - {target_os: rocky8,  target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
           - {target_os: rocky9,  target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
           - {target_os: rocky9,  target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
-          # DEB — Ubuntu 22.04
+          - {target_os: rocky10, target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
+          - {target_os: rocky10, target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
+          # DEB — Ubuntu 22.04/24.04
           - {target_os: ubuntu22.04, target_arch: x86_64, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
           - {target_os: ubuntu22.04, target_arch: arm64,  package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
+          - {target_os: ubuntu24.04, target_arch: x86_64, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
+          - {target_os: ubuntu24.04, target_arch: arm64,  package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
 
     steps:
       - name: Initialize container
