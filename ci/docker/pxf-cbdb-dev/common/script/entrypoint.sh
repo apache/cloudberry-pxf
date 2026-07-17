@@ -341,8 +341,13 @@ wait_for_datanode() {
   local max_attempts=2
   for _attempt in $(seq 1 ${max_attempts}); do
     local dn_ready=false
-    # Wait up to 90s (45 tries * 2s) for DataNode to register
-    for _dn_try in $(seq 1 45); do
+    # Wait up to 180s (90 tries * 2s) for DataNode to register. GHA free-tier
+    # runners under I/O contention can take 90-180s for JVM cold-start +
+    # overlay2 block scan + NameNode handshake; the earlier 90s window was
+    # tight enough that Test PXF Rocky9 - smoke intermittently hit both
+    # attempts before DataNode came Live. Healthy runs still complete in
+    # 20-40s, so this only extends the tail — no cost on the happy path.
+    for _dn_try in $(seq 1 90); do
       if hdfs dfsadmin -report 2>/dev/null | grep -q "Live datanodes.*[1-9]"; then
         dn_ready=true
         break
@@ -356,7 +361,7 @@ wait_for_datanode() {
     fi
 
     # DataNode didn't come up; diagnose and attempt restart
-    log "DataNode not available after 90s (attempt ${_attempt}/${max_attempts})"
+    log "DataNode not available after 180s (attempt ${_attempt}/${max_attempts})"
     log "--- DataNode diagnostic info ---"
     # Check if DataNode process is alive
     if command -v jps >/dev/null 2>&1; then
