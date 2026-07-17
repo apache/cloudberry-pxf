@@ -380,7 +380,7 @@ public class JdbcBasePluginTest {
 
     @Test
     public void testGetConnectionErrorWithoutPassword3() throws SQLException {
-        configuration.set("jdbc.driver", "org.greenplum.pxf.plugins.jdbc.FakeJdbcDriver");
+        configuration.set("jdbc.driver", "org.apache.cloudberry.pxf.plugins.jdbc.FakeJdbcDriver");
         configuration.set("jdbc.url", "jdbc:sqlserver://localhost:1433;databaseName=db1;user=admin");
 
         context.setServerName("test-server");
