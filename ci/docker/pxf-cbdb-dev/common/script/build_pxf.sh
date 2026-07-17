@@ -20,6 +20,12 @@
 # --------------------------------------------------------------------
 # Build and install PXF — works on both Ubuntu and Rocky/RHEL
 
+# Pull in shared helpers (log/die/retry). Sourced with an absolute path so
+# this script works whether invoked directly or via docker exec.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/utils.sh"
+
 # Auto-detect Java 11 path
 if [ -d /usr/lib/jvm/java-11-openjdk-amd64 ]; then
   JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-11-openjdk-amd64}
@@ -35,10 +41,10 @@ export PATH=$GPHOME/bin:$PATH
 
 # Install Java 11 JDK and Maven
 if command -v apt-get >/dev/null 2>&1; then
-  sudo apt update
-  sudo apt install -y openjdk-11-jdk maven
+  retry sudo apt update
+  retry sudo apt install -y openjdk-11-jdk maven
 elif command -v dnf >/dev/null 2>&1; then
-  sudo dnf install -y --nobest java-11-openjdk-devel maven
+  retry sudo dnf install -y --nobest java-11-openjdk-devel maven
 fi
 
 cd /home/gpadmin/workspace/cloudberry-pxf

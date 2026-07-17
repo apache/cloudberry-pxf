@@ -379,6 +379,23 @@ jobs:
         tar xzf /tmp/cloudberry-source.tar.gz
         chmod -R u+rwX,go+rX cloudberry
 
+    - name: Restore Maven cache
+      id: cache-mvn
+      uses: actions/cache/restore@v4
+      with:
+        path: .m2
+        key: mvn-container-${{ hashFiles('cloudberry-pxf/automation/pom.xml') }}
+        restore-keys: |
+          mvn-container-
+
+    - name: Prepare Maven cache dir
+      run: |
+        mkdir -p .m2
+        # docker-compose mounts .m2 into container as /home/gpadmin/.m2;
+        # chmod so gpadmin (uid inside container) can write regardless of
+        # host-side uid mismatch.
+        chmod -R a+rwX .m2 || true
+
     - name: Start Services
       id: start_services
       run: |
@@ -386,6 +403,7 @@ jobs:
         docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v || true
         docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml up -d
         docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry
+        docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/.m2
         docker cp /tmp/*.deb pxf-cbdb-dev:/tmp/
         docker exec pxf-cbdb-dev sudo chown gpadmin:gpadmin /tmp/*.deb
         docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf && ./ci/docker/pxf-cbdb-dev/common/script/entrypoint.sh"
@@ -455,6 +473,15 @@ jobs:
         cd cloudberry-pxf
         docker compose -f ci/docker/pxf-cbdb-dev/ubuntu/docker-compose.yml down -v || true
 
+    - name: Save Maven cache
+      # Save on every branch so PRs also benefit on rerun; scoped per branch
+      # by GHA automatically. Only save if we didn't already have the exact key.
+      if: always() && steps.cache-mvn.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: .m2
+        key: mvn-container-${{ hashFiles('cloudberry-pxf/automation/pom.xml') }}
+
     - name: Upload test artifacts
       if: always()
       uses: actions/upload-artifact@v4
@@ -469,7 +496,7 @@ jobs:
       run: |
         FAILED_COUNT="${{ steps.collect_artifacts.outputs.failed_count || 0 }}"
         SKIPPED_COUNT="${{ steps.collect_artifacts.outputs.skipped_count || 0 }}"
-        
+
         if [ "${{ steps.run_test.outcome }}" == "failure" ] || [ "$FAILED_COUNT" -gt 0 ]; then
           echo "Test group ${{ matrix.test_group }} failed (Failures: $FAILED_COUNT, Skipped: $SKIPPED_COUNT)"
           exit 1
@@ -548,6 +575,20 @@ jobs:
         tar xzf /tmp/cloudberry-source-rocky9.tar.gz
         chmod -R u+rwX,go+rX cloudberry
 
+    - name: Restore Maven cache
+      id: cache-mvn
+      uses: actions/cache/restore@v4
+      with:
+        path: .m2
+        key: mvn-container-${{ hashFiles('cloudberry-pxf/automation/pom.xml') }}
+        restore-keys: |
+          mvn-container-
+
+    - name: Prepare Maven cache dir
+      run: |
+        mkdir -p .m2
+        chmod -R a+rwX .m2 || true
+
     - name: Start Services
       id: start_services
       run: |
@@ -555,6 +596,7 @@ jobs:
         docker compose -f ci/docker/pxf-cbdb-dev/rocky9/docker-compose.yml down -v || true
         docker compose -f ci/docker/pxf-cbdb-dev/rocky9/docker-compose.yml up -d
         docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry
+        docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/.m2
         docker cp /tmp/*.rpm pxf-cbdb-dev:/tmp/
         docker exec pxf-cbdb-dev sudo chown gpadmin:gpadmin /tmp/*.rpm
         docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf && ./ci/docker/pxf-cbdb-dev/common/script/entrypoint.sh"
@@ -624,6 +666,13 @@ jobs:
         cd cloudberry-pxf
         docker compose -f ci/docker/pxf-cbdb-dev/rocky9/docker-compose.yml down -v || true
 
+    - name: Save Maven cache
+      if: always() && steps.cache-mvn.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: .m2
+        key: mvn-container-${{ hashFiles('cloudberry-pxf/automation/pom.xml') }}
+
     - name: Upload test artifacts
       if: always()
       uses: actions/upload-artifact@v4
@@ -681,6 +730,52 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Restore Maven cache (host)
+        id: cache-mvn-host
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.m2/repository
+          key: mvn-host-${{ hashFiles('automation/pom.xml') }}
+          restore-keys: |
+            mvn-host-
+
+      - name: Restore MSSQL image cache
+        if: matrix.tc_group == 'pxf-jdbc'
+        id: cache-mssql
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/mssql-image.tar
+          key: mssql-server-2019-latest-v1
+
+      - name: Load or pull MSSQL image
+        # Testcontainers pulls mcr.microsoft.com/mssql/server:2019-latest at
+        # test time for JdbcMssqlTest. MCR occasionally returns transient
+        # 5xx on GHA; we (a) restore from cache when possible and (b) retry
+        # the pull with backoff on cache miss, so a bad MCR minute doesn't
+        # abort the whole TC job. Only pxf-jdbc TC group exercises MSSQL.
+        if: matrix.tc_group == 'pxf-jdbc'
+        run: |
+          if [ -f /tmp/mssql-image.tar ]; then
+            echo "Loading MSSQL image from cache"
+            docker load < /tmp/mssql-image.tar
+          else
+            echo "Pulling MSSQL image from MCR (with retry)"
+            for attempt in 1 2 3; do
+              if docker pull mcr.microsoft.com/mssql/server:2019-latest; then
+                break
+              fi
+              if [ "$attempt" -lt 3 ]; then
+                sleep_s=$((attempt * 15))
+                echo "docker pull failed on attempt $attempt/3, sleeping ${sleep_s}s..."
+                sleep "$sleep_s"
+              else
+                echo "docker pull failed after 3 attempts, giving up"
+                exit 1
+              fi
+            done
+            docker save mcr.microsoft.com/mssql/server:2019-latest > /tmp/mssql-image.tar
+          fi
 
       - name: Download pxf-cbdb testcontainer image
         uses: actions/download-artifact@v4
@@ -746,6 +841,20 @@ jobs:
           echo "failed_count=$FAILED" >> $GITHUB_OUTPUT
           echo "skipped_count=$SKIPPED" >> $GITHUB_OUTPUT
           echo "Test stats for tc:$TC_GROUP ($TEST_MODE, ${{ matrix.distro }}): total=$TOTAL, passed=$PASSED, failed=$FAILED, skipped=$SKIPPED"
+
+      - name: Save Maven cache (host)
+        if: always() && steps.cache-mvn-host.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.m2/repository
+          key: mvn-host-${{ hashFiles('automation/pom.xml') }}
+
+      - name: Save MSSQL image cache
+        if: always() && matrix.tc_group == 'pxf-jdbc' && steps.cache-mssql.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/mssql-image.tar
+          key: mssql-server-2019-latest-v1
 
       - name: Upload test artifacts
         if: always()

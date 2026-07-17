@@ -34,11 +34,46 @@
         <value>3</value>
     </property>
    <property>
-	   <name>dfs.datanode.socket.write.timeout</name> 
+	   <name>dfs.datanode.socket.write.timeout</name>
 	   <value>0</value>
 	   <description>
 		   used for sockets to and from datanodes. It is 8 minutes by default. Some users set this to 0, effectively disabling the write timeout.
-	   </description> 
+	   </description>
+   </property>
+   <property>
+       <name>dfs.client.socket-timeout</name>
+       <value>180000</value>
+       <description>
+           HDFS client-side socket timeout in ms (default 60s). Raised to
+           3 minutes so shared-runner CI (GitHub Actions free tier) does
+           not spuriously abort large-file writes when the DataNode is
+           slow to ACK due to noisy-neighbor I/O contention. 3 minutes
+           is ~3x the worst observed ACK stall on GHA free runners while
+           still failing fast when a DataNode is genuinely dead. Symptom
+           without this: HdfsWritableTextTest multi-block variants
+           silently drop their write and the readback finds no data.
+       </description>
+   </property>
+   <property>
+       <name>dfs.blocksize</name>
+       <value>16777216</value>
+       <description>
+           Default HDFS block size in bytes (16 MB, down from the Hadoop
+           default of 128 MB). This is a test cluster: smaller blocks
+           let "multi-block" test coverage kick in on much smaller
+           input data (e.g. HdfsWritableTextTest's
+           copyFromFileMultiBlockedData* variants), keeping the tests'
+           original intent (cross-block-boundary reader/writer paths)
+           while cutting write I/O by an order of magnitude — critical
+           on shared GHA runners that otherwise time out.
+           16 MB (not 4 MB) leaves headroom for existing row sizes such
+           as textFormatWideRowsInsert's 10 MiB rows — they fit inside
+           one block, so cross-block row-boundary paths are still
+           exercised by copyFromFileMultiBlockedData* (60 MB / 16 MB
+           ≈ 4 blocks) rather than by every row of every wide-row test.
+           Real-world deployments still use the Hadoop default; this is
+           CI-only.
+       </description>
    </property>
     <property>
         <name>dfs.webhdfs.enabled</name>

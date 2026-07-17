@@ -20,11 +20,18 @@
 # --------------------------------------------------------------------
 # Build Cloudberry from source — works on both Ubuntu and Rocky/RHEL
 
+# Pull in shared helpers (log/die/retry). Sourced with an absolute path so
+# this script works whether invoked directly or via docker exec.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/utils.sh"
+
 # Install sudo & git
 if command -v apt-get >/dev/null 2>&1; then
-  sudo apt update && sudo apt install -y sudo git
+  retry sudo apt update
+  retry sudo apt install -y sudo git
 elif command -v dnf >/dev/null 2>&1; then
-  sudo dnf install -y --nobest sudo git
+  retry sudo dnf install -y --nobest sudo git
 fi
 
 # Required configuration
@@ -65,8 +72,8 @@ ulimit -a
 
 # Install basic system packages
 if command -v apt-get >/dev/null 2>&1; then
-  sudo apt update
-  sudo apt install -y bison \
+  retry sudo apt update
+  retry sudo apt install -y bison \
     bzip2 \
     cmake \
     curl \
@@ -104,7 +111,7 @@ if command -v apt-get >/dev/null 2>&1; then
     rsync \
     libsnappy-dev
 elif command -v dnf >/dev/null 2>&1; then
-  sudo dnf install -y --nobest \
+  retry sudo dnf install -y --nobest \
     bison \
     bzip2 \
     cmake \
