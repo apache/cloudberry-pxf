@@ -1,0 +1,931 @@
+# --------------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements. See the NOTICE file distributed
+# with this work for additional information regarding copyright
+# ownership. The ASF licenses this file to You under the Apache
+# License, Version 2.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy of the
+# License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# permissions and limitations under the License.
+#
+# --------------------------------------------------------------------
+# GitHub Actions Workflow: Apache Cloudberry PXF Convenience Package Build
+# --------------------------------------------------------------------
+# Description:
+#
+#   This workflow manually builds convenience DEB/RPM packages from an
+#   ASF-approved Apache Cloudberry PXF source release tarball, and tests
+#   them against Apache Cloudberry built from its official source release
+#   tarball.
+#
+#   Every build and test runs in its own fresh container to guarantee
+#   environment isolation — no build artifact leakage.
+#
+# Workflow Overview:
+#
+#   1. verify-pxf-source
+#      GPG + SHA-512 verification of the PXF source release tarball.
+#      Runs on bare ubuntu-24.04 — no container overhead.
+#
+#   2. verify-cloudberry-source
+#      Same, for the Cloudberry source release tarball.
+#
+#   3. build-cloudberry (matrix: 6 platforms)
+#      Builds Cloudberry from verified source inside the official
+#      Cloudberry build container.  Tars up /usr/local/cloudberry-db
+#      and uploads it as a per-platform workflow artifact.
+#
+#   4. build-pxf (matrix: 6 platforms)
+#      Downloads the Cloudberry artifact (from job 3) and the PXF
+#      source artifact.  Extracts Cloudberry, then builds PXF
+#      (`make rpm` on Rocky, `make deb` on Ubuntu).  Generates .sha512
+#      checksums and uploads per-platform package artifacts.
+#
+#   5. test-pxf (matrix: 6 platforms)
+#      Downloads both the Cloudberry artifact and the PXF package
+#      artifact into a FRESH container.  Installs Java, installs the
+#      PXF package, spins up gpdemo, and runs PXF smoke tests.
+#      No build step ever touched this container.
+#
+# Scope:
+# - Intended for official Apache Cloudberry PXF source releases managed by
+#   the release manager.
+# - Produces convenience binaries only; detached .asc signatures for DEB/RPM
+#   remain a release manager local step.
+# - Generates .sha512 checksums for all output packages.
+# --------------------------------------------------------------------
+
+name: Apache Cloudberry PXF Convenience Package Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      # ================================================================
+      # PXF source release inputs
+      # ================================================================
+      version:
+        description: '[PXF] Release version, e.g. 2.0.0-incubating'
+        required: true
+        type: string
+      source_url:
+        description: '[PXF] Apache source tarball URL from downloads.apache.org'
+        required: true
+        type: string
+      source_asc_url:
+        description: '[PXF] Detached GPG signature URL for the source tarball (.asc)'
+        required: true
+        type: string
+      source_sha512_url:
+        description: '[PXF] SHA-512 checksum URL for the source tarball (.sha512)'
+        required: true
+        type: string
+
+      # ================================================================
+      # Cloudberry source release inputs (for build / test environment)
+      # ================================================================
+      cloudberry_version:
+        description: '[Cloudberry] Release version, e.g. 2.2.0-incubating'
+        required: true
+        type: string
+      cloudberry_source_url:
+        description: '[Cloudberry] Apache source tarball URL from downloads.apache.org'
+        required: true
+        type: string
+      cloudberry_source_asc_url:
+        description: '[Cloudberry] Detached GPG signature URL for the source tarball (.asc)'
+        required: true
+        type: string
+      cloudberry_source_sha512_url:
+        description: '[Cloudberry] SHA-512 checksum URL for the source tarball (.sha512)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pxf-package-build-${{ github.ref }}-${{ inputs.version }}
+  cancel-in-progress: true
+
+env:
+  LOG_RETENTION_DAYS: 14
+  KEYS_URL: https://downloads.apache.org/incubator/cloudberry/KEYS
+  CB_INSTALL_DIR: /usr/local/cloudberry-db
+
+jobs:
+  # ====================================================================
+  # Job 1: Verify the Apache Cloudberry PXF source release
+  # ====================================================================
+  verify-pxf-source:
+    name: Verify PXF source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      source_tarball_name: ${{ steps.validate.outputs.source_tarball_name }}
+      artifact_name: ${{ steps.validate.outputs.artifact_name }}
+      packaging_version: ${{ steps.validate.outputs.packaging_version }}
+    steps:
+      - name: Validate manual inputs
+        id: validate
+        shell: bash
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          SOURCE_URL: ${{ github.event.inputs.source_url }}
+          SOURCE_ASC_URL: ${{ github.event.inputs.source_asc_url }}
+          SOURCE_SHA512_URL: ${{ github.event.inputs.source_sha512_url }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${VERSION}" ]]; then
+            echo "::error::version must not be empty"
+            exit 1
+          fi
+
+          source_tarball_name="apache-cloudberry-pxf-${VERSION}-src.tar.gz"
+          artifact_name="verified-source-release-pxf-${VERSION}"
+          packaging_version="${VERSION%-incubating}"
+
+          if [[ -z "${packaging_version}" ]]; then
+            echo "::error::Unable to derive packaging version from version=${VERSION}"
+            exit 1
+          fi
+
+          validate_apache_url() {
+            local value="$1"
+            local label="$2"
+            local prefix="https://downloads.apache.org/incubator/cloudberry/"
+            if [[ -z "${value}" ]]; then
+              echo "::error::${label} must not be empty"
+              exit 1
+            fi
+            if [[ "${value}" != "${prefix}"* ]]; then
+              echo "::error::${label} must use downloads.apache.org (got: ${value})"
+              exit 1
+            fi
+          }
+
+          validate_apache_url "${SOURCE_URL}" "source_url"
+          validate_apache_url "${SOURCE_ASC_URL}" "source_asc_url"
+          validate_apache_url "${SOURCE_SHA512_URL}" "source_sha512_url"
+
+          if [[ "${SOURCE_URL}" != */"${source_tarball_name}" ]]; then
+            echo "::error::source_url must end with /${source_tarball_name}"
+            exit 1
+          fi
+          if [[ "${SOURCE_ASC_URL}" != */"${source_tarball_name}.asc" ]]; then
+            echo "::error::source_asc_url must end with /${source_tarball_name}.asc"
+            exit 1
+          fi
+          if [[ "${SOURCE_SHA512_URL}" != */"${source_tarball_name}.sha512" ]]; then
+            echo "::error::source_sha512_url must end with /${source_tarball_name}.sha512"
+            exit 1
+          fi
+
+          echo "source_tarball_name=${source_tarball_name}" >> "${GITHUB_OUTPUT}"
+          echo "artifact_name=${artifact_name}" >> "${GITHUB_OUTPUT}"
+          echo "packaging_version=${packaging_version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Download source release and verification files
+        shell: bash
+        env:
+          SOURCE_URL: ${{ github.event.inputs.source_url }}
+          SOURCE_ASC_URL: ${{ github.event.inputs.source_asc_url }}
+          SOURCE_SHA512_URL: ${{ github.event.inputs.source_sha512_url }}
+          SOURCE_TARBALL_NAME: ${{ steps.validate.outputs.source_tarball_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p verified-source
+
+          echo "=== Downloading PXF source tarball... ==="
+          curl --fail --location --silent --show-error \
+            --output "verified-source/${SOURCE_TARBALL_NAME}" \
+            "${SOURCE_URL}"
+
+          echo "=== Downloading signature... ==="
+          curl --fail --location --silent --show-error \
+            --output "verified-source/${SOURCE_TARBALL_NAME}.asc" \
+            "${SOURCE_ASC_URL}"
+
+          echo "=== Downloading checksum... ==="
+          curl --fail --location --silent --show-error \
+            --output "verified-source/${SOURCE_TARBALL_NAME}.sha512" \
+            "${SOURCE_SHA512_URL}"
+
+          echo "=== Downloading KEYS... ==="
+          curl --fail --location --silent --show-error \
+            --output "verified-source/KEYS" \
+            "${KEYS_URL}"
+
+          echo "=== All files downloaded successfully. ==="
+          ls -la verified-source/
+
+      - name: Verify source release signature and checksum
+        shell: bash
+        env:
+          SOURCE_TARBALL_NAME: ${{ steps.validate.outputs.source_tarball_name }}
+        run: |
+          set -euo pipefail
+
+          export GNUPGHOME="${RUNNER_TEMP}/gnupg"
+          mkdir -p "${GNUPGHOME}"
+          chmod 700 "${GNUPGHOME}"
+
+          echo "=== Importing project KEYS... ==="
+          gpg --import verified-source/KEYS 2>&1
+
+          echo "=== Verifying GPG signature... ==="
+          gpg --verify \
+            "verified-source/${SOURCE_TARBALL_NAME}.asc" \
+            "verified-source/${SOURCE_TARBALL_NAME}" 2>&1
+
+          echo "=== Verifying SHA-512 checksum... ==="
+          ( cd verified-source && sha512sum -c "${SOURCE_TARBALL_NAME}.sha512" )
+
+          echo "=== Verifying tarball integrity (listing contents)... ==="
+          tar -tzf "verified-source/${SOURCE_TARBALL_NAME}" >/dev/null
+          echo "=== PXF source release verification passed. ==="
+
+      - name: Summarize verified source release
+        shell: bash
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          SOURCE_URL: ${{ github.event.inputs.source_url }}
+          SOURCE_ASC_URL: ${{ github.event.inputs.source_asc_url }}
+          SOURCE_SHA512_URL: ${{ github.event.inputs.source_sha512_url }}
+        run: |
+          {
+            echo "# Verified PXF source release"
+            echo "- Version: ${VERSION}"
+            echo "- Packaging version: ${{ steps.validate.outputs.packaging_version }}"
+            echo "- Source URL: ${SOURCE_URL}"
+            echo "- Signature URL: ${SOURCE_ASC_URL}"
+            echo "- Checksum URL: ${SOURCE_SHA512_URL}"
+            echo "- KEYS URL: ${KEYS_URL}"
+            echo "- GPG verification: PASS"
+            echo "- SHA-512 verification: PASS"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload verified source release
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.validate.outputs.artifact_name }}
+          retention-days: ${{ env.LOG_RETENTION_DAYS }}
+          if-no-files-found: error
+          path: verified-source/*
+
+  # ====================================================================
+  # Job 2: Verify the Apache Cloudberry source release
+  # ====================================================================
+  verify-cloudberry-source:
+    name: Verify Cloudberry source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      source_tarball_name: ${{ steps.validate.outputs.source_tarball_name }}
+      artifact_name: ${{ steps.validate.outputs.artifact_name }}
+    steps:
+      - name: Validate manual inputs
+        id: validate
+        shell: bash
+        env:
+          VERSION: ${{ github.event.inputs.cloudberry_version }}
+          SOURCE_URL: ${{ github.event.inputs.cloudberry_source_url }}
+          SOURCE_ASC_URL: ${{ github.event.inputs.cloudberry_source_asc_url }}
+          SOURCE_SHA512_URL: ${{ github.event.inputs.cloudberry_source_sha512_url }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${VERSION}" ]]; then
+            echo "::error::cloudberry_version must not be empty"
+            exit 1
+          fi
+
+          source_tarball_name="apache-cloudberry-${VERSION}-src.tar.gz"
+          artifact_name="verified-source-release-cloudberry-${VERSION}"
+
+          validate_apache_url() {
+            local value="$1"
+            local label="$2"
+            local prefix="https://downloads.apache.org/incubator/cloudberry/"
+            if [[ -z "${value}" ]]; then
+              echo "::error::${label} must not be empty"
+              exit 1
+            fi
+            if [[ "${value}" != "${prefix}"* ]]; then
+              echo "::error::${label} must use downloads.apache.org (got: ${value})"
+              exit 1
+            fi
+          }
+
+          validate_apache_url "${SOURCE_URL}" "cloudberry_source_url"
+          validate_apache_url "${SOURCE_ASC_URL}" "cloudberry_source_asc_url"
+          validate_apache_url "${SOURCE_SHA512_URL}" "cloudberry_source_sha512_url"
+
+          if [[ "${SOURCE_URL}" != */"${source_tarball_name}" ]]; then
+            echo "::error::cloudberry_source_url must end with /${source_tarball_name}"
+            exit 1
+          fi
+          if [[ "${SOURCE_ASC_URL}" != */"${source_tarball_name}.asc" ]]; then
+            echo "::error::cloudberry_source_asc_url must end with /${source_tarball_name}.asc"
+            exit 1
+          fi
+          if [[ "${SOURCE_SHA512_URL}" != */"${source_tarball_name}.sha512" ]]; then
+            echo "::error::cloudberry_source_sha512_url must end with /${source_tarball_name}.sha512"
+            exit 1
+          fi
+
+          echo "source_tarball_name=${source_tarball_name}" >> "${GITHUB_OUTPUT}"
+          echo "artifact_name=${artifact_name}" >> "${GITHUB_OUTPUT}"
+
+      - name: Download source release and verification files
+        shell: bash
+        env:
+          SOURCE_URL: ${{ github.event.inputs.cloudberry_source_url }}
+          SOURCE_ASC_URL: ${{ github.event.inputs.cloudberry_source_asc_url }}
+          SOURCE_SHA512_URL: ${{ github.event.inputs.cloudberry_source_sha512_url }}
+          SOURCE_TARBALL_NAME: ${{ steps.validate.outputs.source_tarball_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p verified-source
+
+          echo "=== Downloading Cloudberry source tarball... ==="
+          curl --fail --location --silent --show-error \
+            --output "verified-source/${SOURCE_TARBALL_NAME}" \
+            "${SOURCE_URL}"
+
+          echo "=== Downloading signature... ==="
+          curl --fail --location --silent --show-error \
+            --output "verified-source/${SOURCE_TARBALL_NAME}.asc" \
+            "${SOURCE_ASC_URL}"
+
+          echo "=== Downloading checksum... ==="
+          curl --fail --location --silent --show-error \
+            --output "verified-source/${SOURCE_TARBALL_NAME}.sha512" \
+            "${SOURCE_SHA512_URL}"
+
+          echo "=== Downloading KEYS... ==="
+          curl --fail --location --silent --show-error \
+            --output "verified-source/KEYS" \
+            "${KEYS_URL}"
+
+          ls -la verified-source/
+
+      - name: Verify source release signature and checksum
+        shell: bash
+        env:
+          SOURCE_TARBALL_NAME: ${{ steps.validate.outputs.source_tarball_name }}
+        run: |
+          set -euo pipefail
+
+          export GNUPGHOME="${RUNNER_TEMP}/gnupg"
+          mkdir -p "${GNUPGHOME}"
+          chmod 700 "${GNUPGHOME}"
+
+          echo "=== Importing project KEYS... ==="
+          gpg --import verified-source/KEYS 2>&1
+
+          echo "=== Verifying GPG signature... ==="
+          gpg --verify \
+            "verified-source/${SOURCE_TARBALL_NAME}.asc" \
+            "verified-source/${SOURCE_TARBALL_NAME}" 2>&1
+
+          echo "=== Verifying SHA-512 checksum... ==="
+          ( cd verified-source && sha512sum -c "${SOURCE_TARBALL_NAME}.sha512" )
+
+          echo "=== Verifying tarball integrity (listing contents)... ==="
+          tar -tzf "verified-source/${SOURCE_TARBALL_NAME}" >/dev/null
+          echo "=== Cloudberry source release verification passed. ==="
+
+      - name: Summarize verified source release
+        shell: bash
+        env:
+          VERSION: ${{ github.event.inputs.cloudberry_version }}
+          SOURCE_URL: ${{ github.event.inputs.cloudberry_source_url }}
+          SOURCE_ASC_URL: ${{ github.event.inputs.cloudberry_source_asc_url }}
+          SOURCE_SHA512_URL: ${{ github.event.inputs.cloudberry_source_sha512_url }}
+        run: |
+          {
+            echo "# Verified Cloudberry source release"
+            echo "- Version: ${VERSION}"
+            echo "- Source URL: ${SOURCE_URL}"
+            echo "- Signature URL: ${SOURCE_ASC_URL}"
+            echo "- Checksum URL: ${SOURCE_SHA512_URL}"
+            echo "- KEYS URL: ${KEYS_URL}"
+            echo "- GPG verification: PASS"
+            echo "- SHA-512 verification: PASS"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload verified source release
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.validate.outputs.artifact_name }}
+          retention-days: ${{ env.LOG_RETENTION_DAYS }}
+          if-no-files-found: error
+          path: verified-source/*
+
+  # ====================================================================
+  # Job 3: Build Cloudberry from verified source on each platform.
+  #         Upload /usr/local/cloudberry-db as a per-platform artifact
+  #         so downstream jobs can use it without rebuilding.
+  # ====================================================================
+  build-cloudberry:
+    name: Build Cloudberry ${{ matrix.platform.target_os }}-${{ matrix.platform.target_arch }}
+    needs: verify-cloudberry-source
+    runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 45
+    container:
+      image: ${{ matrix.platform.build_container_image }}
+      options: >-
+        --user root
+        --hostname cdw
+        --shm-size=2gb
+        -v /usr/share:/host_usr_share
+        -v /usr/local:/host_usr_local
+        -v /opt:/host_opt
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          # Rocky 8 / 9
+          - {target_os: rocky8,  target_arch: x86_64, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
+          - {target_os: rocky8,  target_arch: arm64,  runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
+          - {target_os: rocky9,  target_arch: x86_64, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
+          - {target_os: rocky9,  target_arch: arm64,  runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
+          # Ubuntu 22.04
+          - {target_os: ubuntu22.04, target_arch: x86_64, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
+          - {target_os: ubuntu22.04, target_arch: arm64,  runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
+
+    steps:
+      - name: Free disk space
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /host_opt/hostedtoolcache || true
+          rm -rf /host_usr_local/lib/android || true
+          rm -rf /host_usr_share/dotnet || true
+          rm -rf /host_opt/ghc || true
+          rm -rf /host_usr_local/.ghcup || true
+          rm -rf /host_usr_share/swift || true
+          rm -rf /host_usr_local/share/powershell || true
+          rm -rf /host_usr_local/share/chromium || true
+          rm -rf /host_usr_share/miniconda || true
+          rm -rf /host_opt/az || true
+          rm -rf /host_usr_share/sbt || true
+          df -h /
+
+      - name: Initialize build container
+        shell: bash
+        run: |
+          set -euo pipefail
+          su - gpadmin -c "/tmp/init_system.sh"
+
+      - name: Download verified Cloudberry source
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.verify-cloudberry-source.outputs.artifact_name }}
+          path: ${{ github.workspace }}/verified-source
+
+      - name: Build Cloudberry
+        shell: bash
+        env:
+          SOURCE_TARBALL_NAME: ${{ needs.verify-cloudberry-source.outputs.source_tarball_name }}
+        run: |
+          set -euo pipefail
+
+          # ---- Extract ----
+          tarball_path="${GITHUB_WORKSPACE}/verified-source/${SOURCE_TARBALL_NAME}"
+          source_root_name="$(tar -tzf "${tarball_path}" | head -1 | cut -d/ -f1 || true)"
+
+          echo "=== Extracting Cloudberry source: ${source_root_name} ==="
+          tar -xzf "${tarball_path}" -C "${GITHUB_WORKSPACE}"
+
+          mkdir -p "${GITHUB_WORKSPACE}/cloudberry"
+          mv "${GITHUB_WORKSPACE}/${source_root_name}"/* "${GITHUB_WORKSPACE}/cloudberry/"
+          mv "${GITHUB_WORKSPACE}/${source_root_name}"/.[!.]* "${GITHUB_WORKSPACE}/cloudberry/" 2>/dev/null || true
+          rmdir "${GITHUB_WORKSPACE}/${source_root_name}"
+
+          cb_source_dir="${GITHUB_WORKSPACE}/cloudberry"
+          chown -R gpadmin:gpadmin "${GITHUB_WORKSPACE}"
+
+          # ---- Configure ----
+          export BUILD_DESTINATION="${CB_INSTALL_DIR}"
+
+          mkdir -p "${cb_source_dir}/build-logs"
+          chown -R gpadmin:gpadmin "${cb_source_dir}/build-logs"
+          chmod +x "${cb_source_dir}"/devops/build/automation/cloudberry/scripts/configure-cloudberry.sh
+
+          echo "=== Configuring Cloudberry... ==="
+          su - gpadmin -c "cd ${cb_source_dir} && SRC_DIR=${cb_source_dir} BUILD_USER=github-actions BUILD_DESTINATION=${BUILD_DESTINATION} ${cb_source_dir}/devops/build/automation/cloudberry/scripts/configure-cloudberry.sh"
+          echo "=== Cloudberry configuration complete. ==="
+
+          # ---- Build ----
+          chmod +x "${cb_source_dir}"/devops/build/automation/cloudberry/scripts/build-cloudberry.sh
+
+          echo "=== Building Cloudberry... ==="
+          su - gpadmin -c "cd ${cb_source_dir} && SRC_DIR=${cb_source_dir} BUILD_DESTINATION=${BUILD_DESTINATION} ${cb_source_dir}/devops/build/automation/cloudberry/scripts/build-cloudberry.sh"
+          echo "=== Cloudberry build complete. ==="
+
+      - name: Package Cloudberry for downstream jobs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! -f "${CB_INSTALL_DIR}/cloudberry-env.sh" ]]; then
+            echo "::error::Cloudberry installation not found at ${CB_INSTALL_DIR}"
+            exit 1
+          fi
+
+          artifact_dir="${GITHUB_WORKSPACE}/cloudberry-artifact"
+          mkdir -p "${artifact_dir}"
+
+          # Tar up the installation so build-pxf and test-pxf can use it.
+          echo "=== Packaging Cloudberry installation... ==="
+          tar -czf "${artifact_dir}/cloudberry-db.tar.gz" -C /usr/local cloudberry-db
+          echo "=== Cloudberry artifact size: $(du -h "${artifact_dir}/cloudberry-db.tar.gz" | cut -f1) ==="
+
+      - name: Upload Cloudberry artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudberry-${{ matrix.platform.target_os }}-${{ matrix.platform.target_arch }}
+          retention-days: ${{ env.LOG_RETENTION_DAYS }}
+          if-no-files-found: error
+          path: ${{ github.workspace }}/cloudberry-artifact/
+
+  # ====================================================================
+  # Job 4: Build PXF DEB/RPM packages using the pre-built Cloudberry.
+  # ====================================================================
+  build-pxf:
+    name: Build PXF ${{ matrix.platform.target_os }}-${{ matrix.platform.target_arch }}-${{ matrix.platform.package_type }}
+    needs:
+      - verify-pxf-source
+      - build-cloudberry
+    runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 30
+    container:
+      image: ${{ matrix.platform.build_container_image }}
+      options: >-
+        --user root
+        --hostname cdw
+        --shm-size=2gb
+        -v /usr/share:/host_usr_share
+        -v /usr/local:/host_usr_local
+        -v /opt:/host_opt
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          # RPM — Rocky Linux 8/9
+          - {target_os: rocky8,  target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
+          - {target_os: rocky8,  target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
+          - {target_os: rocky9,  target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
+          - {target_os: rocky9,  target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
+          # DEB — Ubuntu 22.04
+          - {target_os: ubuntu22.04, target_arch: x86_64, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
+          - {target_os: ubuntu22.04, target_arch: arm64,  package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
+
+    steps:
+      - name: Free disk space
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /host_opt/hostedtoolcache || true
+          rm -rf /host_usr_local/lib/android || true
+          rm -rf /host_usr_share/dotnet || true
+          rm -rf /host_opt/ghc || true
+          rm -rf /host_usr_local/.ghcup || true
+          rm -rf /host_usr_share/swift || true
+          rm -rf /host_usr_local/share/powershell || true
+          rm -rf /host_usr_local/share/chromium || true
+          rm -rf /host_usr_share/miniconda || true
+          rm -rf /host_opt/az || true
+          rm -rf /host_usr_share/sbt || true
+          df -h /
+
+      - name: Initialize build container
+        shell: bash
+        run: |
+          set -euo pipefail
+          su - gpadmin -c "/tmp/init_system.sh"
+
+      - name: Download and extract Cloudberry
+        uses: actions/download-artifact@v4
+        with:
+          name: cloudberry-${{ matrix.platform.target_os }}-${{ matrix.platform.target_arch }}
+          path: ${{ github.workspace }}/cloudberry-artifact
+
+      - name: Install Cloudberry
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== Extracting Cloudberry to ${CB_INSTALL_DIR}... ==="
+          tar -xzf "${GITHUB_WORKSPACE}/cloudberry-artifact/cloudberry-db.tar.gz" -C /usr/local
+          ls -la "${CB_INSTALL_DIR}/bin/"
+          echo "=== Cloudberry ready. ==="
+
+      - name: Download verified PXF source
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.verify-pxf-source.outputs.artifact_name }}
+          path: ${{ github.workspace }}/verified-source
+
+      - name: Build PXF packages
+        id: build
+        shell: bash
+        env:
+          SOURCE_TARBALL_NAME: ${{ needs.verify-pxf-source.outputs.source_tarball_name }}
+          PACKAGE_TYPE: ${{ matrix.platform.package_type }}
+          TARGET_OS: ${{ matrix.platform.target_os }}
+          TARGET_ARCH: ${{ matrix.platform.target_arch }}
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+
+          # ---- Extract PXF source ----
+          tarball_path="${GITHUB_WORKSPACE}/verified-source/${SOURCE_TARBALL_NAME}"
+          source_root_name="$(tar -tzf "${tarball_path}" | head -1 | cut -d/ -f1 || true)"
+
+          echo "=== Extracting PXF source: ${source_root_name} ==="
+          tar -xzf "${tarball_path}" -C "${GITHUB_WORKSPACE}"
+          pxf_source_dir="${GITHUB_WORKSPACE}/${source_root_name}"
+          chown -R gpadmin:gpadmin "${pxf_source_dir}"
+
+          # ---- Detect JAVA_HOME ----
+          JAVA_HOME=$(find /usr/lib/jvm -maxdepth 1 -name 'java-11*' -type d | head -1 || true)
+          if [[ -z "${JAVA_HOME}" ]]; then
+            echo "::error::Cannot locate JAVA_HOME under /usr/lib/jvm"
+            ls -la /usr/lib/jvm/ || true
+            exit 1
+          fi
+          echo "=== JAVA_HOME=${JAVA_HOME} ==="
+
+          # ---- Build ----
+          echo "=== Building PXF ${PACKAGE_TYPE} for ${TARGET_OS}/${TARGET_ARCH}... ==="
+          su - gpadmin -c "
+            set -euo pipefail
+            cd '${pxf_source_dir}'
+            source '${CB_INSTALL_DIR}/cloudberry-env.sh'
+            export JAVA_HOME='${JAVA_HOME}'
+            export GOPATH=\$HOME/go
+            export PATH=\$PATH:/usr/local/go/bin:\$GOPATH/bin
+            if [[ '${PACKAGE_TYPE}' == 'deb' ]]; then make deb 2>&1; else make rpm 2>&1; fi
+          "
+          echo "=== PXF build complete. ==="
+
+          # ---- Collect packages ----
+          artifact_dir="${GITHUB_WORKSPACE}/package-artifacts"
+          mkdir -p "${artifact_dir}"
+
+          if [[ "${PACKAGE_TYPE}" == "deb" ]]; then
+            find "${pxf_source_dir}/build" -maxdepth 1 -type f -name '*.deb' -exec cp -f {} "${artifact_dir}/" \;
+            primary_pattern='*.deb'
+          else
+            find "${pxf_source_dir}/build/rpmbuild/RPMS" -type f -name '*.rpm' \
+              ! -name '*-debuginfo-*.rpm' ! -name '*-debugsource-*.rpm' \
+              -exec cp -f {} "${artifact_dir}/" \;
+            primary_pattern='*.rpm'
+          fi
+
+          shopt -s nullglob
+          packages=("${artifact_dir}"/${primary_pattern})
+          if (( ${#packages[@]} == 0 )); then
+            echo "::error::No ${PACKAGE_TYPE} packages collected for ${TARGET_OS}/${TARGET_ARCH}"
+            exit 1
+          fi
+
+          echo "=== Collected ${#packages[@]} package(s): ==="
+          for pkg in "${packages[@]}"; do
+            echo "  - $(basename "${pkg}") ($(du -h "${pkg}" | cut -f1))"
+          done
+
+          # ---- SHA512 checksums ----
+          echo "=== Generating SHA512 checksums... ==="
+          for pkg in "${packages[@]}"; do
+            ( cd "${artifact_dir}" && sha512sum "$(basename "${pkg}")" > "$(basename "${pkg}").sha512" )
+            echo "  Generated: $(basename "${pkg}").sha512"
+          done
+
+      - name: Upload PXF package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.platform.target_os }}-${{ matrix.platform.target_arch }}-${{ matrix.platform.package_type }}
+          retention-days: ${{ env.LOG_RETENTION_DAYS }}
+          if-no-files-found: error
+          path: package-artifacts/
+
+  # ====================================================================
+  # Job 5: Test the PXF package in a FRESH container.
+  #         Downloads Cloudberry artifact and PXF package — no build
+  #         step has ever executed in this container.
+  # ====================================================================
+  test-pxf:
+    name: Test PXF ${{ matrix.platform.target_os }}-${{ matrix.platform.target_arch }}-${{ matrix.platform.package_type }}
+    needs:
+      - build-cloudberry
+      - build-pxf
+    runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 20
+    container:
+      image: ${{ matrix.platform.build_container_image }}
+      options: >-
+        --user root
+        --hostname cdw
+        --shm-size=2gb
+        -v /usr/share:/host_usr_share
+        -v /usr/local:/host_usr_local
+        -v /opt:/host_opt
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          # RPM — Rocky Linux 8/9
+          - {target_os: rocky8,  target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
+          - {target_os: rocky8,  target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
+          - {target_os: rocky9,  target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
+          - {target_os: rocky9,  target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
+          # DEB — Ubuntu 22.04
+          - {target_os: ubuntu22.04, target_arch: x86_64, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
+          - {target_os: ubuntu22.04, target_arch: arm64,  package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
+
+    steps:
+      - name: Initialize container
+        shell: bash
+        run: |
+          set -euo pipefail
+          su - gpadmin -c "/tmp/init_system.sh"
+
+      - name: Download and extract Cloudberry
+        uses: actions/download-artifact@v4
+        with:
+          name: cloudberry-${{ matrix.platform.target_os }}-${{ matrix.platform.target_arch }}
+          path: ${{ github.workspace }}/cloudberry-artifact
+
+      - name: Install Cloudberry
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== Extracting Cloudberry to ${CB_INSTALL_DIR}... ==="
+          tar -xzf "${GITHUB_WORKSPACE}/cloudberry-artifact/cloudberry-db.tar.gz" -C /usr/local
+          chown -R gpadmin:gpadmin "${CB_INSTALL_DIR}"
+          ls -la "${CB_INSTALL_DIR}/bin/"
+          echo "=== Cloudberry ready. ==="
+
+      - name: Install Java
+        shell: bash
+        env:
+          TARGET_OS: ${{ matrix.platform.target_os }}
+        run: |
+          set -euo pipefail
+          echo "=== Installing Java 11... ==="
+          if [[ "${TARGET_OS}" == rocky* ]]; then
+            dnf install -y java-11-openjdk
+          else
+            apt-get update && apt-get install -y openjdk-11-jdk
+          fi
+
+          JAVA_HOME=$(find /usr/lib/jvm -maxdepth 1 -name 'java-11*' -type d | head -1 || true)
+          echo "=== JAVA_HOME=${JAVA_HOME} ==="
+
+      - name: Download PXF package
+        uses: actions/download-artifact@v4
+        with:
+          name: packages-${{ matrix.platform.target_os }}-${{ matrix.platform.target_arch }}-${{ matrix.platform.package_type }}
+          path: ${{ github.workspace }}/package-artifacts
+
+      - name: Install PXF package
+        shell: bash
+        env:
+          PACKAGE_TYPE: ${{ matrix.platform.package_type }}
+          TARGET_OS: ${{ matrix.platform.target_os }}
+        run: |
+          set -euo pipefail
+          artifact_dir="${GITHUB_WORKSPACE}/package-artifacts"
+
+          if [[ "${PACKAGE_TYPE}" == "deb" ]]; then
+            package_file=$(ls "${artifact_dir}"/*.deb 2>/dev/null | head -1 || true)
+          else
+            package_file=$(ls "${artifact_dir}"/*.rpm 2>/dev/null | head -1 || true)
+          fi
+
+          if [[ -z "${package_file}" || ! -f "${package_file}" ]]; then
+            echo "::error::No ${PACKAGE_TYPE} package found in ${artifact_dir}"
+            ls -la "${artifact_dir}" || true
+            exit 1
+          fi
+
+          echo "=== Installing PXF package: $(basename "${package_file}") ==="
+          if [[ "${PACKAGE_TYPE}" == "deb" ]]; then
+            apt-get update && apt-get install --fix-broken -y "${package_file}"
+          else
+            releasever="${TARGET_OS#rocky}"
+            dnf clean all
+            dnf makecache --refresh || dnf makecache
+            dnf install -y --setopt=retries=10 --releasever="${releasever}" "${package_file}"
+          fi
+          chown -R gpadmin:gpadmin /usr/local/cloudberry-pxf* || true
+          ls -la /usr/local/cloudberry-pxf/bin/
+          echo "=== PXF package installed. ==="
+
+      - name: Run PXF smoke test
+        shell: bash
+        env:
+          TARGET_OS: ${{ matrix.platform.target_os }}
+          TARGET_ARCH: ${{ matrix.platform.target_arch }}
+        run: |
+          set -euo pipefail
+          chown -R gpadmin:gpadmin "${GITHUB_WORKSPACE}"
+
+          cat <<'SCRIPT' > /tmp/run_pxf_smoke_test.sh
+          #!/bin/bash
+          set -euo pipefail
+
+          GPHOME="/usr/local/cloudberry-db"
+          source "${GPHOME}/cloudberry-env.sh"
+
+          # Detect JAVA_HOME
+          JAVA_HOME=$(find /usr/lib/jvm -maxdepth 1 -name 'java-11*' -type d | head -1 || true)
+          if [[ -z "${JAVA_HOME}" ]]; then
+            echo "ERROR: Cannot locate JAVA_HOME"
+            exit 1
+          fi
+
+          echo "=== Creating demo cluster ==="
+          cd "${HOME}"
+          gpdemo
+          source "${HOME}/gpdemo-env.sh"
+
+          echo "=== Verifying cluster ==="
+          psql -d postgres -c "SELECT 1 AS cluster_ok;"
+          psql -d postgres -c "SELECT version();"
+
+          echo "=== Setting up PXF environment ==="
+          export JAVA_HOME
+          export PXF_HOME=/usr/local/cloudberry-pxf
+          export PXF_BASE="${HOME}/pxf-base"
+          export PATH=/usr/local/cloudberry-pxf/bin:${PATH}
+
+          # Ensure gpadmin owns everything it needs to write to
+          chown -R gpadmin:gpadmin "${HOME}"
+          chown -R gpadmin:gpadmin "${PXF_HOME}"
+
+          # Clean slate
+          rm -rf "${PXF_BASE}"
+
+          echo "=== PXF version ==="
+          pxf version
+
+          echo "=== PXF prepare ==="
+          pxf prepare
+
+          echo "=== PXF register ==="
+          pxf register
+
+          echo "=== PXF start ==="
+          pxf start
+          sleep 5
+
+          echo "=== PXF status ==="
+          pxf status
+
+          echo "=== PXF stop ==="
+          pxf stop
+
+          echo "=== PXF start ==="
+          pxf start
+          sleep 3
+
+          echo "=== PXF restart ==="
+          pxf restart
+          sleep 3
+
+          echo "=== PXF cluster status ==="
+          pxf cluster status || true
+
+          echo "=== PXF stop (cleanup) ==="
+          pxf stop
+
+          echo "=== All PXF smoke tests passed ==="
+          SCRIPT
+
+          chmod +x /tmp/run_pxf_smoke_test.sh
+          su - gpadmin -c "/tmp/run_pxf_smoke_test.sh"
+          test_status=$?
+
+          {
+            echo "## PXF package smoke test"
+            echo "- Target: ${{ matrix.platform.target_os }}/${{ matrix.platform.target_arch }}"
+            echo "- Commands: version, prepare, register, start, status, stop, restart"
+            if [[ ${test_status} -eq 0 ]]; then
+              echo "- Result: PASS"
+            else
+              echo "- Result: FAIL"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+          exit ${test_status}
