@@ -25,6 +25,27 @@ set -euo pipefail
 log() { echo "[utils][$(date '+%F %T')] $*"; }
 die() { log "ERROR $*"; exit 1; }
 
+# retry <cmd...>  — run <cmd> up to $RETRY_MAX_ATTEMPTS times (default 3),
+# waiting $RETRY_DELAY seconds between attempts (default 15). Used to
+# harden CI against transient upstream failures: dnf/apt mirror hiccups,
+# Maven Central connect flakes, image registry throttling, etc. Exits
+# with the last command's exit code on final failure.
+retry() {
+  local -r max_attempts=${RETRY_MAX_ATTEMPTS:-3}
+  local -r delay=${RETRY_DELAY:-15}
+  local attempt=1
+  until "$@"; do
+    if [ "$attempt" -ge "$max_attempts" ]; then
+      log "retry: '$*' failed after $attempt attempts, giving up"
+      return 1
+    fi
+    log "retry: '$*' failed (attempt $attempt/$max_attempts), waiting ${delay}s"
+    sleep "$delay"
+    attempt=$((attempt + 1))
+  done
+  return 0
+}
+
 wait_port() {
   local host="$1" port="$2" retries="${3:-10}" sleep_sec="${4:-2}"
   local i

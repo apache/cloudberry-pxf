@@ -45,6 +45,11 @@ services:
     volumes:
       - ../../../../../cloudberry-pxf:/home/gpadmin/workspace/cloudberry-pxf
       - ../../../../../cloudberry:/home/gpadmin/workspace/cloudberry
+      # Share host's Maven local repo with the container so mvn dependency
+      # downloads survive across runs via actions/cache. Neutralises transient
+      # 5xx from Maven Central and single-source repos (top-q.co.il for
+      # JSystem) once the cache is warm.
+      - ../../../../../.m2:/home/gpadmin/.m2
     command: ["tail", "-f", "/dev/null"]
 
 networks:
