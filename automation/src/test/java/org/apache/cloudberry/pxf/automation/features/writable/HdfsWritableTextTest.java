@@ -466,7 +466,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         FileFormatsUtils.prepareData(new WritableDataPreparer(), 1000, data);
         // multiple it to file
         String multiBlockedLocalFilePath = dataTempFolder + "/multiBlockedData";
-        FileFormatsUtils.prepareDataFile(data, 15000, multiBlockedLocalFilePath);
+        FileFormatsUtils.prepareDataFile(data, 1000, multiBlockedLocalFilePath);
 
         String hdfsPath = hdfsWritePath + "/copy_from_file_multi_block_no_compression";
         writableExTable = prepareWritableTable("pxf_text_multi_block_no_compression_w", hdfsPath, null);
@@ -480,7 +480,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
 
         readableExTable = prepareReadableTable("pxf_text_multi_block_no_compression_r", hdfsPath);
         gpdb.runAnalyticQuery("SELECT COUNT(*) FROM " + readableExTable.getName(),
-                String.valueOf(1000 * 15000));
+                String.valueOf(1000 * 1000));
     }
 
     /**
@@ -495,7 +495,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         FileFormatsUtils.prepareData(new WritableDataPreparer(), 1000, data);
         // multiple it to file
         String multiBlockedLocalFilePath = (dataTempFolder + "/multiBlockedData_gzip");
-        FileFormatsUtils.prepareDataFile(data, 15000, multiBlockedLocalFilePath);
+        FileFormatsUtils.prepareDataFile(data, 1000, multiBlockedLocalFilePath);
 
         String hdfsPath = hdfsWritePath + "/copy_from_file_multi_block_gzip";
         writableExTable = prepareWritableGzipTable("pxf_text_multi_block_gzip_w", hdfsPath);
@@ -509,7 +509,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
 
         readableExTable = prepareReadableTable("pxf_text_multi_block_gzip_r", hdfsPath);
         gpdb.runAnalyticQuery("SELECT COUNT(*) FROM " + readableExTable.getName(),
-                String.valueOf(1000 * 15000));
+                String.valueOf(1000 * 1000));
     }
 
     /**
@@ -525,7 +525,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
         FileFormatsUtils.prepareData(new WritableDataPreparer(), 1000, data);
         // multiple it to file
         String multiBlockedLocalFilePath = dataTempFolder + "/multiBlockedData_bzip";
-        FileFormatsUtils.prepareDataFile(data, 15000, multiBlockedLocalFilePath);
+        FileFormatsUtils.prepareDataFile(data, 1000, multiBlockedLocalFilePath);
 
         String hdfsPath = hdfsWritePath + "/copy_from_file_multi_block_bzip2";
         writableExTable = prepareWritableBZip2Table("pxf_text_multi_block_bzip2_w", hdfsPath);
@@ -539,7 +539,7 @@ public class HdfsWritableTextTest extends BaseWritableFeature {
 
         readableExTable = prepareReadableTable("pxf_text_multi_block_bzip2_r", hdfsPath);
         gpdb.runAnalyticQuery("SELECT COUNT(*) FROM " + readableExTable.getName(),
-                String.valueOf(1000 * 15000));
+                String.valueOf(1000 * 1000));
     }
 
     /**

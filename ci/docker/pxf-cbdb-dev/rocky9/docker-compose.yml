@@ -34,6 +34,13 @@ services:
     hostname: mdw
     depends_on:
       - singlecluster
+    environment:
+      # Pin container TZ so JVM's ZoneId.systemDefault() (used by
+      # ParquetTypeConverter for INT96 timestamp encode/decode) is the
+      # same across distros. Matches the PGOPTIONS timezone='GMT-1' set
+      # by run_tests.sh, keeping the Parquet-vs-PG timestamp path
+      # internally consistent.
+      TZ: Etc/GMT-1
     ports:
       - "2222:22"
     volumes:
