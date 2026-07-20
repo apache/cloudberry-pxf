@@ -59,6 +59,7 @@ public class PXFCloudberryContainer extends GenericContainer<PXFCloudberryContai
     static {
         BASE_IMAGES.put("ubuntu", "apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest");
         BASE_IMAGES.put("rocky9", "apache/incubator-cloudberry:cbdb-build-rocky9-latest");
+        BASE_IMAGES.put("rocky10", "apache/incubator-cloudberry:cbdb-build-rocky10-latest");
     }
 
     public static final int CLOUDBERRY_PORT = 7000;

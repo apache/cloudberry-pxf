@@ -191,6 +191,78 @@ jobs:
         path: workspace/cloudberry-source-rocky9.tar.gz
         retention-days: 7
 
+  build-cloudberry-rpm-rocky10:
+    name: Build Cloudberry RPM Package (Rocky 10)
+    runs-on: ubuntu-latest
+    container:
+      image: apache/incubator-cloudberry:cbdb-build-rocky10-latest
+      options: --user root
+    steps:
+    - name: Get month number
+      id: get-month
+      run: echo "month=$(/bin/date -u '+%Y-%m')" >> "$GITHUB_OUTPUT"
+
+    - name: Restore RPM Rocky 10 cache
+      id: cache-rpm-rocky10
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          workspace/cloudberry-rpm-rocky10
+          workspace/cloudberry-source-rocky10.tar.gz
+        key: cloudberry-rpm-rocky10-${{ runner.os }}-${{ steps.get-month.outputs.month }}
+
+    - name: Checkout Cloudberry source
+      if: steps.cache-rpm-rocky10.outputs.cache-hit != 'true'
+      uses: actions/checkout@v4
+      with:
+        repository: apache/cloudberry
+        ref: ${{ env.CLOUDBERRY_VERSION }}
+        path: workspace/cloudberry
+        submodules: true
+
+    - name: Checkout PXF source (for build script)
+      if: steps.cache-rpm-rocky10.outputs.cache-hit != 'true'
+      uses: actions/checkout@v4
+      with:
+        path: cloudberry-pxf
+
+    - name: Build Cloudberry RPM (Rocky 10)
+      if: steps.cache-rpm-rocky10.outputs.cache-hit != 'true'
+      run: |
+        export WORKSPACE=$PWD/workspace
+        export CLOUDBERRY_VERSION=99.0.0
+        export CLOUDBERRY_BUILD=1
+        bash cloudberry-pxf/ci/docker/pxf-cbdb-dev/rocky10/script/build_cloudberry_rpm.sh
+
+    - name: Package Cloudberry source
+      if: steps.cache-rpm-rocky10.outputs.cache-hit != 'true'
+      run: |
+        cd workspace
+        tar czf cloudberry-source-rocky10.tar.gz cloudberry/
+
+    - name: Save RPM Rocky 10 cache
+      if: steps.cache-rpm-rocky10.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          workspace/cloudberry-rpm-rocky10
+          workspace/cloudberry-source-rocky10.tar.gz
+        key: cloudberry-rpm-rocky10-${{ runner.os }}-${{ steps.get-month.outputs.month }}
+
+    - name: Upload RPM artifact (Rocky 10)
+      uses: actions/upload-artifact@v4
+      with:
+        name: cloudberry-rpm-rocky10
+        path: workspace/cloudberry-rpm-rocky10/*.rpm
+        retention-days: 7
+
+    - name: Upload Cloudberry source artifact (Rocky 10)
+      uses: actions/upload-artifact@v4
+      with:
+        name: cloudberry-source-rocky10
+        path: workspace/cloudberry-source-rocky10.tar.gz
+        retention-days: 7
+
   build-docker-images:
     name: Build Docker Images (Ubuntu)
     runs-on: ubuntu-latest
@@ -252,6 +324,28 @@ jobs:
         path: /tmp/singlecluster-rocky9-image.tar
         retention-days: 1
 
+  build-docker-images-rocky10:
+    name: Build Docker Images (Rocky 10)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout PXF source
+      uses: actions/checkout@v4
+      with:
+        path: cloudberry-pxf
+
+    - name: Build singlecluster Rocky 10 image
+      run: |
+        cd cloudberry-pxf/ci/singlecluster
+        docker build --build-arg BASE_IMAGE=apache/incubator-cloudberry:cbdb-build-rocky10-latest -t pxf/singlecluster-rocky10:3 .
+        docker save pxf/singlecluster-rocky10:3 > /tmp/singlecluster-rocky10-image.tar
+
+    - name: Upload singlecluster Rocky 10 image
+      uses: actions/upload-artifact@v4
+      with:
+        name: singlecluster-rocky10-image
+        path: /tmp/singlecluster-rocky10-image.tar
+        retention-days: 1
+
   build-pxf-cbdb-testcontainer-image:
     name: Build Testcontainer Images (${{ matrix.distro }})
     runs-on: ubuntu-latest
@@ -266,6 +360,9 @@ jobs:
           - distro: rocky9
             base_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest
             image_tag: pxf/cbdb-testcontainer-rocky9:1
+          - distro: rocky10
+            base_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest
+            image_tag: pxf/cbdb-testcontainer-rocky10:1
     steps:
       - name: Get month number
         id: get-month
@@ -694,6 +791,198 @@ jobs:
         fi
 
 
+  # Stage 2b2: Rocky 10 parallel test jobs
+  pxf-test-rocky10:
+    name: Test PXF Rocky10 - ${{ matrix.test_group }}
+    needs: [build-cloudberry-rpm-rocky10, build-docker-images-rocky10]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test_group:
+          - cli
+          - external-table
+          - fdw
+          - server
+          - sanity
+          - smoke
+          - hdfs
+          - hcatalog
+          - hcfs
+          - hive
+          - hbase
+          - profile
+          - jdbc
+          - proxy
+          - unused
+          - features
+          - gpdb
+          - gpdb_fdw
+          - load
+    steps:
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/hostedtoolcache
+        sudo docker system prune -af
+        df -h
+
+    - name: Checkout PXF source
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        path: cloudberry-pxf
+        submodules: true
+
+    - name: Download Cloudberry RPM (Rocky 10)
+      uses: actions/download-artifact@v4
+      with:
+        name: cloudberry-rpm-rocky10
+        path: /tmp
+
+    - name: Download Cloudberry source (Rocky 10)
+      uses: actions/download-artifact@v4
+      with:
+        name: cloudberry-source-rocky10
+        path: /tmp
+
+    - name: Download singlecluster Rocky 10 image
+      uses: actions/download-artifact@v4
+      with:
+        name: singlecluster-rocky10-image
+        path: /tmp
+
+    - name: Load singlecluster Rocky 10 image
+      run: |
+        docker load < /tmp/singlecluster-rocky10-image.tar
+
+    - name: Prepare Cloudberry source
+      run: |
+        tar xzf /tmp/cloudberry-source-rocky10.tar.gz
+        chmod -R u+rwX,go+rX cloudberry
+
+    - name: Restore Maven cache
+      id: cache-mvn
+      uses: actions/cache/restore@v4
+      with:
+        path: .m2
+        key: mvn-container-${{ hashFiles('cloudberry-pxf/automation/pom.xml') }}
+        restore-keys: |
+          mvn-container-
+
+    - name: Prepare Maven cache dir
+      run: |
+        mkdir -p .m2
+        chmod -R a+rwX .m2 || true
+
+    - name: Start Services
+      id: start_services
+      run: |
+        cd cloudberry-pxf
+        docker compose -f ci/docker/pxf-cbdb-dev/rocky10/docker-compose.yml down -v || true
+        docker compose -f ci/docker/pxf-cbdb-dev/rocky10/docker-compose.yml up -d
+        docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/workspace/cloudberry
+        docker exec pxf-cbdb-dev sudo chown -R gpadmin:gpadmin /home/gpadmin/.m2
+        docker cp /tmp/*.rpm pxf-cbdb-dev:/tmp/
+        docker exec pxf-cbdb-dev sudo chown gpadmin:gpadmin /tmp/*.rpm
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf && ./ci/docker/pxf-cbdb-dev/common/script/entrypoint.sh"
+
+    - name: Run Test - ${{ matrix.test_group }}
+      id: run_test
+      continue-on-error: true
+      timeout-minutes: 120
+      run: |
+        docker exec pxf-cbdb-dev bash -lc "cd /home/gpadmin/workspace/cloudberry-pxf/automation && source ../ci/docker/pxf-cbdb-dev/common/script/pxf-env.sh && ../ci/docker/pxf-cbdb-dev/common/script/run_tests.sh ${{ matrix.test_group }}"
+
+    - name: Collect artifacts and generate stats
+      if: always()
+      id: collect_artifacts
+      run: |
+        mkdir -p artifacts/logs
+        TEST_GROUP="${{ matrix.test_group }}"
+        TEST_RESULT="${{ steps.run_test.outcome }}"
+
+        # Initialize counters
+        TOTAL=0
+        PASSED=0
+        FAILED=0
+        SKIPPED=0
+
+        # Copy test artifacts
+        cp -r cloudberry-pxf/automation/test_artifacts/* artifacts/ 2>/dev/null || true
+        docker exec pxf-cbdb-dev bash -c "cp -r /usr/local/pxf/logs/* /tmp/pxf-logs/ 2>/dev/null || true" || true
+        docker cp pxf-cbdb-dev:/tmp/pxf-logs artifacts/logs/ 2>/dev/null || true
+
+        # Parse surefire reports for automation tests
+        if [[ "$TEST_GROUP" != "cli" && "$TEST_GROUP" != "server" ]]; then
+          for xml in cloudberry-pxf/automation/target/surefire-reports/TEST-*.xml; do
+            if [ -f "$xml" ]; then
+              tests=$(grep -oP 'tests="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+              failures=$(grep -oP 'failures="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+              errors=$(grep -oP 'errors="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+              skipped=$(grep -oP 'skipped="\K\d+' "$xml" 2>/dev/null | head -1 || echo "0")
+
+              TOTAL=$((TOTAL + tests))
+              FAILED=$((FAILED + failures + errors))
+              SKIPPED=$((SKIPPED + skipped))
+            fi
+          done
+          PASSED=$((TOTAL - FAILED - SKIPPED))
+        fi
+
+        # Generate stats JSON
+        cat > artifacts/test_stats.json <<EOF
+        {
+          "group": "$TEST_GROUP",
+          "result": "$TEST_RESULT",
+          "total": $TOTAL,
+          "passed": $PASSED,
+          "failed": $FAILED,
+          "skipped": $SKIPPED
+        }
+        EOF
+
+        echo "failed_count=$FAILED" >> $GITHUB_OUTPUT
+        echo "skipped_count=$SKIPPED" >> $GITHUB_OUTPUT
+        echo "Test stats for $TEST_GROUP (Rocky 10): total=$TOTAL, passed=$PASSED, failed=$FAILED, skipped=$SKIPPED"
+
+    - name: Cleanup containers
+      if: always()
+      run: |
+        cd cloudberry-pxf
+        docker compose -f ci/docker/pxf-cbdb-dev/rocky10/docker-compose.yml down -v || true
+
+    - name: Save Maven cache
+      if: always() && steps.cache-mvn.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: .m2
+        key: mvn-container-${{ hashFiles('cloudberry-pxf/automation/pom.xml') }}
+
+    - name: Upload test artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-rocky10-${{ matrix.test_group }}
+        path: artifacts/**
+        if-no-files-found: ignore
+        retention-days: 7
+
+    - name: Check test result
+      if: always()
+      run: |
+        FAILED_COUNT="${{ steps.collect_artifacts.outputs.failed_count || 0 }}"
+        SKIPPED_COUNT="${{ steps.collect_artifacts.outputs.skipped_count || 0 }}"
+
+        if [ "${{ steps.run_test.outcome }}" == "failure" ] || [ "$FAILED_COUNT" -gt 0 ]; then
+          echo "Test group ${{ matrix.test_group }} (Rocky 10) failed (Failures: $FAILED_COUNT, Skipped: $SKIPPED_COUNT)"
+          exit 1
+        fi
+
+
   # Stage 2c: Testcontainers-based tests
   pxf-testcontainer-test:
     name: "TC Test - ${{ matrix.tc_group }} (${{ matrix.use_fdw == 'true' && 'fdw' || 'external-table' }}, ${{ matrix.distro }})"
@@ -713,6 +1002,7 @@ jobs:
         distro:
           - 'ubuntu'
           - 'rocky9'
+          - 'rocky10'
         exclude:
           - tc_group: 'pxf-extension'
             use_fdw: 'true'
@@ -877,7 +1167,7 @@ jobs:
   # Stage 3: Summary job
   test-summary:
     name: Test Summary
-    needs: [pxf-test, pxf-test-rocky9, pxf-testcontainer-test]
+    needs: [pxf-test, pxf-test-rocky9, pxf-test-rocky10, pxf-testcontainer-test]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -970,10 +1260,13 @@ jobs:
 
         EXIT_CODE=0
 
-        # Ubuntu results (test-results-<group>, excluding test-results-rocky9-*)
+        # Ubuntu results (test-results-<group>, excluding test-results-rocky*-*)
         generate_os_summary "Ubuntu 22.04" "test-results-[!r]*" || EXIT_CODE=1
 
         # Rocky 9 results
         generate_os_summary "Rocky 9" "test-results-rocky9-*" || EXIT_CODE=1
+
+        # Rocky 10 results
+        generate_os_summary "Rocky 10" "test-results-rocky10-*" || EXIT_CODE=1
 
         exit $EXIT_CODE
