@@ -21,6 +21,18 @@
 #include "pxfutils.h"
 #include "utils/formatting.h"
 
+/*
+ * PostgreSQL 16 split the generic Value node into distinct Integer/Float/
+ * String/etc. node types; makeString()/strVal() now operate on String *
+ * instead of Value *. Cloudberry versions built on pre-16 Postgres bases
+ * (e.g. PG14) still use the old Value type, so alias to whichever exists.
+ */
+#if PG_VERSION_NUM >= 160000
+typedef String PxfStringNode;
+#else
+typedef Value PxfStringNode;
+#endif
+
 static const char *PTC_SEP = "://";
 static const char *OPTION_SEP = "&";
 static const int EMPTY_VALUE_LEN = 2;
@@ -291,7 +303,7 @@ GPHDUri_verify_no_duplicate_options(GPHDUri *uri)
 	{
 		OptionData *data = (OptionData *) lfirst(option);
 
-		Value	   *key = makeString(asc_toupper(data->key, strlen(data->key)));
+		PxfStringNode *key = makeString(asc_toupper(data->key, strlen(data->key)));
 
 		if (!list_member(previousKeys, key))
 			previousKeys = lappend(previousKeys, key);
@@ -308,7 +320,7 @@ GPHDUri_verify_no_duplicate_options(GPHDUri *uri)
 		initStringInfo(&duplicates);
 		foreach(key, duplicateKeys)
 		{
-			char	   *keyname = strVal((Value *) lfirst(key));
+			char	   *keyname = strVal((PxfStringNode *) lfirst(key));
 
 			if (!first)
 				appendStringInfoString(&duplicates, ", ");
