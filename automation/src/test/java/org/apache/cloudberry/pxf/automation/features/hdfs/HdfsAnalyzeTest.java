@@ -1,5 +1,6 @@
 package org.apache.cloudberry.pxf.automation.features.hdfs;
 
+import annotations.SkipForFDW;
 import annotations.WorksWithFDW;
 import org.apache.cloudberry.pxf.automation.components.cluster.PhdCluster;
 import org.apache.cloudberry.pxf.automation.datapreparer.CustomSequencePreparer;
@@ -219,6 +220,7 @@ public class HdfsAnalyzeTest extends BaseFeature {
      * @throws Exception if test failed to run
      */
     @Test(groups = { "features" })
+    @SkipForFDW // relies on explicit fragmenter/accessor/resolver without a profile, unsupported by FDW
     public void analyzeOnSequenceSmall() throws Exception {
 
         String path = hdfs.getWorkingDirectory()
@@ -268,6 +270,7 @@ public class HdfsAnalyzeTest extends BaseFeature {
      * @throws Exception if test failed to run
      */
     @Test(groups = { "features" })
+    @SkipForFDW // relies on explicit fragmenter/accessor/resolver without a profile, unsupported by FDW
     public void negativeAnalyzeFailOnFragmenter() throws Exception {
 
         String csvPath = hdfs.getWorkingDirectory() + "/analyze_nofragmenter.csv";
@@ -323,7 +326,6 @@ public class HdfsAnalyzeTest extends BaseFeature {
      * @throws Exception if test failed to run
      */
     @Test(groups = { "features" }, enabled = false)
-
     public void negativeAnalyzeFailOnEstimate() throws Exception {
 
         String csvPath = hdfs.getWorkingDirectory() + "/no_such_file.csv";
@@ -375,6 +377,7 @@ public class HdfsAnalyzeTest extends BaseFeature {
      * @throws Exception test failed to run
      */
     @Test(groups = { "features" })
+    @SkipForFDW // relies on explicit fragmenter/accessor/resolver without a profile, unsupported by FDW
     public void negativeAnalyzeFailOnResolver() throws Exception {
 
         String csvPath = hdfs.getWorkingDirectory() + "/analyze_noresolver.csv";
@@ -454,6 +457,7 @@ public class HdfsAnalyzeTest extends BaseFeature {
      * @throws Exception if test failed to run
      */
     @Test(groups = { "features" })
+    @SkipForFDW // relies on explicit fragmenter/accessor/resolver without a profile, unsupported by FDW
     public void negativeAnalyzeFailAfter10000Rows() throws Exception {
 
         String dataPath = hdfs.getWorkingDirectory()

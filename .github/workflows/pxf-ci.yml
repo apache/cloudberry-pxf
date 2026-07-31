@@ -319,7 +319,6 @@ jobs:
           - cli
           - external-table
           - fdw
-          - sanity
           - smoke
           - hdfs
           - hcatalog
@@ -327,12 +326,10 @@ jobs:
           - hive
           - hbase
           - profile
-          - jdbc
           - proxy
           - unused
           - features
-          - gpdb
-          - gpdb_fdw
+          - features_fdw
           - load
     steps:
     - name: Free disk space
@@ -515,7 +512,6 @@ jobs:
           - external-table
           - fdw
           - server
-          - sanity
           - smoke
           - hdfs
           - hcatalog
@@ -523,12 +519,10 @@ jobs:
           - hive
           - hbase
           - profile
-          - jdbc
           - proxy
           - unused
           - features
-          - gpdb
-          - gpdb_fdw
+          - features_fdw
           - load
     steps:
     - name: Free disk space

@@ -80,7 +80,7 @@ public class ProfilesTest extends BaseFeature {
      *
      * @throws Exception if test fails to run
      */
-    @Test(groups = {"sanity"})
+    @Test(groups = {"unused"})
     protected void sanity() throws Exception {
 
         gpdb.createTableAndVerify(exTable);

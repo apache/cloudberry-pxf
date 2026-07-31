@@ -130,7 +130,7 @@ public class HdfsReadableTextTest extends BaseFeature {
      * format.
      */
     // TODO: pxf_regress shows diff for this test. Should be fixed.
-    @Test(enabled = false, groups = {"features", "sanity", "gpdb", "security"})
+    @Test(enabled = false, groups = {"features", "gpdb", "security"})
     public void readDelimitedTextUsingTextFormat() throws Exception {
         // set plugins and delimiter
         exTable.setFragmenter("org.apache.cloudberry.pxf.plugins.hdfs.HdfsDataFragmenter");
