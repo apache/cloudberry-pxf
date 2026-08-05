@@ -13,6 +13,20 @@ import org.junit.Assert;
  */
 public abstract class ReportUtils {
 
+	// Caps report log size; tests can produce megabytes of logs.
+	private static final int MAX_MESSAGE_LENGTH = 8192;
+	// Chars kept from the message end so a truncated tail (e.g. COPY closing) stays visible.
+	private static final int TAIL_LENGTH = 128;
+
+	private static String truncate(String message) {
+		if (message == null || message.length() <= MAX_MESSAGE_LENGTH) {
+			return message;
+		}
+		String head = message.substring(0, MAX_MESSAGE_LENGTH - TAIL_LENGTH);
+		String tail = message.substring(message.length() - TAIL_LENGTH);
+		return head + "... [truncated, " + message.length() + " chars total] ..." + tail;
+	}
+
 	public static void report(Reporter jsystemReport, Class<?> contextClass, String message) {
 		report(jsystemReport, contextClass, message, Reporter.PASS);
 	}
@@ -27,10 +41,10 @@ public abstract class ReportUtils {
 	 * @param status use {@link Reporter} Reporter.FAIL or Reporter.PASS
 	 */
 	public static void report(Reporter jsystemReport, Class<?> contextClass, String message, int status) {
-		String messageToReport = message;
+		String messageToReport = truncate(message);
 
 		if (contextClass != null) {
-			messageToReport = contextClass.getSimpleName() + " -> " + message;
+			messageToReport = contextClass.getSimpleName() + " -> " + messageToReport;
 		}
 		if (jsystemReport != null && !jsystemReport.isSilent()) {
 			jsystemReport.report(messageToReport, status);
@@ -66,7 +80,7 @@ public abstract class ReportUtils {
 	 * @throws IOException
 	 */
 	public static void startLevel(Reporter jsystemReport, Class<?> contextClass, String additionalText, String message) throws IOException {
-		String reportMessage = contextClass.getSimpleName() + " " + additionalText + " -> " + message;
+		String reportMessage = contextClass.getSimpleName() + " " + additionalText + " -> " + truncate(message);
 
 		if (jsystemReport != null && !jsystemReport.isSilent()) {
 			jsystemReport.startLevel(reportMessage);
@@ -107,12 +121,12 @@ public abstract class ReportUtils {
 	 */
 	public static void reportHtml(Reporter jsystemReport, Class<?> contextClass, String data) {
 		if (jsystemReport != null && !jsystemReport.isSilent()) {
-			jsystemReport.report(contextClass.getSimpleName() + " -> " + data, ReportAttribute.HTML);
+			jsystemReport.report(contextClass.getSimpleName() + " -> " + truncate(data), ReportAttribute.HTML);
 		}
 	}
 
 	public static void reportTable(Table table) {
-		System.out.println(table);
+		System.out.println(table == null ? null : truncate(table.toString()));
 	}
 
 	/**
