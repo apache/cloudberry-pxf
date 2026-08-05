@@ -1,0 +1,13 @@
+-- @description query02 for PXF parallel scan single fragment - sum aggregation
+
+SET optimizer = off;
+SET
+SET enable_parallel = true;
+SET
+SET max_parallel_workers_per_gather = 4;
+SET
+SELECT sum(id) FROM pxf_parallel_single_frag;
+ sum
+------
+ 5050
+(1 row)

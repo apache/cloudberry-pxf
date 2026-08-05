@@ -39,6 +39,7 @@
 #define FDW_OPTION_REJECT_LIMIT "reject_limit"
 #define FDW_OPTION_REJECT_LIMIT_TYPE "reject_limit_type"
 #define FDW_OPTION_RESOURCE "resource"
+#define FDW_OPTION_ENABLE_PARALLEL "enable_parallel"
 
 #define FDW_COPY_OPTION_FORMAT "format"
 #define FDW_COPY_OPTION_HEADER "header"
@@ -71,6 +72,10 @@ static const struct PxfFdwOption valid_options[] = {
 	{FDW_OPTION_REJECT_LIMIT, ForeignTableRelationId},
 	{FDW_OPTION_REJECT_LIMIT_TYPE, ForeignTableRelationId},
 	{FDW_OPTION_LOG_ERRORS, ForeignTableRelationId},
+
+	/* Parallel execution */
+	{FDW_OPTION_ENABLE_PARALLEL, ForeignTableRelationId},
+	{FDW_OPTION_ENABLE_PARALLEL, ForeignServerRelationId},
 
 	/* Sentinel */
 	{NULL, InvalidOid}
@@ -454,6 +459,8 @@ PxfGetOptions(Oid foreigntableid)
 			opt->log_errors = defGetBoolean(def);
 		else if (strcmp(def->defname, FDW_OPTION_DISABLE_PPD) == 0)
 			opt->disable_ppd = defGetBoolean(def);
+		else if (strcmp(def->defname, FDW_OPTION_ENABLE_PARALLEL) == 0)
+			opt->enable_parallel = defGetBoolean(def);
 		else if (strcmp(def->defname, FDW_OPTION_FORMAT) == 0)
 		{
 			opt->format = defGetString(def);
@@ -565,20 +572,37 @@ static void
 ValidateOption(char *option, Oid catalog)
 {
 	const struct PxfFdwOption *entry;
+	bool		found = false;
 
 	for (entry = valid_options; entry->optname; entry++)
 	{
-		/* option can only be defined at its catalog level */
-		if (strcmp(entry->optname, option) == 0 && catalog != entry->optcontext)
+		if (strcmp(entry->optname, option) == 0)
 		{
-			Relation	rel = RelationIdGetRelation(entry->optcontext);
+			/* option is recognized; check if it's allowed at this catalog level */
+			if (catalog == entry->optcontext)
+				return;		/* valid — exact match */
+			found = true;	/* name matches but at a different level */
+		}
+	}
 
-			ereport(ERROR,
-					(errcode(ERRCODE_FDW_INVALID_OPTION_NAME),
-					 errmsg(
-							"the %s option can only be defined at the %s level",
-							option,
-							RelationGetRelationName(rel))));
+	if (found)
+	{
+		/*
+		 * The option exists but is not valid at this catalog level.
+		 * Report the first matching level for the error message.
+		 */
+		for (entry = valid_options; entry->optname; entry++)
+		{
+			if (strcmp(entry->optname, option) == 0)
+			{
+				Relation	rel = RelationIdGetRelation(entry->optcontext);
+
+				ereport(ERROR,
+						(errcode(ERRCODE_FDW_INVALID_OPTION_NAME),
+						 errmsg("the %s option can only be defined at the %s level",
+								option,
+								RelationGetRelationName(rel))));
+			}
 		}
 	}
 }
