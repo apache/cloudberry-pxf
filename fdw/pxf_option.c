@@ -21,6 +21,18 @@
 #include "foreign/foreign.h"
 #include "mb/pg_wchar.h"
 
+/*
+ * PostgreSQL 16 split the generic Value node into distinct Integer/Float/
+ * String/etc. node types; makeString() now returns String * instead of
+ * Value *. Cloudberry versions built on pre-16 Postgres bases (e.g. PG14)
+ * still use the old Value type, so alias to whichever exists.
+ */
+#if PG_VERSION_NUM >= 160000
+typedef String PxfStringNode;
+#else
+typedef Value PxfStringNode;
+#endif
+
 #define FDW_OPTION_WIRE_FORMAT_TEXT "text"
 #define FDW_OPTION_WIRE_FORMAT_CSV "csv"
 
@@ -470,7 +482,7 @@ PxfGetOptions(Oid foreigntableid)
 			copy_options = lappend(copy_options, def);
 		else
 		{
-			Value	   *val = makeString(def->defname);
+			PxfStringNode *val = makeString(def->defname);
 
 			/*
 			 * if we have already seen this option before disregard the new

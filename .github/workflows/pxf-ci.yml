@@ -40,7 +40,7 @@ env:
   JAVA_HOME: "/usr/lib/jvm/java-11-openjdk"
   GO_VERSION: "1.25"
   GPHOME: "/usr/local/cloudberry-db"
-  CLOUDBERRY_VERSION: "REL_2_STABLE"
+  CLOUDBERRY_VERSION: "main"
   PXF_HOME: "/usr/local/pxf"
 
 jobs:

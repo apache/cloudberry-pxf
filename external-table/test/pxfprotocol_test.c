@@ -47,7 +47,7 @@ test_pxfprotocol_validate_urls(void **state)
 	PG_FUNCTION_ARGS = palloc0(sizeof(FunctionCallInfoData));
 	fcinfo->context = palloc0(sizeof(ExtProtocolValidatorData));
 	fcinfo->context->type = T_ExtProtocolValidatorData;
-	Value	   *v = makeString(uri_no_profile);
+	PxfStringNode *v = makeString(uri_no_profile);
 	List	   *list = list_make1(v);
 
 	((ExtProtocolValidatorData *) fcinfo->context)->url_list = list;

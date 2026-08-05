@@ -19,6 +19,7 @@
 #
 # --------------------------------------------------------------------
 # Build and install PXF — works on both Ubuntu and Rocky/RHEL
+set -euo pipefail
 
 # Auto-detect Java 11 path
 if [ -d /usr/lib/jvm/java-11-openjdk-amd64 ]; then
@@ -45,8 +46,13 @@ sudo chmod -R a+rwX "$PXF_HOME"
 
 # Build and Install PXF
 cd /home/gpadmin/workspace/cloudberry-pxf
-make -C external-table install
-make -C fdw install
+# external-table and fdw are native extensions; the automation harness copies
+# the host repo (including any binaries the host already built) into this
+# container, so a plain `make install` would silently reuse a .so linked
+# against the host's glibc instead of rebuilding for this container's glibc.
+# Force a clean rebuild here.
+make -C external-table clean install
+make -C fdw clean install
 make -C server install-server
 make -C server install-jdbc-drivers
 
