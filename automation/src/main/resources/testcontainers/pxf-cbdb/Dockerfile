@@ -29,9 +29,18 @@ RUN if command -v apt-get >/dev/null 2>&1; then \
         locales wget lsb-release openssh-server iproute2 sudo \
         openjdk-11-jdk-headless; \
     elif command -v dnf >/dev/null 2>&1; then \
-      sudo dnf install -y --allowerasing --nobest \
-        curl ca-certificates wget maven unzip openssh-server iproute sudo glibc-langpack-en glibc-locale-source \
-        java-11-openjdk-devel && \
+      if [ -f /etc/os-release ] && . /etc/os-release && [ "$ID" = "rocky" ] && [ "${VERSION_ID%%.*}" -ge 10 ]; then \
+        echo "Rocky 10+: JDK 11 / glibc-locale-source not in distro repos, using JDK 21 / glibc-all-langpacks"; \
+        sudo dnf install -y --allowerasing --nobest \
+          curl ca-certificates wget maven unzip openssh-server iproute sudo \
+          glibc-langpack-en glibc-all-langpacks \
+          java-21-openjdk-devel; \
+      else \
+        sudo dnf install -y --allowerasing --nobest \
+          curl ca-certificates wget maven unzip openssh-server iproute sudo \
+          glibc-langpack-en glibc-locale-source \
+          java-11-openjdk-devel; \
+      fi && \
       sudo dnf clean all; \
     fi
 

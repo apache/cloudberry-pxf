@@ -29,10 +29,27 @@ RUN if command -v apt-get >/dev/null 2>&1; then \
         openjdk-8-jdk-headless \
         openjdk-11-jdk-headless; \
     elif command -v dnf >/dev/null 2>&1; then \
-      sudo dnf install -y --allowerasing --nobest \
-        curl ca-certificates \
-        java-1.8.0-openjdk-devel \
-        java-11-openjdk-devel && \
+      sudo dnf install -y --allowerasing --nobest curl ca-certificates && \
+      if [ -f /etc/os-release ] && . /etc/os-release && [ "$ID" = "rocky" ] && [ "${VERSION_ID%%.*}" -ge 10 ]; then \
+        echo "Rocky 10+: JDK 8/11 not in distro repos, downloading from Adoptium"; \
+        sudo dnf install -y --allowerasing --nobest java-21-openjdk-devel; \
+        ADOPTIUM_BASE="https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u442-b06/OpenJDK8U-jdk_x64_linux_hotspot_8u442b06"; \
+        curl -fsSL "$ADOPTIUM_BASE.tar.gz" -o /tmp/jdk8.tar.gz && \
+        sudo mkdir -p /usr/lib/jvm && sudo tar xzf /tmp/jdk8.tar.gz -C /usr/lib/jvm && \
+        sudo ln -sf /usr/lib/jvm/jdk8u442-b06 /usr/lib/jvm/java-1.8.0-openjdk && \
+        sudo alternatives --install /usr/bin/java java /usr/lib/jvm/java-1.8.0-openjdk/bin/java 1 && \
+        rm /tmp/jdk8.tar.gz && \
+        ADOPTIUM_BASE11="https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.26%2B4/OpenJDK11U-jdk_x64_linux_hotspot_11.0.26_4"; \
+        curl -fsSL "$ADOPTIUM_BASE11.tar.gz" -o /tmp/jdk11.tar.gz && \
+        sudo mkdir -p /usr/lib/jvm && sudo tar xzf /tmp/jdk11.tar.gz -C /usr/lib/jvm && \
+        sudo ln -sf /usr/lib/jvm/jdk-11.0.26+4 /usr/lib/jvm/java-11-openjdk && \
+        sudo alternatives --install /usr/bin/java java /usr/lib/jvm/java-11-openjdk/bin/java 2 && \
+        rm /tmp/jdk11.tar.gz; \
+      else \
+        sudo dnf install -y --allowerasing --nobest \
+          java-1.8.0-openjdk-devel \
+          java-11-openjdk-devel; \
+      fi && \
       sudo dnf clean all; \
     fi
 
