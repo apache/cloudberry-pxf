@@ -30,6 +30,8 @@ import org.apache.cloudberry.pxf.api.utilities.Utilities;
 import org.apache.cloudberry.pxf.plugins.jdbc.utils.ConnectionManager;
 import org.apache.cloudberry.pxf.plugins.jdbc.utils.DbProduct;
 import org.apache.cloudberry.pxf.plugins.jdbc.utils.HiveJdbcUtils;
+import org.postgresql.Driver;
+import org.postgresql.PGProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,6 +99,7 @@ public class JdbcBasePlugin extends BasePlugin {
     private static final String HIVE_DEFAULT_DRIVER_CLASS = "org.apache.hive.jdbc.HiveDriver";
     private static final String MYSQL_DRIVER_PREFIX = "com.mysql.";
     private static final String JDBC_DATE_WIDE_RANGE = "jdbc.date.wideRange";
+    private static final String POSTGRESQL_URL_PREFIX = "jdbc:postgresql://";
 
     private enum TransactionIsolation {
         READ_UNCOMMITTED(1),
@@ -315,11 +318,9 @@ public class JdbcBasePlugin extends BasePlugin {
                 jdbcUser = context.getUser();
             }
         }
-        if (jdbcUser != null) {
+        if (jdbcUser != null && !jdbcUser.isEmpty()) {
             LOG.debug("Effective JDBC user {}", jdbcUser);
             connectionConfiguration.setProperty("user", jdbcUser);
-        } else {
-            LOG.debug("JDBC user has not been set");
         }
 
         if (LOG.isDebugEnabled()) {
@@ -332,13 +333,15 @@ public class JdbcBasePlugin extends BasePlugin {
 
         // This must be the last parameter parsed, as we output connectionConfiguration earlier
         // Optional parameter. By default, corresponding connectionConfiguration property is not set
+        String jdbcPassword = configuration.get(JDBC_PASSWORD_PROPERTY_NAME);
         if (jdbcUser != null) {
-            String jdbcPassword = configuration.get(JDBC_PASSWORD_PROPERTY_NAME);
-            if (jdbcPassword != null) {
+            if (jdbcPassword != null && !jdbcPassword.isEmpty()) {
                 LOG.debug("Connection password: {}", ConnectionManager.maskPassword(jdbcPassword));
                 connectionConfiguration.setProperty("password", jdbcPassword);
             }
         }
+
+        assertJDBC(jdbcUrl, jdbcUser, jdbcPassword);
 
         // connection pool is optional, enabled by default
         isConnectionPoolUsed = configuration.getBoolean(JDBC_CONNECTION_POOL_ENABLED_PROPERTY_NAME, true);
@@ -400,6 +403,38 @@ public class JdbcBasePlugin extends BasePlugin {
 
         return connection;
     }
+
+    /**
+     * Asserts whether all required JDBC URL params/properties set, throws IllegalArgumentException otherwise
+     *
+     * @param jdbcUrl   connection string
+     * @param username  username from properties (outside of connection string)
+     * @param password  password from properties (outside of connection string)
+     */
+    private void assertJDBC(String jdbcUrl, String username, String password) {
+        if (!StringUtils.startsWith(jdbcUrl, POSTGRESQL_URL_PREFIX)) {
+            return;
+        }
+
+        // For PostgreSQL we enforce users to specify username and password
+        Properties urlProperties = Driver.parseURL(jdbcUrl, null);
+        if (urlProperties == null) {
+            throw new IllegalArgumentException("Invalid PostgreSQL JDBC URL format provided: " + jdbcUrl);
+        }
+
+        String urlUsername = urlProperties.getProperty(PGProperty.USER.getName());
+        if (StringUtils.isEmpty(username) && StringUtils.isEmpty(urlUsername)) {
+            LOG.debug("PostgreSQL JDBC user has not been set");
+            throw new IllegalArgumentException("PostgreSQL JDBC user has not been set");
+        }
+
+        String urlPassword = urlProperties.getProperty(PGProperty.PASSWORD.getName());
+        if (StringUtils.isEmpty(password) && StringUtils.isEmpty(urlPassword)) {
+            throw new IllegalArgumentException("PostgreSQL JDBC password has not been set");
+        }
+
+        // Ok. It is fine to work with this postgres datasource
+}
 
     /**
      * Prepare a JDBC PreparedStatement

@@ -123,6 +123,8 @@ public class JdbcBasePluginTestInitialize {
         Configuration configuration = new Configuration();
         configuration.set("jdbc.driver", JDBC_DRIVER);
         configuration.set("jdbc.url", JDBC_URL);
+        configuration.set("jdbc.user", "test-user");
+        configuration.set("jdbc.password", "test-password");
         return configuration;
     }
 
@@ -430,6 +432,8 @@ public class JdbcBasePluginTestInitialize {
         Properties expected = new Properties();
         expected.setProperty(CONFIG_PROPERTIES_KEYS[0], "v1");
         expected.setProperty(CONFIG_PROPERTIES_KEYS[1], "v2");
+        expected.setProperty("user", "test-user");
+        expected.setProperty("password", "test-password");
         assertEntrySetEquals(expected.entrySet(), ((Properties) getInternalState(plugin, "connectionConfiguration")).entrySet());
     }
 
@@ -449,6 +453,7 @@ public class JdbcBasePluginTestInitialize {
         // Checks
         Properties expected = new Properties();
         expected.setProperty("user", "user");
+        expected.setProperty("password", "test-password");
         assertEntrySetEquals(expected.entrySet(), ((Properties) getInternalState(plugin, "connectionConfiguration")).entrySet());
     }
 
@@ -469,6 +474,7 @@ public class JdbcBasePluginTestInitialize {
         // Checks
         Properties expected = new Properties();
         expected.setProperty("user", "proxy");
+        expected.setProperty("password", "test-password");
         assertEntrySetEquals(expected.entrySet(), ((Properties) getInternalState(plugin, "connectionConfiguration")).entrySet());
     }
 
@@ -490,6 +496,7 @@ public class JdbcBasePluginTestInitialize {
         // Checks
         Properties expected = new Properties();
         expected.setProperty("user", "proxy");
+        expected.setProperty("password", "test-password");
         assertEntrySetEquals(expected.entrySet(), ((Properties) getInternalState(plugin, "connectionConfiguration")).entrySet());
     }
 
@@ -511,6 +518,7 @@ public class JdbcBasePluginTestInitialize {
         // Checks
         Properties expected = new Properties();
         expected.setProperty("user", "user");
+        expected.setProperty("password", "test-password");
         assertEntrySetEquals(expected.entrySet(), ((Properties) getInternalState(plugin, "connectionConfiguration")).entrySet());
     }
 
@@ -531,6 +539,7 @@ public class JdbcBasePluginTestInitialize {
         // Checks
         Properties expected = new Properties();
         expected.setProperty("user", "user");
+        expected.setProperty("password", "test-password");
         assertEntrySetEquals(expected.entrySet(), ((Properties) getInternalState(plugin, "connectionConfiguration")).entrySet());
     }
 
@@ -571,6 +580,8 @@ public class JdbcBasePluginTestInitialize {
 
         // Checks
         Properties expected = new Properties();
+        expected.setProperty("user", "test-user");
+        expected.setProperty("password", "password");
         assertEntrySetEquals(expected.entrySet(), ((Properties) getInternalState(plugin, "connectionConfiguration")).entrySet());
     }
 
