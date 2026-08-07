@@ -52,7 +52,7 @@ public class PxfFdwExtensionTest extends AbstractTestcontainersTest {
 
     @Test(groups = {"testcontainers", "pxf-fdw-extension"})
     public void testPxfCreateExtension() throws Exception {
-        extensionDb.runQuery("CREATE EXTENSION pxf_fdw VERSION '2.0'");
+        extensionDb.runQuery("CREATE EXTENSION pxf_fdw VERSION '2.1'");
         regress.runSqlTest("features/fdw_extension_tests/create_extension");
     }
 
@@ -67,13 +67,13 @@ public class PxfFdwExtensionTest extends AbstractTestcontainersTest {
         extensionDb.runQuery("CREATE EXTENSION pxf_fdw VERSION '1.0'");
         regress.runSqlTest("features/fdw_extension_tests/upgrade/step_1_create_extension_with_older_pxf_version");
 
-        extensionDb.runQuery("ALTER EXTENSION pxf_fdw UPDATE TO '2.0'");
+        extensionDb.runQuery("ALTER EXTENSION pxf_fdw UPDATE TO '2.1'");
         regress.runSqlTest("features/fdw_extension_tests/upgrade/step_2_after_alter_extension");
     }
 
     @Test(groups = {"testcontainers", "pxf-fdw-extension"})
     public void testPxfDowngradeThenUpgradeAgain() throws Exception {
-        extensionDb.runQuery("CREATE EXTENSION pxf_fdw VERSION '2.0'");
+        extensionDb.runQuery("CREATE EXTENSION pxf_fdw VERSION '2.1'");
         regress.runSqlTest("features/fdw_extension_tests/downgrade_then_upgrade/step_1_check_extension");
 
         extensionDb.runQuery("ALTER EXTENSION pxf_fdw UPDATE TO '1.0'");
@@ -81,5 +81,23 @@ public class PxfFdwExtensionTest extends AbstractTestcontainersTest {
 
         extensionDb.runQuery("ALTER EXTENSION pxf_fdw UPDATE TO '2.0'");
         regress.runSqlTest("features/fdw_extension_tests/downgrade_then_upgrade/step_3_after_alter_extension_upgrade");
+    }
+
+    @Test(groups = {"testcontainers", "pxf-fdw-extension"})
+    public void testPxfCreateExtension21() throws Exception {
+        extensionDb.runQuery("CREATE EXTENSION pxf_fdw VERSION '2.1'");
+        regress.runSqlTest("features/fdw_extension_tests_2_1/create_extension");
+    }
+
+    @Test(groups = {"testcontainers", "pxf-fdw-extension"})
+    public void testPxfUpgradeDowngrade21() throws Exception {
+        extensionDb.runQuery("CREATE EXTENSION pxf_fdw VERSION '2.0'");
+        regress.runSqlTest("features/fdw_extension_tests_2_1/upgrade_downgrade/step_1_create_2_0");
+
+        extensionDb.runQuery("ALTER EXTENSION pxf_fdw UPDATE TO '2.1'");
+        regress.runSqlTest("features/fdw_extension_tests_2_1/upgrade_downgrade/step_2_after_upgrade_2_1");
+
+        extensionDb.runQuery("ALTER EXTENSION pxf_fdw UPDATE TO '2.0'");
+        regress.runSqlTest("features/fdw_extension_tests_2_1/upgrade_downgrade/step_3_after_downgrade_2_0");
     }
 }
