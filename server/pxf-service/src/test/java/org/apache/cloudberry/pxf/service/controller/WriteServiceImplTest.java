@@ -4,6 +4,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.cloudberry.pxf.api.model.ConfigurationFactory;
 import org.apache.cloudberry.pxf.api.model.RequestContext;
 import org.apache.cloudberry.pxf.service.MetricsReporter;
+import org.apache.cloudberry.pxf.service.activity.ActiveRequestRegistry;
 import org.apache.cloudberry.pxf.service.bridge.Bridge;
 import org.apache.cloudberry.pxf.service.bridge.BridgeFactory;
 import org.apache.cloudberry.pxf.service.security.SecurityService;
@@ -61,7 +62,7 @@ public class WriteServiceImplTest {
         });
         when(mockBridgeFactory.getBridge(mockContext)).thenReturn(mockBridge);
 
-        writeService = new WriteServiceImpl(mockConfigurationFactory, mockBridgeFactory, mockSecurityService, mockMetricReporter);
+        writeService = new WriteServiceImpl(mockConfigurationFactory, mockBridgeFactory, mockSecurityService, mockMetricReporter, new ActiveRequestRegistry());
     }
 
     @Test

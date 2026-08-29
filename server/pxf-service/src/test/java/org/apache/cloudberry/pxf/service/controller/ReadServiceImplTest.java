@@ -8,6 +8,7 @@ import org.apache.cloudberry.pxf.api.model.Fragment;
 import org.apache.cloudberry.pxf.api.model.RequestContext;
 import org.apache.cloudberry.pxf.service.FragmenterService;
 import org.apache.cloudberry.pxf.service.MetricsReporter;
+import org.apache.cloudberry.pxf.service.activity.ActiveRequestRegistry;
 import org.apache.cloudberry.pxf.service.bridge.Bridge;
 import org.apache.cloudberry.pxf.service.bridge.BridgeFactory;
 import org.apache.cloudberry.pxf.service.security.SecurityService;
@@ -75,7 +76,7 @@ public class ReadServiceImplTest {
             return result;
         });
 
-        readService = new ReadServiceImpl(mockConfigurationFactory, mockBridgeFactory, mockSecurityService, mockFragmenterService, mockMetricReporter);
+        readService = new ReadServiceImpl(mockConfigurationFactory, mockBridgeFactory, mockSecurityService, mockFragmenterService, mockMetricReporter, new ActiveRequestRegistry());
     }
 
     @Test

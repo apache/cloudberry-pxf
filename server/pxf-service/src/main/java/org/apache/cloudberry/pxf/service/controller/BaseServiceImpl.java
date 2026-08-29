@@ -6,6 +6,7 @@ import org.apache.cloudberry.pxf.api.model.ConfigurationFactory;
 import org.apache.cloudberry.pxf.api.model.RequestContext;
 import org.apache.cloudberry.pxf.api.utilities.Utilities;
 import org.apache.cloudberry.pxf.service.MetricsReporter;
+import org.apache.cloudberry.pxf.service.activity.ActiveRequestRegistry;
 import org.apache.cloudberry.pxf.service.bridge.Bridge;
 import org.apache.cloudberry.pxf.service.bridge.BridgeFactory;
 import org.apache.cloudberry.pxf.service.security.SecurityService;
@@ -26,26 +27,30 @@ public abstract class BaseServiceImpl<T> extends PxfErrorReporter<T> {
     private final ConfigurationFactory configurationFactory;
     private final BridgeFactory bridgeFactory;
     private final SecurityService securityService;
+    private final ActiveRequestRegistry activeRequestRegistry;
 
     /**
      * Creates a new instance of the service with auto-wired dependencies.
      *
-     * @param serviceName          name of the service
-     * @param configurationFactory configuration factory
-     * @param bridgeFactory        bridge factory
-     * @param securityService      security service
-     * @param metricsReporter      metrics reporter service
+     * @param serviceName           name of the service
+     * @param configurationFactory  configuration factory
+     * @param bridgeFactory         bridge factory
+     * @param securityService       security service
+     * @param metricsReporter       metrics reporter service
+     * @param activeRequestRegistry registry of in-flight requests
      */
     protected BaseServiceImpl(String serviceName,
                               ConfigurationFactory configurationFactory,
                               BridgeFactory bridgeFactory,
                               SecurityService securityService,
-                              MetricsReporter metricsReporter) {
+                              MetricsReporter metricsReporter,
+                              ActiveRequestRegistry activeRequestRegistry) {
         this.serviceName = serviceName;
         this.configurationFactory = configurationFactory;
         this.bridgeFactory = bridgeFactory;
         this.securityService = securityService;
         this.metricsReporter = metricsReporter;
+        this.activeRequestRegistry = activeRequestRegistry;
     }
 
     /**
@@ -70,8 +75,19 @@ public abstract class BaseServiceImpl<T> extends PxfErrorReporter<T> {
 
         Instant startTime = Instant.now();
 
-        // execute processing action with a proper identity
-        OperationResult result = securityService.doAs(context, action);
+        // clear any interrupt status left on this pooled worker thread by a
+        // previous request that was targeted by pxf_interrupt_backend, so it
+        // cannot leak into the request we are about to process
+        Thread.interrupted();
+
+        activeRequestRegistry.register(context);
+        OperationResult result;
+        try {
+            // execute processing action with a proper identity
+            result = securityService.doAs(context, action);
+        } finally {
+            activeRequestRegistry.unregister();
+        }
 
         // obtain results after executing the action
         OperationStats stats = result.getStats();
@@ -114,5 +130,25 @@ public abstract class BaseServiceImpl<T> extends PxfErrorReporter<T> {
      */
     protected Bridge getBridge(RequestContext context) {
         return bridgeFactory.getBridge(context);
+    }
+
+    /**
+     * Records the bridge the current worker thread is iterating over so that a
+     * concurrent `pxf_cancel_backend` can end it. Pass `null` to
+     * detach once the bridge is closed.
+     *
+     * @param bridge the bridge in use, or {@code null} to detach
+     */
+    protected void attachBridge(Bridge bridge) {
+        activeRequestRegistry.attachBridge(bridge);
+    }
+
+    /**
+     * @return whether the request currently processed by this thread has been
+     * asked to cancel via `pxf_cancel_backend`; the read/write loops poll
+     * this so they stop between fragments/records.
+     */
+    protected boolean isCancelled() {
+        return activeRequestRegistry.isCurrentCancelled();
     }
 }

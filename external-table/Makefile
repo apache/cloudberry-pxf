@@ -1,7 +1,7 @@
 EXTENSION   = pxf
-DATA        = pxf--2.1.sql pxf--2.0--2.1.sql pxf--2.1--2.0.sql pxf--2.0.sql pxf--1.0--2.0.sql pxf--1.0.sql
+DATA        = pxf--2.2.sql pxf--2.1--2.2.sql pxf--2.2--2.1.sql pxf--2.1.sql pxf--2.0--2.1.sql pxf--2.1--2.0.sql pxf--2.0.sql pxf--1.0--2.0.sql pxf--1.0.sql
 MODULE_big  = pxf
-OBJS        = src/pxfprotocol.o src/pxfbridge.o src/pxfuriparser.o src/libchurl.o src/pxfutils.o src/pxfheaders.o src/gpdbwritableformatter.o src/pxfdelimited_formatter.o src/pxffilters.o
+OBJS        = src/pxfprotocol.o src/pxfbridge.o src/pxfuriparser.o src/libchurl.o src/pxfutils.o src/pxfheaders.o src/gpdbwritableformatter.o src/pxfdelimited_formatter.o src/pxffilters.o src/pxf_stat_activity.o src/pxf_cancel_activity.o
 REGRESS     = setup pxf pxfinvalid
 SHLIB_LINK += -lcurl
 
