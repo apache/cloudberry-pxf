@@ -7,9 +7,9 @@ import org.greenplum.pxf.api.GreenplumDateTime;
 import org.greenplum.pxf.api.io.DataType;
 
 import java.math.BigDecimal;
-import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -21,6 +21,7 @@ public interface IcebergConverters {
     IcebergConverter<Object> unsupportedTypeConverter = new SimpleIcebergConverter<>(Types.UnknownType.get(), DataType.UNSUPPORTED_TYPE, Objects::toString);
 
     List<IcebergConverter<?>> converters = List.of(
+            new SimpleIcebergConverter<>(Types.UUIDType.get(), DataType.UUID, UUID::fromString),
             // integer converter
             new SimpleIcebergConverter<>(Types.IntegerType.get(), DataType.INTEGER, Integer::parseInt),
             // long converter
@@ -28,6 +29,7 @@ public interface IcebergConverters {
             // boolean converter
             new SimpleIcebergConverter<>(Types.BooleanType.get(), DataType.BOOLEAN, Boolean::parseBoolean),
 
+            new SimpleIcebergConverter<>(Types.FloatType.get(), DataType.REAL, Float::valueOf),
             new SimpleIcebergConverter<>(Types.DoubleType.get(), DataType.FLOAT8, Double::parseDouble),
             new SimpleIcebergConverter<>(Types.FloatType.get(), DataType.FLOAT8, Float::valueOf,
                     val -> Double.parseDouble(val.toString())
@@ -38,7 +40,7 @@ public interface IcebergConverters {
             //  date converter
             new SimpleIcebergConverter<>(Types.DateType.get(), DataType.DATE, LocalDate::parse),
             //  time converter
-            new SimpleIcebergConverter<>(Types.TimeType.get(), DataType.TIME, Time::valueOf),
+            new SimpleIcebergConverter<>(Types.TimeType.get(), DataType.TIME, LocalTime::parse),
             //  timestamp converter
             new SimpleIcebergConverter<>(Types.TimestampType.withoutZone(), DataType.TIMESTAMP, val ->
                     LocalDateTime.parse(val, GreenplumDateTime.DATETIME_FORMATTER)
