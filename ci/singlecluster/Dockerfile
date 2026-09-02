@@ -20,7 +20,12 @@
 ARG BASE_IMAGE=apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest
 FROM ${BASE_IMAGE}
 
-# Install Java 8 & 11: auto-detect OS package manager
+# Install Java 8 & 11: auto-detect OS package manager.
+# Hadoop 3.1.2 runs on JDK 8 (JAVA_HADOOP) and the PXF server builds with
+# JDK 11 (JAVA_BUILD), so both are needed on every distro. RHEL/Rocky 10
+# dropped OpenJDK 8 and 11 from its repos (only 21/25 remain), so take them
+# from Adoptium there and expose them under the same /usr/lib/jvm names the
+# CI scripts look for (see ci/docker/pxf-cbdb-dev/common/script/utils.sh).
 RUN if command -v apt-get >/dev/null 2>&1; then \
       export DEBIAN_FRONTEND=noninteractive && \
       sudo apt-get update && \
@@ -29,10 +34,27 @@ RUN if command -v apt-get >/dev/null 2>&1; then \
         openjdk-8-jdk-headless \
         openjdk-11-jdk-headless; \
     elif command -v dnf >/dev/null 2>&1; then \
-      sudo dnf install -y --allowerasing --nobest \
-        curl ca-certificates \
-        java-1.8.0-openjdk-devel \
-        java-11-openjdk-devel && \
+      sudo dnf install -y --allowerasing --nobest curl ca-certificates && \
+      . /etc/os-release && \
+      if [ "${VERSION_ID%%.*}" -ge 10 ]; then \
+        printf '[adoptium]\nname=Adoptium\nbaseurl=https://packages.adoptium.net/artifactory/rpm/rhel/%s/%s\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.adoptium.net/artifactory/api/gpg/key/public\n' \
+          "${VERSION_ID%%.*}" "$(uname -m)" \
+          | sudo tee /etc/yum.repos.d/adoptium.repo >/dev/null && \
+        sudo dnf install -y --allowerasing --nobest temurin-8-jdk temurin-11-jdk && \
+        for v in 8 11; do \
+          javac_path=$(rpm -ql "temurin-${v}-jdk" | grep -m1 '/bin/javac$') && \
+          [ -n "$javac_path" ] || exit 1; \
+          jdk_home=$(dirname "$(dirname "$javac_path")"); \
+          if [ "$v" = 8 ]; then link=java-1.8.0-openjdk; else link="java-${v}-openjdk"; fi; \
+          sudo ln -sfn "$jdk_home" "/usr/lib/jvm/${link}"; \
+        done && \
+        test -x /usr/lib/jvm/java-1.8.0-openjdk/bin/javac && \
+        test -x /usr/lib/jvm/java-11-openjdk/bin/javac; \
+      else \
+        sudo dnf install -y --allowerasing --nobest \
+          java-1.8.0-openjdk-devel \
+          java-11-openjdk-devel; \
+      fi && \
       sudo dnf clean all; \
     fi
 

@@ -20,7 +20,10 @@
 ARG BASE_IMAGE=apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest
 FROM ${BASE_IMAGE}
 
-# Install Java 11: auto-detect OS package manager
+# Install Java 11: auto-detect OS package manager.
+# RHEL/Rocky 10 dropped OpenJDK 11 from its repos (only 21/25 remain), so take
+# it from Adoptium there and expose it as /usr/lib/jvm/java-11-openjdk, which
+# is the path script/{pxf-env,entrypoint,build_pxf}.sh resolve JAVA_BUILD to.
 RUN if command -v apt-get >/dev/null 2>&1; then \
       export DEBIAN_FRONTEND=noninteractive && \
       sudo apt-get update && \
@@ -30,8 +33,21 @@ RUN if command -v apt-get >/dev/null 2>&1; then \
         openjdk-11-jdk-headless; \
     elif command -v dnf >/dev/null 2>&1; then \
       sudo dnf install -y --allowerasing --nobest \
-        curl ca-certificates wget maven unzip openssh-server iproute sudo glibc-langpack-en glibc-locale-source \
-        java-11-openjdk-devel && \
+        curl ca-certificates wget maven unzip openssh-server iproute sudo \
+        glibc-langpack-en glibc-locale-source && \
+      . /etc/os-release && \
+      if [ "${VERSION_ID%%.*}" -ge 10 ]; then \
+        printf '[adoptium]\nname=Adoptium\nbaseurl=https://packages.adoptium.net/artifactory/rpm/rhel/%s/%s\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.adoptium.net/artifactory/api/gpg/key/public\n' \
+          "${VERSION_ID%%.*}" "$(uname -m)" \
+          | sudo tee /etc/yum.repos.d/adoptium.repo >/dev/null && \
+        sudo dnf install -y --allowerasing --nobest temurin-11-jdk && \
+        javac_path=$(rpm -ql temurin-11-jdk | grep -m1 '/bin/javac$') && \
+        [ -n "$javac_path" ] && \
+        sudo ln -sfn "$(dirname "$(dirname "$javac_path")")" /usr/lib/jvm/java-11-openjdk && \
+        test -x /usr/lib/jvm/java-11-openjdk/bin/javac; \
+      else \
+        sudo dnf install -y --allowerasing --nobest java-11-openjdk-devel; \
+      fi && \
       sudo dnf clean all; \
     fi
 

@@ -78,11 +78,23 @@ setup_ssh() {
   sudo ssh-keygen -A
   sudo bash -c 'echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config'
   sudo mkdir -p /etc/ssh/sshd_config.d
-  sudo bash -c 'cat >/etc/ssh/sshd_config.d/pxf-automation.conf <<EOF
+  # OpenSSH 9.8+ (RHEL/Rocky 10 ships 9.9) removed DSA altogether. Naming ssh-dss
+  # there makes sshd reject the whole file with "Bad key types" and refuse to
+  # start, so only ask for the key types the local sshd still knows about.
+  local key_algs=ssh-rsa
+  if ssh -Q key 2>/dev/null | grep -qx ssh-dss; then
+    key_algs=ssh-rsa,ssh-dss
+  fi
+  log "sshd key types: ${key_algs}"
+  # Must sort before 40-redhat-crypto-policies.conf: sshd keeps the FIRST value
+  # it obtains for a keyword, so a drop-in read after the crypto-policy include
+  # is silently ignored. That is why Rocky 10 never actually offered ssh-rsa.
+  sudo rm -f /etc/ssh/sshd_config.d/pxf-automation.conf
+  sudo bash -c "cat >/etc/ssh/sshd_config.d/01-pxf-automation.conf <<EOF
 KexAlgorithms +diffie-hellman-group-exchange-sha1,diffie-hellman-group14-sha1,diffie-hellman-group1-sha1
-HostKeyAlgorithms +ssh-rsa,ssh-dss
-PubkeyAcceptedAlgorithms +ssh-rsa,ssh-dss
-EOF'
+HostKeyAlgorithms +${key_algs}
+PubkeyAcceptedAlgorithms +${key_algs}
+EOF"
   if [ "$OS_FAMILY" = "deb" ]; then
     sudo usermod -a -G sudo gpadmin
   else
@@ -105,7 +117,17 @@ EOF'
   # Ensure privilege separation user exists (required by Rocky 9 sshd)
   id sshd &>/dev/null || sudo useradd -r -d /var/empty/sshd -s /sbin/nologin sshd 2>/dev/null || true
   sudo mkdir -p /var/empty/sshd && sudo chmod 0755 /var/empty/sshd
-  sudo /usr/sbin/sshd -E /tmp/sshd.log || die "Failed to start sshd, check /tmp/sshd.log"
+  # Validate first: a rejected directive makes sshd exit without writing -E log,
+  # which otherwise leaves nothing to go on but "Failed to start sshd".
+  if ! sudo /usr/sbin/sshd -t 2>/tmp/sshd-config-test.log; then
+    log "ERROR sshd rejected its configuration:"
+    cat /tmp/sshd-config-test.log 2>/dev/null || true
+    die "invalid sshd configuration"
+  fi
+  sudo /usr/sbin/sshd -E /tmp/sshd.log || {
+    cat /tmp/sshd.log 2>/dev/null || true
+    die "Failed to start sshd, check /tmp/sshd.log"
+  }
   sleep 1
   if ! ss -tlnp | grep -q ':22 '; then
     log "ERROR: sshd is not listening on port 22"
