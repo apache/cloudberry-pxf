@@ -26,8 +26,16 @@ import java.nio.charset.StandardCharsets;
 import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -65,6 +73,7 @@ public class ReadServiceImplTest {
     private RequestContext mockContext;
 
     private ReadServiceImpl readService;
+    private ActiveRequestRegistry activeRequestRegistry;
 
     @BeforeEach
     public void setup() throws Exception {
@@ -76,7 +85,8 @@ public class ReadServiceImplTest {
             return result;
         });
 
-        readService = new ReadServiceImpl(mockConfigurationFactory, mockBridgeFactory, mockSecurityService, mockFragmenterService, mockMetricReporter, new ActiveRequestRegistry());
+        activeRequestRegistry = new ActiveRequestRegistry();
+        readService = new ReadServiceImpl(mockConfigurationFactory, mockBridgeFactory, mockSecurityService, mockFragmenterService, mockMetricReporter, activeRequestRegistry);
     }
 
     @Test
@@ -254,6 +264,45 @@ public class ReadServiceImplTest {
         inOrder.verify(mockBridge1).endIteration();
         inOrder.verify(mockMetricReporter).reportTimer(same(MetricsReporter.PxfMetric.FRAGMENTS_SENT), any(Duration.class), same(mockContext), eq(true));
         inOrder.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void testCancelledLastFragmentIsReportedAsFailure() throws Exception {
+        when(mockMetricReporter.getReportFrequency()).thenReturn(1L);
+        when(mockFragmentList.size()).thenReturn(1);
+        when(mockFragmentList.get(0)).thenReturn(mockFragment1);
+        when(mockBridgeFactory.getBridge(mockContext)).thenReturn(mockBridge1);
+        when(mockBridge1.beginIteration()).thenReturn(true);
+        when(mockContext.getSegmentId()).thenReturn(0);
+        when(mockContext.getGpSessionId()).thenReturn(42);
+        when(mockContext.getDataSource()).thenReturn("test-resource");
+
+        CountDownLatch getNextStarted = new CountDownLatch(1);
+        CountDownLatch cancelBridge = new CountDownLatch(1);
+        when(mockBridge1.getNext()).thenAnswer(invocation -> {
+            getNextStarted.countDown();
+            assertTrue(cancelBridge.await(5, TimeUnit.SECONDS), "cancel did not end the bridge");
+            return null;
+        });
+        doAnswer(invocation -> {
+            cancelBridge.countDown();
+            return null;
+        }).when(mockBridge1).endIteration();
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<?> read = executor.submit(() -> readService.readData(mockContext, mockOutputStream));
+            assertTrue(getNextStarted.await(5, TimeUnit.SECONDS), "read did not reach getNext");
+            assertEquals(1, activeRequestRegistry.cancel(0, 42));
+
+            ExecutionException exception = assertThrows(
+                    ExecutionException.class,
+                    () -> read.get(5, TimeUnit.SECONDS));
+            assertTrue(exception.getCause() instanceof PxfRuntimeException);
+            assertTrue(exception.getCause().getMessage().contains("cancelled by pxf_cancel_backend"));
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     // helper for writing mock record to a mock output stream

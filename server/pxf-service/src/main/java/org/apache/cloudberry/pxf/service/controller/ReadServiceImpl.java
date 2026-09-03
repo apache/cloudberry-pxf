@@ -161,18 +161,20 @@ public class ReadServiceImpl extends BaseServiceImpl<OperationStats> implements 
             bridge = getBridge(context);
             // expose the bridge so pxf_cancel_backend can end it mid-read
             attachBridge(bridge);
+            throwIfCancelled(context);
             if (!bridge.beginIteration()) {
                 log.debug("Skipping streaming fragment {} of resource {}",
                         context.getFragmentIndex(), context.getDataSource());
             } else {
                 log.debug("Starting streaming fragment {} of resource {}",
                         context.getFragmentIndex(), context.getDataSource());
-                while ((record = bridge.getNext()) != null) {
+                while (!isCancelled() && (record = bridge.getNext()) != null) {
                     record.write(dos);
                     // fragment's current byte count is relative to the previous stream's byte count
                     fragmentStats.reportCompletedRecord(countingOutputStream.getCount() - previousStreamByteCount);
                 }
             }
+            throwIfCancelled(context);
             success = true;
         } finally {
             if (bridge != null) {
@@ -200,6 +202,14 @@ public class ReadServiceImpl extends BaseServiceImpl<OperationStats> implements 
             log.debug("Finished processing fragment {} of resource {} in {} ms, wrote {} records and {} bytes.",
                     context.getFragmentIndex(), context.getDataSource(), duration.toMillis(), fragmentStats.getRecordCount(), fragmentStats.getByteCount());
             metricsReporter.reportTimer(MetricsReporter.PxfMetric.FRAGMENTS_SENT, duration, context, success);
+        }
+    }
+
+    private void throwIfCancelled(RequestContext context) {
+        if (isCancelled()) {
+            throw new PxfRuntimeException(String.format(
+                    "Read of resource %s cancelled by pxf_cancel_backend",
+                    context.getDataSource()));
         }
     }
 
