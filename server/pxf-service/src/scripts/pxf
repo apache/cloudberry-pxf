@@ -130,7 +130,7 @@ function waitForSpringBoot() {
 
     # wait until spring boot is up:
     echoYellow 'Checking if PXF is up and running...'
-    until $curl --silent --connect-timeout 1 -I "http://localhost:$PXF_PORT" | grep 'PXF Server' > /dev/null; do
+    until $curl "${curl_opts[@]}" --silent --connect-timeout 1 -I "http://localhost:$PXF_PORT" | grep 'PXF Server' > /dev/null; do
         if (( ++attempts == max_attempts )); then
             echoRed 'ERROR: PXF is down - the application is not running'
             return 1
@@ -151,7 +151,7 @@ function waitForSpringBoot() {
 function checkWebapp() {
     waitForSpringBoot "$1" "$2" || return 1
 
-    curlResponse=$($curl -s "http://localhost:${PXF_PORT}/actuator/health")
+    curlResponse=$($curl "${curl_opts[@]}" -s "http://localhost:${PXF_PORT}/actuator/health")
 
     [[ $curlResponse == {\"status\":\"UP\"* ]] || fail "PXF is inaccessible. Check logs ($PXF_LOGDIR) for more information"
     return 0
@@ -187,6 +187,10 @@ function validate_system() {
     if ! curl=$(command -v curl); then
         fail 'curl is not installed, please install'
     fi
+    # PXF's actuator endpoints are always local to this host, so never route the
+    # probes through an HTTP proxy. Without this, an http_proxy set in the
+    # environment makes start/status/stop misreport a healthy PXF as down.
+    curl_opts=(--noproxy '*')
 }
 
 function printUsage() {
@@ -435,7 +439,7 @@ function doStop() {
     echoYellow "Stopping PXF [pid=$pid]..."
 
     # first try endpoint (assume it might be disabled)
-    if $curl --max-time 5 --silent -X POST "localhost:$PXF_PORT/actuator/shutdown" | grep "Shutting down, bye..." > /dev/null; then
+    if $curl "${curl_opts[@]}" --max-time 5 --silent -X POST "localhost:$PXF_PORT/actuator/shutdown" | grep "Shutting down, bye..." > /dev/null; then
         for i in $(seq 1 $STOP_WAIT_TIME); do
             if isRunning "$pid"; then
                 sleep 1
