@@ -69,11 +69,16 @@ To build PXF, you must have:
     source /usr/local/cloudberry-db/cloudberry-env.sh # For Cloudberry 2.1+
     ```
 
-3. JDK 1.8 or JDK 11 to compile/run
+3. A full JDK -- 1.8, 11, 17, or 21 -- to compile/run. A JRE is not enough, as the
+   server module needs `javac`.
+
+    > [!NOTE]
+    > Support for JDK 1.8 will be removed in PXF 3.0. Use JDK 11 or later for new setups.
 
     Export your `JAVA_HOME`:
     ```
-    export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
+    export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64  # Debian/Ubuntu
+    export JAVA_HOME=/usr/lib/jvm/java-11-openjdk        # RHEL/Rocky
     ```
 
 4. Go (1.25 or later)
@@ -95,6 +100,8 @@ To build PXF, you must have:
 ### Build PXF
 
 PXF uses Makefiles to build its components. PXF server component uses Gradle that is wrapped into the Makefile for convenience.
+
+If the build fails, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md#build-issues).
 
 > [!NOTE]
 > To comply with Apache Software Foundation release guidelines, `gradle-wrapper.jar` is not included in the source distribution. It will be downloaded automatically during the initial build. Please ensure you have an active and stable internet connection.
@@ -163,7 +170,7 @@ We provide a Docker-based development environment that includes Cloudberry, Hado
 
 - Start IntelliJ. Click "Open" and select the directory to which you cloned the `pxf` repo.
 - Select `File > Project Structure`.
-- Make sure you have a JDK (version 1.8) selected.
+- Make sure you have a JDK selected (1.8, 11, 17, or 21). CI builds with JDK 11 by default.
 - In the `Project Settings > Modules` section, select `Import Module`, pick the `pxf/server` directory and import as a Gradle module. You may see an error saying that there's
 no JDK set for Gradle. Just cancel and retry. It goes away the second time.
 - Import a second module, giving the `pxf/automation` directory, select "Import module from external model", pick `Maven` then click Finish.

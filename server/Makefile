@@ -27,8 +27,31 @@ PXF_API_VERSION ?= $(shell cat $(PXF_ROOT_DIR)/api_version)
 
 PXF_GRADLE_PROPERTIES = -Pversion=$(PXF_VERSION) -PapiVersion=$(PXF_API_VERSION)
 
+# Gradle can start on a JRE, but compiling PXF needs a JDK. Detect a JRE-only
+# installation here so the build fails with an actionable message instead of
+# Gradle's "does not provide the required capabilities: [JAVA_COMPILER]".
+JAVAC := $(if $(JAVA_HOME),$(JAVA_HOME)/bin/javac,$(shell command -v javac 2>/dev/null))
+
+.PHONY: check-jdk
+check-jdk:
+	@if [ ! -x "$(JAVAC)" ]; then \
+		echo "ERROR: no Java compiler (javac) found -- a JDK is required to build PXF, a JRE is not enough."; \
+		if [ -n "$(JAVA_HOME)" ]; then \
+			echo "       JAVA_HOME=$(JAVA_HOME) has no bin/javac, so it points at a JRE."; \
+		else \
+			echo "       JAVA_HOME is not set and javac is not on PATH."; \
+		fi; \
+		echo "       Install a JDK and point JAVA_HOME at it, for example:"; \
+		echo "         Debian/Ubuntu: sudo apt-get install -y openjdk-11-jdk"; \
+		echo "         RHEL/Rocky:    sudo dnf install -y java-11-openjdk-devel"; \
+		echo "         export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64"; \
+		echo "       If a build already failed here, also run './gradlew --stop'."; \
+		echo "       See TROUBLESHOOTING.md for details."; \
+		exit 2; \
+	fi
+
 .PHONY: prepare-gradle-wrapper
-prepare-gradle-wrapper:
+prepare-gradle-wrapper: check-jdk
 	@APP_HOME="$(CURDIR)" bash ./gradlew-install.sh
 
 help:
