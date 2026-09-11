@@ -41,7 +41,7 @@ jobs:
         working-directory: ./server
         run: make prepare-gradle-wrapper
       - name: Generate and submit dependency graph
-        uses: gradle/actions/dependency-submission@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e  # v6.1.0
+        uses: gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb  # v6.3.0
         with:
           build-root-directory: server
           artifact-retention-days: 5
