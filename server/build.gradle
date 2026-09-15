@@ -110,7 +110,6 @@ configure(javaProjects) {
             dependency("org.datanucleus:datanucleus-api-jdo:4.2.4")
             dependency("org.datanucleus:datanucleus-core:4.1.17")
             dependency("org.jodd:jodd-core:3.5.2")
-            dependency("org.json:json:20090211")
             dependency("org.mortbay.jetty:jetty-util:6.1.26")
             dependency("org.objenesis:objenesis:2.1")
 

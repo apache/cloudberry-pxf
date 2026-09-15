@@ -64,9 +64,6 @@ dependencies {
     // transitive dependency for reading Hive tables with SerDe 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
     implementation("net.sf.opencsv:opencsv")                         { transitive = false }
 
-    // transitive dependency required by MapR
-    implementation("org.json:json:20090211")                         { transitive = false }
-
     /*******************************
      * Test Dependencies
      *******************************/
