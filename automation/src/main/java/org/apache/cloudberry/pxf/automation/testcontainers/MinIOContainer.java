@@ -35,7 +35,7 @@ import org.testcontainers.utility.DockerImageName;
  */
 public class MinIOContainer extends GenericContainer<MinIOContainer> {
 
-    private static final String DEFAULT_IMAGE = "minio/minio:RELEASE.2024-11-07T00-52-20Z";
+    private static final String DEFAULT_IMAGE = "quay.io/minio/minio:RELEASE.2024-11-07T00-52-20Z";
     private static final String NETWORK_ALIAS = "minio";
 
     public static final int API_PORT = 9000;
