@@ -266,7 +266,7 @@ func runTest(test string) {
 // Check the actual result file for the given test against the expected results
 //
 // Returns true if different (failure), false if they match.
-// In the true case, the diff is appended to the diffs file.
+// In the true case, the diff is logged and appended to the diffs file.
 func resultsDiffer(resultsFile string, expectFile string) bool {
 	diffOpts := baseDiffOpts
 	if initFile != "" {
@@ -294,6 +294,10 @@ func resultsDiffer(resultsFile string, expectFile string) bool {
 	// exit status of diff is 1 if different, 2 if trouble
 	if exiterr.ExitCode() > 1 {
 		logger.Fatalf("diff command failed (%d): %s", exiterr.ExitCode(), exiterr.Error())
+	}
+
+	if len(diffOutput) > 0 {
+		logger.Printf("differences for %s:\n%s", resultsFile, diffOutput)
 	}
 
 	diffResults := strings.Replace(resultsFile, ".out", ".diff", 1)

@@ -146,7 +146,7 @@ Components:
   fdw              Test PXF FDW
   external-table   Test PXF External Table
   server           Test PXF Server
-  automation       Test PXF Automation (smoke tests)
+  automation       Test PXF Automation
   all              Run all tests (default)
 
 Examples:

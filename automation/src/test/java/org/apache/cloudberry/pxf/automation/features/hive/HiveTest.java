@@ -1,5 +1,7 @@
 package org.apache.cloudberry.pxf.automation.features.hive;
 
+import annotations.WorksWithFDW;
+import annotations.SkipForFDW;
 import jsystem.framework.system.SystemManagerImpl;
 import org.apache.cloudberry.pxf.automation.components.hive.Hive;
 import org.apache.cloudberry.pxf.automation.enums.EnumPxfDefaultProfiles;
@@ -20,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@WorksWithFDW
 public class HiveTest extends HiveBaseTest {
 
     private static final String HIVE_PARTITIONED_SKEWED_TABLE = "hive_partitioned_skewed_table";
@@ -171,6 +174,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW does not parse the custom Hive delimiter (missing data for column t2).
     public void hiveTextTableCustomDelimiter() throws Exception {
 
         HiveTable hiveTable = new HiveTable(HIVE_TEXT_TABLE + "_custom_delimiter", HIVE_RC_COLS);
@@ -225,6 +229,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW returns extra fields when reading a subset of the Hive schema.
     public void columnSubsetOfHiveSchema() throws Exception {
 
         createExternalTable(PXF_HIVE_SMALL_DATA_TABLE,
@@ -240,6 +245,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW returns extra fields when reading a subset of the partitioned Hive schema.
     public void columnSubsetOfPartitionedHiveSchema() throws Exception {
 
         preparePartitionedData();
@@ -283,6 +289,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW binary reads fail with an invalid UTF-8 byte sequence.
     public void hiveBinaryData() throws Exception {
 
         prepareBinaryData();
@@ -313,6 +320,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW automation requires a profile; this test sets fragmenter/accessor/resolver directly.
     public void storeAsRc() throws Exception {
 
         prepareRCData();
@@ -407,6 +415,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb"})
+    @SkipForFDW // FDW error context differs from the external-table expected output.
     public void notExistingHiveTable() throws Exception {
 
         HiveTable hiveTable = new HiveTable("no_such_hive_table", null);
@@ -481,6 +490,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW automation requires a profile; this test sets fragmenter/accessor/resolver directly.
     public void hivePartitionedPPDTableCustomFilters() throws Exception {
 
         // Hive talbe with partition columns s2, n1.
@@ -541,6 +551,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW parses the Hive NULL marker as an integer value.
     public void hivePartitionedTableUnionAll() throws Exception {
 
         preparePartitionedData();
@@ -593,6 +604,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW reports a different type-mismatch error than the external-table expected output.
     public void columnDataTypeMisMatch() throws Exception {
 
         /* Here t1 column data type is passed as integer where as expected as
@@ -629,6 +641,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW error context differs from the external-table expected output.
     public void columnNameMismatch() throws Exception {
 
         String[] nonMatchingColumnNames = PXF_HIVE_SMALLDATA_FMT_COLS.clone();
@@ -671,6 +684,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW automation requires a profile; this test sets fragmenter/accessor/resolver directly.
     public void partitionFilterPushDown() throws Exception {
 
         // Create Hive table with partitions
@@ -743,6 +757,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW automation requires a profile; this test sets fragmenter/accessor/resolver directly.
     public void invalidFilterPushDown() throws Exception {
 
         // Create Hive table with partitions
@@ -791,6 +806,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW type-conversion error does not match the external-table message assertion.
     public void negativeCollectionTypes() throws Exception {
 
         HiveTable hiveTable = new HiveTable(HIVE_COLLECTIONS_TABLE,
@@ -971,6 +987,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW fails to parse the Hive text rows (missing data for column t2).
     public void aggregateQueries() throws Exception {
 
         // hive table with nulls
@@ -991,6 +1008,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW fails to parse the Hive text rows (missing data for column t2).
     public void hiveTableWithSkipHeader() throws Exception {
         List<List<String>> tableProperties = new ArrayList<>();
         tableProperties.add(Arrays.asList("skip.header.line.count", "3"));
@@ -1032,6 +1050,7 @@ public class HiveTest extends HiveBaseTest {
      * @throws Exception if test fails to run
      */
     @Test(groups = {"hive", "features", "gpdb", "security"})
+    @SkipForFDW // FDW nested-struct reads fail with extra data after the last expected column.
     public void hiveNestedStruct() throws Exception {
         // create Hive readable table with data stored as PARQUET
         hiveNestedStructTable = new HiveTable(HIVE_NESTED_STRUCT_TABLE, HIVE_NESTED_STRUCT_COLS);

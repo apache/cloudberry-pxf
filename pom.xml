@@ -341,10 +341,8 @@
             <exclude>automation/pom.xml</exclude>
             <exclude>automation/README.md</exclude>
             <exclude>automation/README.Linux.md</exclude>
-            <exclude>automation/sqlrepo/smoke/small_data/expected/**</exclude>
-            <exclude>automation/sqlrepo/smoke/small_data/sql/**</exclude>
-            <exclude>automation/sqlrepo/smoke/multi_block/expected/**</exclude>
-            <exclude>automation/sqlrepo/smoke/multi_block/sql/**</exclude>
+            <exclude>automation/sqlrepo/features/reader/multi_block/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/reader/multi_block/sql/**</exclude>
             <exclude>automation/sqlrepo/proxy/small_data/expected/**</exclude>
             <exclude>automation/sqlrepo/proxy/small_data/sql/**</exclude>
             <exclude>automation/sqlrepo/proxy/hive_small_data/expected/**</exclude>
@@ -1248,7 +1246,6 @@
             <exclude>automation/src/test/resources/data/parquet/invalid_parquet_list.schema</exclude>
             <exclude>automation/src/test/resources/data/parquet/generate_parquet_timestamp_list.bash</exclude>
             <exclude>automation/src/test/resources/data/parquet/generate_precision_numeric_parquet.bash</exclude>
-            <exclude>automation/src/test/java/org/apache/cloudberry/pxf/automation/smoke/**</exclude>
             <exclude>automation/src/test/java/org/apache/cloudberry/pxf/automation/proxy/**</exclude>
             <exclude>automation/src/test/java/org/apache/cloudberry/pxf/automation/BaseFunctionality.java</exclude>
             <exclude>automation/src/test/java/org/apache/cloudberry/pxf/automation/features/**</exclude>
@@ -1283,13 +1280,6 @@
             <exclude>fdw/pxf_deparse.c</exclude>
             <exclude>fdw/pxf_fdw.c</exclude>
             <exclude>fdw/sql/**</exclude>
-
-            <exclude>regression/init_file</exclude>
-            <exclude>regression/Makefile</exclude>
-            <exclude>regression/schedules/**</exclude>
-            <exclude>regression/README.md</exclude>
-            <exclude>regression/scripts/**</exclude>
-            <exclude>regression/sql/**</exclude>
 
             <exclude>package/install_deb</exclude>
             <exclude>package/DEBIAN/**</exclude>

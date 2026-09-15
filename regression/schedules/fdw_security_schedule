@@ -1,3 +1,0 @@
-# put an underscore in front of testname
-# after search and replace, that will be the test name
-test: _FDW_HdfsSmokeTest _FDW_HiveSmokeTest _FDW_FilterPushDownTest

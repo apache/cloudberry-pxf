@@ -139,9 +139,8 @@ You can read more about TestNG here <http://testng.org/doc/index.md>
 
 ## Guidelines for creating a new test for PXF automation
 
-1. Decide which category of run cycle (smoke/feature/load)
+1. Decide which category of run cycle (feature/load)
 1. Extend the right java class (according to the above test class hierarchy diagram)
-1. While implementing "smoke" test you can override three methods: `prepareData`, `createTables` and `queryResults` and then just call `runTest` method from your test case for running the three mentioned methods in that order. (see _Example 1_)
 1. Use `pxf_regress` framework to test GPDB query results (see below _Add SQL Cases_ section)
 
 ## Add SQL Cases
@@ -153,57 +152,7 @@ You can read more about TestNG here <http://testng.org/doc/index.md>
 
 ## Test Examples
 
-1. Example 1 (Smoke case)
-
-    ```java
-    public class HdfsSmokeTest extends BaseSmoke {
-
-        String fileName = "hdfsSmallData.txt";
-
-        @Override
-        protected void beforeClass() throws Exception {
-        }
-
-        @Override
-        protected void prepareData() throws Exception {
-            /**
-             * Create Data and write it to HDFS
-             */
-            Table dataTable = getSmallData();
-
-            hdfs.writeTextFile(hdfs.getWorkingDirectory() + "/" + fileName, dataTable.getData(), ",");
-        }
-
-        @Override
-        protected void createTables() throws Exception {
-            /**
-             * Create GPDB external table directed to the HDFS file
-             */
-            exTable = TableFactory.getPxfReadableTextTable("pxf_smoke_small", new String[] {
-                    "name text",
-                    "num integer",
-                    "dub double precision",
-                    "longNum bigint",
-                    "bool boolean" }, hdfs.getWorkingDirectory() + "/" + fileName, ",");
-
-            gpdb.createTableAndVerify(exTable);
-        }
-
-        @Override
-        protected void queryResults() throws Exception {
-            /**
-             * Run SQL "small data" test
-             */
-            runSqlTest("smoke/small_data");
-        }
-        @Test(groups = "smoke")
-        public void test() throws Exception {
-            runTest();
-        }
-    }
-    ```
-
-2. Example 2 (Feature case)
+1. Feature case
 
     ```java
     public class HdfsReadableTextTest extends BaseFeature {

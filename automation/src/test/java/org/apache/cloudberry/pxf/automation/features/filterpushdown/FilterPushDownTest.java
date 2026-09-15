@@ -1,6 +1,5 @@
 package org.apache.cloudberry.pxf.automation.features.filterpushdown;
 
-import annotations.SkipForFDW;
 import annotations.WorksWithFDW;
 import org.apache.cloudberry.pxf.automation.features.BaseFeature;
 import org.apache.cloudberry.pxf.automation.structures.tables.utils.TableFactory;
@@ -39,9 +38,8 @@ public class FilterPushDownTest extends BaseFeature {
      * @throws Exception
      */
     @Test(groups = {"features", "gpdb", "security"})
-    @SkipForFDW // the guc used in the test is not applicable to FDW and has no effect
     public void checkFilterPushDownDisabled() throws Exception {
-        preparePxfTable(COMMA);
+        preparePxfTable(COMMA, true);
         runSqlTest("features/filterpushdown/checkFilterPushDownDisabled");
     }
 
@@ -61,9 +59,16 @@ public class FilterPushDownTest extends BaseFeature {
      * @throws Exception
      */
     private void preparePxfTable(String delimiter) throws Exception {
+        preparePxfTable(delimiter, false);
+    }
+
+    private void preparePxfTable(String delimiter, boolean disablePpd) throws Exception {
         // Create PXF external table for filter testing
         exTable = TableFactory.getPxfReadableTestCSVTable("test_filter", FIELDS, "dummy_path", delimiter);
         exTable.setProfile("system:filter"); // use system:filter profile shipped with PXF server
+        if (disablePpd) {
+            exTable.setUserParameters(new String[]{"DISABLE_PPD=true"});
+        }
         gpdb.createTableAndVerify(exTable);
     }
 }

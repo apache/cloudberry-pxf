@@ -82,7 +82,7 @@ identify the error. Shown below is an example directory structure of the files
 created by `pxf_regress`
 
 ```console
-$ tree smoke/small_data
+$ tree features/profiles/small_data
 ├── regression.diffs
 └── output
     ├── query01_<timestamp>.out
@@ -101,8 +101,11 @@ $ tree smoke/small_data
     messages related to running `pxf_regress` will be prefixed with `Regress
     ->`.
 
-1. If the failure occurs while running `pxf_regress`, you can view all of
-   differences between the actual results and the expected results in
+1. When query output differs from the expected results, `pxf_regress` prints
+   the non-empty diff to stdout, so it appears directly in the automation test
+   log above. Passing queries do not print a diff.
+
+   You can also view all differences between the actual results and the expected results in
    `<test-directory>/regression.diffs`; individual diffs can be viewed in
    `<test-directory>/output/<test-name>_<timestamp>.diff`.
 
@@ -110,12 +113,12 @@ $ tree smoke/small_data
    `<test-directory>/results/<test-name>.out`; here is an example:
 
     ```console
-    $ cat ./smoke/small_data/results/query01.out
+    $ cat ./features/profiles/small_data/results/query01.out
     -- @description query01 for PXF test on small data
-    SELECT *  FROM pxf_smoke_small_data ORDER BY name;
-    psql:smoke/small_data/sql/query01.sql:3: ERROR:  PXF server error : Input path does not exist: hdfs://alpine:8020/tmp/pxf_automation_data/10f83dae-5146-44d7-957d-ea335cb3ea24/data.txt  (seg0 slice1 127.0.1.1:6000 pid=115042)
+    SELECT * FROM pxf_profiles_small_data ORDER BY name;
+    psql:features/profiles/small_data/sql/query01.sql:3: ERROR:  PXF server error : Input path does not exist: hdfs://alpine:8020/tmp/pxf_automation_data/10f83dae-5146-44d7-957d-ea335cb3ea24/data.txt  (seg0 slice1 127.0.1.1:6000 pid=115042)
     HINT:  Check the PXF logs located in the '/home/bradford/pxf-base/logs' directory on host 'localhost' or 'set client_min_messages=LOG' for additional details.
-    CONTEXT:  External table pxf_smoke_small_data, line 1 of file pxf://tmp/pxf_automation_data/10f83dae-5146-44d7-957d-ea335cb3ea24/data.txt?PROFILE=hdfs:text
+    CONTEXT:  External table pxf_profiles_small_data, line 1 of file pxf://tmp/pxf_automation_data/10f83dae-5146-44d7-957d-ea335cb3ea24/data.txt?PROFILE=hdfs:text
     ```
 
 [1]: https://www.postgresql.org/docs/12/libpq-envars.html

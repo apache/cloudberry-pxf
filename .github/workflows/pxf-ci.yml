@@ -495,7 +495,6 @@ jobs:
           - cli
           - external-table
           - fdw
-          - smoke
           - hdfs
           - hcfs
           - hive
@@ -687,7 +686,6 @@ jobs:
           - external-table
           - fdw
           - server
-          - smoke
           - hdfs
           - hcfs
           - hive
@@ -878,7 +876,6 @@ jobs:
           - external-table
           - fdw
           - server
-          - smoke
           - hdfs
           - hcfs
           - hive

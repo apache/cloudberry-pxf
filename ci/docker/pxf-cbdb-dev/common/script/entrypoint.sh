@@ -421,7 +421,7 @@ wait_for_datanode() {
     # Wait up to 180s (90 tries * 2s) for DataNode to register. GHA free-tier
     # runners under I/O contention can take 90-180s for JVM cold-start +
     # overlay2 block scan + NameNode handshake; the earlier 90s window was
-    # tight enough that Test PXF Rocky9 - smoke intermittently hit both
+    # tight enough that automation tests intermittently hit both
     # attempts before DataNode came Live. Healthy runs still complete in
     # 20-40s, so this only extends the tail — no cost on the happy path.
     for _dn_try in $(seq 1 90); do

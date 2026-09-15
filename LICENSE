@@ -242,9 +242,8 @@ CLI and Packaging:
    cli/
    package/
 
-Data Loading and Regression Tests:
+Data Loading Tests:
    load/
-   regression/
 
 =======================================================================
 

@@ -44,7 +44,6 @@ This project is derived from [greenplum/pxf](https://github.com/greenplum-db/pxf
 * `cli/` : Contains command line interface code for PXF
 * `automation/` : Contains the automation and integration tests for PXF against the various datasources
 * `ci/` : Contains CI/CD environment and scripts (including singlecluster Hadoop environment)
-* `regression/` : Contains the end-to-end (integration) tests for PXF against the various datasources, utilizing the PostgreSQL testing framework `pg_regress`
 
 ## PXF Development
 

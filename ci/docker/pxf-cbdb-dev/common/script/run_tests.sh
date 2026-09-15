@@ -33,7 +33,6 @@ source "${RUN_TESTS_DIR}/pxf-env.sh"
 source "${RUN_TESTS_DIR}/utils.sh"
 
 # Test-related defaults (kept close to test runner)
-export GROUP=${GROUP:-smoke}
 export RUN_TESTS=${RUN_TESTS:-true}
 export PXF_SKIP_TINC=${PXF_SKIP_TINC:-false}
 export EXCLUDED_GROUPS=${EXCLUDED_GROUPS:-}
@@ -235,10 +234,6 @@ base_test(){
   export PGHOST=127.0.0.1
   export PATH="${GPHOME}/bin:${PATH}"
   ensure_testuser_pg_hba
-
-  make GROUP="smoke" || true
-  save_test_reports "smoke"
-  echo "[run_tests] GROUP=smoke finished"
 
   make GROUP="hdfs" || true
   save_test_reports "hdfs"
@@ -462,7 +457,7 @@ generate_test_summary() {
 
     local group=$(basename "$group_dir")
     # Skip if it's not a test group directory
-    [[ "$group" =~ ^(smoke|hcfs|hdfs|hive|hbase|profile|proxy|unused|features|features_fdw|load|performance|fdw)$ ]] || continue
+    [[ "$group" =~ ^(hcfs|hdfs|hive|hbase|profile|proxy|unused|features|features_fdw|load|performance|fdw)$ ]] || continue
 
     echo "Processing $group test reports from $group_dir"
 
@@ -637,14 +632,14 @@ run_single_group() {
       make GROUP="proxy"
       save_test_reports "proxy"
       ;;
-    smoke|hdfs|hcfs|profile|unused)
+    hdfs|hcfs|profile|unused)
       export PROTOCOL=
       make GROUP="$group"
       save_test_reports "$group"
       ;;
     *)
       echo "Unknown test group: $group"
-      echo "Available groups: cli, external-table, fdw, server, smoke, hdfs, hcfs, hive, hbase, profile, proxy, unused, features, features_fdw, load, performance, bench"
+      echo "Available groups: cli, external-table, fdw, server, hdfs, hcfs, hive, hbase, profile, proxy, unused, features, features_fdw, load, performance, bench"
       exit 1
       ;;
   esac
@@ -665,7 +660,7 @@ main() {
     # Run health check first
     health_check_with_retry
 
-    # Run base tests (includes smoke, hdfs, hcfs, hive, etc.)
+    # Run base tests (includes hdfs, hcfs, hive, etc.)
     base_test
 
     # Run feature tests (union of features + gpdb tags, once per USE_FDW mode)
