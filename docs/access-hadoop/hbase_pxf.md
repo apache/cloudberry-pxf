@@ -14,7 +14,7 @@ This section describes how to use the PXF HBase connector.
 
 Before working with HBase table data, ensure that you have:
 
-- Copied `<PXF_INSTALL_DIR>/share/pxf-hbase-*.jar` to each node in your HBase cluster, and that the location of this PXF JAR file is in the `$HBASE_CLASSPATH`. This configuration is required for the PXF HBase connector to support filter pushdown.
+- Copied `<PXF_INSTALL_DIR>/share/pxf-hbase-lib-*.jar` to each node in your HBase cluster, and added the JAR to `$HBASE_CLASSPATH`. This JAR contains the filter comparators used by HBase RegionServers and is compatible with Java 8. Remove any older full `pxf-hbase` JAR from the RegionServer classpath.
 - Met the PXF Hadoop [Prerequisites](./access_hdfs.md#prerequisites).
 
 ## HBase Primer

@@ -17,16 +17,26 @@
  * under the License.
  */
 
-rootProject.name = 'pxf'
+apply plugin: "java-library"
 
-include 'pxf-service',
-        'pxf-api',
-        'pxf-hbase-lib',
-        'pxf-hbase',
-        'pxf-hdfs',
-        'pxf-hive',
-        'pxf-jdbc',
-        'pxf-jdbc-drivers',
-        'pxf-json',
-        'pxf-s3',
-        'pxf-diagnostic'
+jar {
+    enabled = true
+}
+
+compileJava {
+    options.release = 8
+}
+
+dependencies {
+    implementation("org.apache.hbase:hbase-client")                     { transitive = false }
+    implementation("org.apache.hbase:hbase-common")                     { transitive = false }
+    implementation("org.apache.hbase:hbase-protocol-shaded")            { transitive = false }
+    implementation("org.apache.hbase.thirdparty:hbase-shaded-protobuf") { transitive = false }
+    implementation("org.apache.yetus:audience-annotations")             { transitive = false }
+
+    compileOnly("com.google.code.findbugs:annotations")
+}
+
+test {
+    useJUnitPlatform()
+}

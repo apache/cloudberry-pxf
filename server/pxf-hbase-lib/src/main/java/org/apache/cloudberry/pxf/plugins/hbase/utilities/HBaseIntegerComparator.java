@@ -41,6 +41,7 @@ import org.apache.hbase.thirdparty.com.google.protobuf.InvalidProtocolBufferExce
  * ({@link #toByteArray()} and {@link #parseFrom(byte[])} methods).
  * <p>
  * A reference can be found in {@link SubstringComparator}.
+ * This class MUST ONLY use features from java 8 and lower as it will be loaded within hbase
  */
 public class HBaseIntegerComparator extends ByteArrayComparable {
 

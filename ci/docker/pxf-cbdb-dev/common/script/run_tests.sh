@@ -111,12 +111,14 @@ cleanup_hive_state() {
 }
 
 start_hbase() {
-  echo "[run_tests] copying pxf-hbase.jar to HBase lib..."
-  cp /home/gpadmin/automation_tmp_lib/pxf-hbase.jar "${GPHD_ROOT}/hbase/lib/" 2>/dev/null || true
-  if [ ! -f "${GPHD_ROOT}/hbase/lib/pxf-hbase.jar" ]; then
-    pxf_app=$(ls -1v /usr/local/pxf/application/pxf-app-*.jar 2>/dev/null | grep -v 'plain' | tail -n 1)
-    [ -n "${pxf_app}" ] && unzip -qq -j "${pxf_app}" 'BOOT-INF/lib/pxf-hbase-*.jar' -d "${GPHD_ROOT}/hbase/lib/" || true
+  echo "[run_tests] copying Java 8 HBase comparator library to HBase lib..."
+  local comparator_jar
+  comparator_jar=$(find "${PXF_HOME}/share" -maxdepth 1 -name 'pxf-hbase-lib-*.jar' -print -quit)
+  if [[ -z "${comparator_jar}" ]]; then
+    echo "[run_tests] ERROR: HBase comparator library not found in ${PXF_HOME}/share"
+    return 1
   fi
+  cp "${comparator_jar}" "${GPHD_ROOT}/hbase/lib/pxf-hbase-lib.jar"
   if pgrep -f HMaster >/dev/null 2>&1; then
     echo "[run_tests] HBase HMaster already running, skipping start"
   else

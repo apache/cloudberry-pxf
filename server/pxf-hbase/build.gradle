@@ -20,6 +20,7 @@ dependencies {
      *******************************/
 
     implementation(project(':pxf-api'))
+    implementation(project(':pxf-hbase-lib'))
     implementation("commons-collections:commons-collections")
 
     /*******************************
