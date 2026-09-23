@@ -106,7 +106,7 @@ jobs:
       - name: Check for binary files
         run: |
           echo "Checking for binary files..."
-          echo "Checking extensions: class, jar, tar, tgz, zip, exe, dll, so, gz, bz2"
+          echo "Checking extensions: class, jar, tar, tgz, zip, exe, dll, so, gz, bz2, deb, rpm, gppkg, bin"
           echo "----------------------------------------------------------------------"
           
           # Binary file allowlist, see README.apache.md
@@ -120,14 +120,14 @@ jobs:
           )
           
           # Check for specific binary file extensions
-          binary_extensions="class jar tar tgz zip exe dll so gz bz2"
+          binary_extensions="class jar tar tgz zip exe dll so gz bz2 deb rpm gppkg bin"
           echo "BINARY_EXTENSIONS=${binary_extensions}" >> $GITHUB_ENV
           binary_results=""
           binaryfiles_found=false
           
           for extension in ${binary_extensions}; do
             printf "Checking *.%-4s files..." "${extension}"
-            found=$(find . -name "*.${extension}" -type f || true)
+            found=$(find . \( -path ./.git -o -path '*/target' -o -path '*/build' -o -path '*/.gradle' \) -prune -o -name "*.${extension}" -type f -print || true)
             
             # Filter out allowed files
             if [ -n "$found" ]; then
