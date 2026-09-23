@@ -121,7 +121,10 @@
             <exclude>server/pxf-api/src/test/java/org/apache/hadoop/security/PxfUserGroupInformationTest.java</exclude>
             <exclude>server/pxf-api/src/main/java/org/apache/cloudberry/pxf/api/configuration/PxfServerProperties.java</exclude>
             <exclude>server/pxf-api/src/main/java/org/apache/cloudberry/pxf/api/security/GSSCredentialProvider.java</exclude>
-            <exclude>server/pxf-api/src/main/java/org/apache/cloudberry/pxf/api/function/**</exclude>
+            <exclude>server/pxf-api/src/main/java/org/apache/cloudberry/pxf/api/function/PentaConsumer.java</exclude>
+            <exclude>server/pxf-api/src/main/java/org/apache/cloudberry/pxf/api/function/PentaFunction.java</exclude>
+            <exclude>server/pxf-api/src/main/java/org/apache/cloudberry/pxf/api/function/TriConsumer.java</exclude>
+            <exclude>server/pxf-api/src/main/java/org/apache/cloudberry/pxf/api/function/TriFunction.java</exclude>
             <exclude>server/pxf-api/src/main/java/org/apache/cloudberry/pxf/api/utilities/SerializationService.java</exclude>
             <exclude>server/pxf-api/src/main/java/org/apache/cloudberry/pxf/api/utilities/FragmenterCacheFactory.java</exclude>
             <exclude>server/pxf-api/src/main/java/org/apache/cloudberry/pxf/api/utilities/SpringContext.java</exclude>
@@ -208,7 +211,14 @@
             <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/bridge/BridgeFactory.java</exclude>
             <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/bridge/WriteVectorizedBridge.java</exclude>
             <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/bridge/SimpleBridgeFactory.java</exclude>
-            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/controller/**</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/controller/BaseServiceImpl.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/controller/OperationResult.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/controller/OperationStats.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/controller/PxfErrorReporter.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/controller/ReadService.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/controller/ReadServiceImpl.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/controller/WriteService.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/controller/WriteServiceImpl.java</exclude>
             <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/utilities/ThrowingSupplier.java</exclude>
             <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/utilities/GSSFailureHandler.java</exclude>
             <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/utilities/BasePluginFactory.java</exclude>
@@ -222,8 +232,19 @@
             <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/serde/RecordReader.java</exclude>
             <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/serde/RecordReaderFactory.java</exclude>
             <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/RequestParser.java</exclude>
-            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/rest/**</exclude>
-            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/**</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/rest/PxfBaseResource.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/rest/PxfLegacyResource.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/rest/PxfReadResource.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/rest/PxfWriteResource.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfConfiguration.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfContextMdcLogEnhancerDecorator.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfContextMdcLogEnhancerFilter.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfErrorAttributes.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfExceptionHandler.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfThreadPoolTaskExecutor.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfTomcatCustomizer.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfTomcatInitializationListener.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfWebMvcTagsContributor.java</exclude>
             <exclude>server/doc/dependency_decisions.yml</exclude>
             <exclude>server/doc/README.md</exclude>
             <exclude>server/pxf-hdfs/build.gradle</exclude>
