@@ -1334,6 +1334,17 @@
             <exclude>.github/pull_request_template.md</exclude>
             <exclude>server/gradle/wrapper/gradle-8.14.4-wrapper.jar.sha256</exclude>
 
+            <!--
+                Compliance files for the convenience binary packages. These
+                either are license texts themselves or reproduce third-party
+                license and notice texts verbatim, so they must not carry an
+                ASF header. See package/licensing/README.md.
+            -->
+            <exclude>LICENSE-binary</exclude>
+            <exclude>NOTICE-binary</exclude>
+            <exclude>licenses-binary/**</exclude>
+            <exclude>package/licensing/bundled-components.tsv</exclude>
+
           </excludes>
 
           <!--
