@@ -13,6 +13,27 @@ respectively. PXF compiles against and generates packages for Apache Cloudberry.
 For example, `apache-cloudberry-pxf-incubating-1.2.3-1.el7.x86_64.rpm` represents an RPM package of PXF version 1.2.3 intended to work with
 Apache Cloudberry on CentOS / Red Hat 7 operating systems.
 
+## Apache compliance files in the packages
+
+The RPM, DEB and binary tarball do not ship the repository's `LICENSE` and
+`NOTICE`. Those describe the *source* release, while the packages additionally
+contain the PXF server application JAR, which bundles its entire runtime
+classpath (Hadoop, Hive, HBase, Parquet, ORC, the AWS and Azure SDKs, Spring,
+embedded Tomcat and their dependencies).
+
+The packages therefore install the binary variants instead:
+
+| in the repository  | installed in the package as |
+|--------------------|-----------------------------|
+| `LICENSE-binary`   | `LICENSE`                   |
+| `NOTICE-binary`    | `NOTICE`                    |
+| `licenses-binary/` | `licenses/`                 |
+| `DISCLAIMER`       | `DISCLAIMER`                |
+
+`make stage` and `make deb` fail if any of these is missing. See
+[package/licensing/README.md](licensing/README.md) for how the inventory is
+maintained and how to update it after changing a dependency.
+
 ## PXF RPM specification
 On CentOS platforms PXF product is packaged as an RPM. The specification on how to build the RPM is provided by the
 `cloudberry-pxf.spec` file in this directory. The following key design decisions were made:

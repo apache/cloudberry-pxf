@@ -1,0 +1,156 @@
+# Components bundled inside the PXF server application JAR (BOOT-INF/lib) of the
+# convenience binary packages. Regenerate/verify with generate-binary-license.py.
+#
+# jar_file	coordinate	license_id	license_file	notes
+aircompressor-2.0.2.jar	io.airlift:aircompressor:2.0.2	Apache-2.0	-	
+antlr-runtime-3.5.2.jar	org.antlr:antlr-runtime:3.5.2	BSD-3-Clause	LICENSE-antlr-runtime.txt	
+audience-annotations-0.13.0.jar	org.apache.yetus:audience-annotations:0.13.0	Apache-2.0	-	
+avro-1.11.5.jar	org.apache.avro:avro:1.11.5	Apache-2.0	-	
+avro-mapred-1.11.5.jar	org.apache.avro:avro-mapred:1.11.5	Apache-2.0	-	
+aws-java-sdk-core-1.12.261.jar	com.amazonaws:aws-java-sdk-core:1.12.261	Apache-2.0	-	
+aws-java-sdk-kms-1.12.261.jar	com.amazonaws:aws-java-sdk-kms:1.12.261	Apache-2.0	-	
+aws-java-sdk-s3-1.12.261.jar	com.amazonaws:aws-java-sdk-s3:1.12.261	Apache-2.0	-	
+azure-data-lake-store-sdk-2.3.9.jar	com.microsoft.azure:azure-data-lake-store-sdk:2.3.9	MIT	LICENSE-azure-data-lake-store-sdk.txt	
+azure-storage-5.5.0.jar	com.microsoft.azure:azure-storage:5.5.0	Apache-2.0	-	
+commons-codec-1.14.jar	commons-codec:commons-codec:1.14	Apache-2.0	-	
+commons-collections-3.2.2.jar	commons-collections:commons-collections:3.2.2	Apache-2.0	-	
+commons-compress-1.20.jar	org.apache.commons:commons-compress:1.20	Apache-2.0	-	
+commons-configuration-1.10.jar	commons-configuration:commons-configuration:1.10	Apache-2.0	-	
+commons-crypto-1.0.0.jar	org.apache.commons:commons-crypto:1.0.0	Apache-2.0	-	
+commons-io-2.7.jar	commons-io:commons-io:2.7	Apache-2.0	-	
+commons-lang-2.6.jar	commons-lang:commons-lang:2.6	Apache-2.0	-	
+commons-lang3-3.12.0.jar	org.apache.commons:commons-lang3:3.12.0	Apache-2.0	-	
+commons-logging-1.1.3.jar	commons-logging:commons-logging:1.1.3	Apache-2.0	-	
+datanucleus-api-jdo-4.2.4.jar	org.datanucleus:datanucleus-api-jdo:4.2.4	Apache-2.0	-	
+datanucleus-core-4.1.17.jar	org.datanucleus:datanucleus-core:4.1.17	Apache-2.0	-	
+gcs-connector-hadoop2-1.9.17-shaded.jar	com.google.cloud.bigdataoss:gcs-connector:hadoop2-1.9.17	Apache-2.0	-	
+guava-20.0.jar	com.google.guava:guava:20.0	Apache-2.0	-	
+hadoop-auth-2.10.2.jar	org.apache.hadoop:hadoop-auth:2.10.2	Apache-2.0	-	
+hadoop-aws-2.10.2.jar	org.apache.hadoop:hadoop-aws:2.10.2	Apache-2.0	-	
+hadoop-azure-2.10.2.jar	org.apache.hadoop:hadoop-azure:2.10.2	Apache-2.0	-	
+hadoop-azure-datalake-2.10.2.jar	org.apache.hadoop:hadoop-azure-datalake:2.10.2	Apache-2.0	-	
+hadoop-common-2.10.2.jar	org.apache.hadoop:hadoop-common:2.10.2	Apache-2.0	-	
+hadoop-hdfs-2.10.2.jar	org.apache.hadoop:hadoop-hdfs:2.10.2	Apache-2.0	-	
+hadoop-hdfs-client-2.10.2.jar	org.apache.hadoop:hadoop-hdfs-client:2.10.2	Apache-2.0	-	
+hadoop-mapreduce-client-core-2.10.2.jar	org.apache.hadoop:hadoop-mapreduce-client-core:2.10.2	Apache-2.0	-	
+hadoop-yarn-api-2.10.2.jar	org.apache.hadoop:hadoop-yarn-api:2.10.2	Apache-2.0	-	
+hadoop-yarn-client-2.10.2.jar	org.apache.hadoop:hadoop-yarn-client:2.10.2	Apache-2.0	-	
+hbase-client-2.5.15.jar	org.apache.hbase:hbase-client:2.5.15	Apache-2.0	-	
+hbase-common-2.5.15.jar	org.apache.hbase:hbase-common:2.5.15	Apache-2.0	-	
+hbase-hadoop-compat-2.5.15.jar	org.apache.hbase:hbase-hadoop-compat:2.5.15	Apache-2.0	-	
+hbase-hadoop2-compat-2.5.15.jar	org.apache.hbase:hbase-hadoop2-compat:2.5.15	Apache-2.0	-	
+hbase-logging-2.5.15.jar	org.apache.hbase:hbase-logging:2.5.15	Apache-2.0	-	
+hbase-metrics-2.5.15.jar	org.apache.hbase:hbase-metrics:2.5.15	Apache-2.0	-	
+hbase-metrics-api-2.5.15.jar	org.apache.hbase:hbase-metrics-api:2.5.15	Apache-2.0	-	
+hbase-protocol-2.5.15.jar	org.apache.hbase:hbase-protocol:2.5.15	Apache-2.0	-	
+hbase-protocol-shaded-2.5.15.jar	org.apache.hbase:hbase-protocol-shaded:2.5.15	Apache-2.0	-	
+hbase-shaded-gson-4.1.13.jar	org.apache.hbase.thirdparty:hbase-shaded-gson:4.1.13	Apache-2.0	-	
+hbase-shaded-miscellaneous-4.1.13.jar	org.apache.hbase.thirdparty:hbase-shaded-miscellaneous:4.1.13	Apache-2.0	-	
+hbase-shaded-netty-4.1.13.jar	org.apache.hbase.thirdparty:hbase-shaded-netty:4.1.13	Apache-2.0	-	
+hbase-shaded-protobuf-4.1.13.jar	org.apache.hbase.thirdparty:hbase-shaded-protobuf:4.1.13	Apache-2.0	-	
+hbase-unsafe-4.1.13.jar	org.apache.hbase.thirdparty:hbase-unsafe:4.1.13	Apache-2.0	-	
+HdrHistogram-2.1.12.jar	org.hdrhistogram:HdrHistogram:2.1.12	CC0-1.0 OR BSD-2-Clause	LICENSE-HdrHistogram.txt	
+HikariCP-3.4.5.jar	com.zaxxer:HikariCP:3.4.5	Apache-2.0	-	
+hive-common-2.3.8.jar	org.apache.hive:hive-common:2.3.8	Apache-2.0	-	
+hive-exec-2.3.8-core.jar	org.apache.hive:hive-exec:2.3.8	Apache-2.0	-	
+hive-jdbc-1.1.0.jar	org.apache.hive:hive-jdbc:1.1.0	Apache-2.0	-	
+hive-metastore-2.3.8.jar	org.apache.hive:hive-metastore:2.3.8	Apache-2.0	-	
+hive-serde-2.3.8.jar	org.apache.hive:hive-serde:2.3.8	Apache-2.0	-	
+hive-service-1.1.0.jar	org.apache.hive:hive-service:1.1.0	Apache-2.0	-	
+hive-shims-0.23-2.3.8.jar	org.apache.hive.shims:hive-shims-0.23:2.3.8	Apache-2.0	-	
+hive-shims-common-2.3.8.jar	org.apache.hive.shims:hive-shims-common:2.3.8	Apache-2.0	-	
+hive-storage-api-2.7.3.jar	org.apache.hive:hive-storage-api:2.7.3	Apache-2.0	-	
+htrace-core4-4.2.0-incubating.jar	org.apache.htrace:htrace-core4:4.2.0-incubating	Apache-2.0	-	
+httpclient-4.5.14.jar	org.apache.httpcomponents:httpclient:4.5.14	Apache-2.0	-	
+httpcore-4.4.16.jar	org.apache.httpcomponents:httpcore:4.4.16	Apache-2.0	-	
+istack-commons-runtime-3.0.12.jar	com.sun.istack:istack-commons-runtime:3.0.12	EDL-1.0	LICENSE-istack-commons-runtime.txt	
+jackson-annotations-2.13.5.jar	com.fasterxml.jackson.core:jackson-annotations:2.13.5	Apache-2.0	-	
+jackson-core-2.13.5.jar	com.fasterxml.jackson.core:jackson-core:2.13.5	Apache-2.0	-	
+jackson-core-asl-1.9.13.jar	org.codehaus.jackson:jackson-core-asl:1.9.13	Apache-2.0	-	
+jackson-databind-2.13.5.jar	com.fasterxml.jackson.core:jackson-databind:2.13.5	Apache-2.0	-	
+jackson-datatype-jdk8-2.13.5.jar	com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.13.5	Apache-2.0	-	
+jackson-datatype-jsr310-2.13.5.jar	com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.5	Apache-2.0	-	
+jackson-mapper-asl-1.9.13.jar	org.codehaus.jackson:jackson-mapper-asl:1.9.13	Apache-2.0	-	
+jackson-module-parameter-names-2.13.5.jar	com.fasterxml.jackson.module:jackson-module-parameter-names:2.13.5	Apache-2.0	-	
+jakarta.activation-1.2.2.jar	com.sun.activation:jakarta.activation:1.2.2	EDL-1.0	LICENSE-jakarta.activation.txt	
+jakarta.annotation-api-1.3.5.jar	jakarta.annotation:jakarta.annotation-api:1.3.5	EPL-2.0 OR GPL-2.0-with-classpath-exception	LICENSE-jakarta.annotation-api.txt	ASF Category B: binary-only inclusion
+jakarta.xml.bind-api-2.3.3.jar	jakarta.xml.bind:jakarta.xml.bind-api:2.3.3	EDL-1.0	LICENSE-jakarta.xml.bind-api.txt	
+jaxb-runtime-2.3.9.jar	org.glassfish.jaxb:jaxb-runtime:2.3.9	EDL-1.0	LICENSE-jaxb-runtime.txt	
+jdo-api-3.0.1.jar	javax.jdo:jdo-api:3.0.1	Apache-2.0	-	
+jetty-util-6.1.26.jar	org.mortbay.jetty:jetty-util:6.1.26	Apache-2.0	-	dual-licensed Apache-2.0 / EPL-1.0; Apache-2.0 elected
+joda-time-2.8.1.jar	joda-time:joda-time:2.8.1	Apache-2.0	-	
+jodd-core-3.5.2.jar	org.jodd:jodd-core:3.5.2	BSD-2-Clause	LICENSE-jodd-core.txt	
+jul-to-slf4j-1.7.36.jar	org.slf4j:jul-to-slf4j:1.7.36	MIT	LICENSE-slf4j.txt	
+kryo-3.0.3.jar	com.esotericsoftware:kryo:3.0.3	BSD-3-Clause	LICENSE-kryo.txt	
+LatencyUtils-2.0.3.jar	org.latencyutils:LatencyUtils:2.0.3	CC0-1.0	LICENSE-LatencyUtils.txt	
+libfb303-0.9.3.jar	org.apache.thrift:libfb303:0.9.3	Apache-2.0	-	
+libthrift-0.9.3.jar	org.apache.thrift:libthrift:0.9.3	Apache-2.0	-	
+log4j-api-2.25.4.jar	org.apache.logging.log4j:log4j-api:2.25.4	Apache-2.0	-	
+log4j-core-2.25.4.jar	org.apache.logging.log4j:log4j-core:2.25.4	Apache-2.0	-	
+log4j-jul-2.25.4.jar	org.apache.logging.log4j:log4j-jul:2.25.4	Apache-2.0	-	
+log4j-over-slf4j-1.7.36.jar	org.slf4j:log4j-over-slf4j:1.7.36	Apache-2.0	-	
+log4j-slf4j-impl-2.25.4.jar	org.apache.logging.log4j:log4j-slf4j-impl:2.25.4	Apache-2.0	-	
+log4j-spring-boot-2.25.4.jar	org.apache.logging.log4j:log4j-spring-boot:2.25.4	Apache-2.0	-	
+metrics-core-3.2.6.jar	io.dropwizard.metrics:metrics-core:3.2.6	Apache-2.0	-	
+micrometer-core-1.9.17.jar	io.micrometer:micrometer-core:1.9.17	Apache-2.0	-	
+micrometer-registry-prometheus-1.9.17.jar	io.micrometer:micrometer-registry-prometheus:1.9.17	Apache-2.0	-	
+minlog-1.3.0.jar	com.esotericsoftware:minlog:1.3.0	BSD-3-Clause	LICENSE-minlog.txt	
+netty-common-4.1.101.Final.jar	io.netty:netty-common:4.1.101.Final	Apache-2.0	-	
+netty-transport-4.1.101.Final.jar	io.netty:netty-transport:4.1.101.Final	Apache-2.0	-	
+objenesis-2.1.jar	org.objenesis:objenesis:2.1	Apache-2.0	-	
+opencsv-2.3.jar	net.sf.opencsv:opencsv:2.3	Apache-2.0	-	
+opentelemetry-api-1.49.0.jar	io.opentelemetry:opentelemetry-api:1.49.0	Apache-2.0	-	
+opentelemetry-context-1.49.0.jar	io.opentelemetry:opentelemetry-context:1.49.0	Apache-2.0	-	
+opentelemetry-semconv-1.29.0-alpha.jar	io.opentelemetry.semconv:opentelemetry-semconv:1.29.0-alpha	Apache-2.0	-	
+orc-core-1.7.11.jar	org.apache.orc:orc-core:1.7.11	Apache-2.0	-	
+orc-shims-1.7.11.jar	org.apache.orc:orc-shims:1.7.11	Apache-2.0	-	
+parquet-column-1.15.2.jar	org.apache.parquet:parquet-column:1.15.2	Apache-2.0	-	
+parquet-common-1.15.2.jar	org.apache.parquet:parquet-common:1.15.2	Apache-2.0	-	
+parquet-encoding-1.15.2.jar	org.apache.parquet:parquet-encoding:1.15.2	Apache-2.0	-	
+parquet-format-2.11.0.jar	org.apache.parquet:parquet-format:2.11.0	Apache-2.0	-	
+parquet-format-structures-1.15.2.jar	org.apache.parquet:parquet-format-structures:1.15.2	Apache-2.0	-	
+parquet-generator-1.15.2.jar	org.apache.parquet:parquet-generator:1.15.2	Apache-2.0	-	
+parquet-hadoop-1.15.2.jar	org.apache.parquet:parquet-hadoop:1.15.2	Apache-2.0	-	
+parquet-jackson-1.15.2.jar	org.apache.parquet:parquet-jackson:1.15.2	Apache-2.0	-	
+postgresql-42.7.2.jar	org.postgresql:postgresql:42.7.2	BSD-2-Clause	LICENSE-postgresql.txt	bundles shaded com.ongres SCRAM/stringprep (BSD-2-Clause), see LICENSE-ongres-scram.txt
+protobuf-java-2.5.0.jar	com.google.protobuf:protobuf-java:2.5.0	BSD-3-Clause	LICENSE-protobuf-java.txt	
+pxf-api-*.jar	org.apache.cloudberry:pxf-api	Apache-2.0	-	PXF's own module; version follows the release
+pxf-diagnostic-*.jar	org.apache.cloudberry:pxf-diagnostic	Apache-2.0	-	PXF's own module; version follows the release
+pxf-hbase-*.jar	org.apache.cloudberry:pxf-hbase	Apache-2.0	-	PXF's own module; version follows the release
+pxf-hdfs-*.jar	org.apache.cloudberry:pxf-hdfs	Apache-2.0	-	PXF's own module; version follows the release
+pxf-hive-*.jar	org.apache.cloudberry:pxf-hive	Apache-2.0	-	PXF's own module; version follows the release
+pxf-jdbc-*.jar	org.apache.cloudberry:pxf-jdbc	Apache-2.0	-	PXF's own module; version follows the release
+pxf-json-*.jar	org.apache.cloudberry:pxf-json	Apache-2.0	-	PXF's own module; version follows the release
+pxf-s3-*.jar	org.apache.cloudberry:pxf-s3	Apache-2.0	-	PXF's own module; version follows the release
+reflectasm-1.11.6.jar	com.esotericsoftware:reflectasm:1.11.6	BSD-3-Clause	LICENSE-reflectasm.txt	
+simpleclient-0.15.0.jar	io.prometheus:simpleclient:0.15.0	Apache-2.0	-	
+simpleclient_common-0.15.0.jar	io.prometheus:simpleclient_common:0.15.0	Apache-2.0	-	
+simpleclient_tracer_common-0.15.0.jar	io.prometheus:simpleclient_tracer_common:0.15.0	Apache-2.0	-	
+simpleclient_tracer_otel-0.15.0.jar	io.prometheus:simpleclient_tracer_otel:0.15.0	Apache-2.0	-	
+simpleclient_tracer_otel_agent-0.15.0.jar	io.prometheus:simpleclient_tracer_otel_agent:0.15.0	Apache-2.0	-	
+slf4j-api-1.7.36.jar	org.slf4j:slf4j-api:1.7.36	MIT	LICENSE-slf4j.txt	
+snakeyaml-1.30.jar	org.yaml:snakeyaml:1.30	Apache-2.0	-	
+snappy-java-1.1.10.7.jar	org.xerial.snappy:snappy-java:1.1.10.7	Apache-2.0	-	
+spring-aop-5.3.33.jar	org.springframework:spring-aop:5.3.33	Apache-2.0	-	
+spring-beans-5.3.33.jar	org.springframework:spring-beans:5.3.33	Apache-2.0	-	
+spring-boot-2.7.18.jar	org.springframework.boot:spring-boot:2.7.18	Apache-2.0	-	
+spring-boot-actuator-2.7.18.jar	org.springframework.boot:spring-boot-actuator:2.7.18	Apache-2.0	-	
+spring-boot-actuator-autoconfigure-2.7.18.jar	org.springframework.boot:spring-boot-actuator-autoconfigure:2.7.18	Apache-2.0	-	
+spring-boot-autoconfigure-2.7.18.jar	org.springframework.boot:spring-boot-autoconfigure:2.7.18	Apache-2.0	-	
+spring-context-5.3.33.jar	org.springframework:spring-context:5.3.33	Apache-2.0	-	
+spring-core-5.3.33.jar	org.springframework:spring-core:5.3.33	Apache-2.0	-	
+spring-expression-5.3.33.jar	org.springframework:spring-expression:5.3.33	Apache-2.0	-	
+spring-web-5.3.33.jar	org.springframework:spring-web:5.3.33	Apache-2.0	-	
+spring-webmvc-5.3.33.jar	org.springframework:spring-webmvc:5.3.33	Apache-2.0	-	
+stax2-api-3.1.4.jar	org.codehaus.woodstox:stax2-api:3.1.4	BSD-2-Clause	LICENSE-stax2-api.txt	license text reconstructed from POM declaration + source headers
+threeten-extra-1.5.0.jar	org.threeten:threeten-extra:1.5.0	BSD-3-Clause	LICENSE-threeten-extra.txt	
+tomcat-embed-core-9.0.118.jar	org.apache.tomcat.embed:tomcat-embed-core:9.0.118	Apache-2.0	-	
+tomcat-embed-el-9.0.118.jar	org.apache.tomcat.embed:tomcat-embed-el:9.0.118	Apache-2.0	-	
+tomcat-embed-websocket-9.0.118.jar	org.apache.tomcat.embed:tomcat-embed-websocket:9.0.118	Apache-2.0	-	
+univocity-parsers-2.9.1.jar	com.univocity:univocity-parsers:2.9.1	Apache-2.0	-	
+wildfly-openssl-1.0.7.Final.jar	org.wildfly.openssl:wildfly-openssl:1.0.7.Final	Apache-2.0	-	
+woodstox-core-5.0.3.jar	com.fasterxml.woodstox:woodstox-core:5.0.3	Apache-2.0	-	
+xz-1.8.jar	org.tukaani:xz:1.8	Public Domain	LICENSE-xz.txt	
+zookeeper-3.8.6.jar	org.apache.zookeeper:zookeeper:3.8.6	Apache-2.0	-	
+zookeeper-jute-3.8.6.jar	org.apache.zookeeper:zookeeper-jute:3.8.6	Apache-2.0	-	
+zstd-jni-1.5.7-6.jar	com.github.luben:zstd-jni:1.5.7-6	BSD-2-Clause	LICENSE-zstd-jni.txt	
