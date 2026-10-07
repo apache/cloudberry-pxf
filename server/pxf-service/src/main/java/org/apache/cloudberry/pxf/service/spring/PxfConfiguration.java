@@ -7,8 +7,8 @@ import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.task.TaskExecutorBuilder;
-import org.springframework.boot.task.TaskExecutorCustomizer;
+import org.springframework.boot.task.ThreadPoolTaskExecutorBuilder;
+import org.springframework.boot.task.ThreadPoolTaskExecutorCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.AsyncTaskExecutor;
@@ -64,12 +64,12 @@ public class PxfConfiguration implements WebMvcConfigurer {
     @Bean(name = {PXF_RESPONSE_STREAM_TASK_EXECUTOR,
             AsyncAnnotationBeanPostProcessor.DEFAULT_TASK_EXECUTOR_BEAN_NAME})
     public ThreadPoolTaskExecutor pxfApplicationTaskExecutor(PxfServerProperties pxfServerProperties,
-                                                             ObjectProvider<TaskExecutorCustomizer> taskExecutorCustomizers,
+                                                             ObjectProvider<ThreadPoolTaskExecutorCustomizer> taskExecutorCustomizers,
                                                              ObjectProvider<TaskDecorator> taskDecorator) {
 
         TaskExecutionProperties properties = pxfServerProperties.getTask();
         TaskExecutionProperties.Pool pool = properties.getPool();
-        TaskExecutorBuilder builder = new TaskExecutorBuilder();
+        ThreadPoolTaskExecutorBuilder builder = new ThreadPoolTaskExecutorBuilder();
         builder = builder.queueCapacity(pool.getQueueCapacity());
         builder = builder.corePoolSize(pool.getCoreSize());
         builder = builder.maxPoolSize(pool.getMaxSize());

@@ -5,17 +5,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.spi.MDCAdapter;
+import org.slf4j.MDC;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import java.io.IOException;
-
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class PxfContextMdcLogEnhancerFilterTest {
@@ -26,7 +24,7 @@ class PxfContextMdcLogEnhancerFilterTest {
     MockFilterChain mockFilterChain;
 
     @Mock
-    MDCAdapter mdcMock;
+    MockedStatic<MDC> mdcMock;
 
     @BeforeEach
     void setup() {
@@ -40,11 +38,11 @@ class PxfContextMdcLogEnhancerFilterTest {
     void testNonPxfContextRequest() throws ServletException, IOException {
         filter.doFilter(mockRequest, mockResponse, mockFilterChain);
         // always removes
-        verify(mdcMock).remove("segmentId");
-        verify(mdcMock).remove("sessionId");
-        verify(mdcMock).remove("ssid");
-        verify(mdcMock).remove("ccnt");
-        verifyNoMoreInteractions(mdcMock);
+        mdcMock.verify(() -> MDC.remove("segmentId"));
+        mdcMock.verify(() -> MDC.remove("sessionId"));
+        mdcMock.verify(() -> MDC.remove("ssid"));
+        mdcMock.verify(() -> MDC.remove("ccnt"));
+        mdcMock.verifyNoMoreInteractions();
     }
 
     @Test
@@ -54,16 +52,16 @@ class PxfContextMdcLogEnhancerFilterTest {
         mockRequest.addHeader("X-GP-SEGMENT-ID", "5");
         filter.doFilter(mockRequest, mockResponse, mockFilterChain);
 
-        verify(mdcMock).put("sessionId", "transaction:id:default");
-        verify(mdcMock).put("segmentId", "5");
-        verify(mdcMock).put("ssid", null);
-        verify(mdcMock).put("ccnt", null);
+        mdcMock.verify(() -> MDC.put("sessionId", "transaction:id:default"));
+        mdcMock.verify(() -> MDC.put("segmentId", "5"));
+        mdcMock.verify(() -> MDC.put("ssid", null));
+        mdcMock.verify(() -> MDC.put("ccnt", null));
 
-        verify(mdcMock).remove("segmentId");
-        verify(mdcMock).remove("sessionId");
-        verify(mdcMock).remove("ssid");
-        verify(mdcMock).remove("ccnt");
-        verifyNoMoreInteractions(mdcMock);
+        mdcMock.verify(() -> MDC.remove("segmentId"));
+        mdcMock.verify(() -> MDC.remove("sessionId"));
+        mdcMock.verify(() -> MDC.remove("ssid"));
+        mdcMock.verify(() -> MDC.remove("ccnt"));
+        mdcMock.verifyNoMoreInteractions();
     }
 
     @Test
@@ -74,16 +72,16 @@ class PxfContextMdcLogEnhancerFilterTest {
         mockRequest.addHeader("X-GP-SEGMENT-ID", "5");
         filter.doFilter(mockRequest, mockResponse, mockFilterChain);
 
-        verify(mdcMock).put("sessionId", "transaction:id:s3");
-        verify(mdcMock).put("segmentId", "5");
-        verify(mdcMock).put("ssid", null);
-        verify(mdcMock).put("ccnt", null);
+        mdcMock.verify(() -> MDC.put("sessionId", "transaction:id:s3"));
+        mdcMock.verify(() -> MDC.put("segmentId", "5"));
+        mdcMock.verify(() -> MDC.put("ssid", null));
+        mdcMock.verify(() -> MDC.put("ccnt", null));
 
-        verify(mdcMock).remove("segmentId");
-        verify(mdcMock).remove("sessionId");
-        verify(mdcMock).remove("ssid");
-        verify(mdcMock).remove("ccnt");
-        verifyNoMoreInteractions(mdcMock);
+        mdcMock.verify(() -> MDC.remove("segmentId"));
+        mdcMock.verify(() -> MDC.remove("sessionId"));
+        mdcMock.verify(() -> MDC.remove("ssid"));
+        mdcMock.verify(() -> MDC.remove("ccnt"));
+        mdcMock.verifyNoMoreInteractions();
     }
 
     @Test
@@ -95,16 +93,16 @@ class PxfContextMdcLogEnhancerFilterTest {
         mockRequest.addHeader("X-GP-COMMAND-COUNT", "7");
         filter.doFilter(mockRequest, mockResponse, mockFilterChain);
 
-        verify(mdcMock).put("sessionId", "transaction:id:default");
-        verify(mdcMock).put("segmentId", "5");
-        verify(mdcMock).put("ssid", "12345");
-        verify(mdcMock).put("ccnt", "7");
+        mdcMock.verify(() -> MDC.put("sessionId", "transaction:id:default"));
+        mdcMock.verify(() -> MDC.put("segmentId", "5"));
+        mdcMock.verify(() -> MDC.put("ssid", "12345"));
+        mdcMock.verify(() -> MDC.put("ccnt", "7"));
 
-        verify(mdcMock).remove("segmentId");
-        verify(mdcMock).remove("sessionId");
-        verify(mdcMock).remove("ssid");
-        verify(mdcMock).remove("ccnt");
-        verifyNoMoreInteractions(mdcMock);
+        mdcMock.verify(() -> MDC.remove("segmentId"));
+        mdcMock.verify(() -> MDC.remove("sessionId"));
+        mdcMock.verify(() -> MDC.remove("ssid"));
+        mdcMock.verify(() -> MDC.remove("ccnt"));
+        mdcMock.verifyNoMoreInteractions();
     }
 
     @Test
@@ -115,15 +113,15 @@ class PxfContextMdcLogEnhancerFilterTest {
         mockRequest.addHeader("X-GP-SEGMENT-ID", "5");
         filter.doFilter(mockRequest, mockResponse, mockFilterChain);
 
-        verify(mdcMock).put("sessionId", "transaction:id:default");
-        verify(mdcMock).put("segmentId", "5");
-        verify(mdcMock).put("ssid", null);
-        verify(mdcMock).put("ccnt", null);
+        mdcMock.verify(() -> MDC.put("sessionId", "transaction:id:default"));
+        mdcMock.verify(() -> MDC.put("segmentId", "5"));
+        mdcMock.verify(() -> MDC.put("ssid", null));
+        mdcMock.verify(() -> MDC.put("ccnt", null));
 
-        verify(mdcMock).remove("segmentId");
-        verify(mdcMock).remove("sessionId");
-        verify(mdcMock).remove("ssid");
-        verify(mdcMock).remove("ccnt");
-        verifyNoMoreInteractions(mdcMock);
+        mdcMock.verify(() -> MDC.remove("segmentId"));
+        mdcMock.verify(() -> MDC.remove("sessionId"));
+        mdcMock.verify(() -> MDC.remove("ssid"));
+        mdcMock.verify(() -> MDC.remove("ccnt"));
+        mdcMock.verifyNoMoreInteractions();
     }
 }

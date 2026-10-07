@@ -52,7 +52,6 @@ dependencies {
     testCompileOnly("org.apache.hadoop:hadoop-annotations")
     testImplementation("com.esotericsoftware:minlog")
     testImplementation("com.esotericsoftware:reflectasm")
-    testImplementation('org.mockito:mockito-inline')
     testImplementation('org.springframework.boot:spring-boot-starter-test')
 }
 

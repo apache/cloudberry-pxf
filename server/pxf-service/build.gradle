@@ -62,7 +62,6 @@ dependencies {
     testCompileOnly("org.apache.hadoop:hadoop-annotations")
     testImplementation("com.esotericsoftware:kryo")
     testImplementation("commons-io:commons-io")
-    testImplementation("org.simplify4u:slf4j-mock") // for MDC mocking
 
     developmentOnly('org.springframework.boot:spring-boot-devtools')
     testImplementation('org.springframework.boot:spring-boot-starter-test')
@@ -76,7 +75,7 @@ bootJar {
     manifest {
         attributes("Implementation-Title": project.name)
         attributes("Implementation-Version": project.version)
-        attributes('Main-Class': 'org.springframework.boot.loader.PropertiesLauncher')
+        attributes('Main-Class': 'org.springframework.boot.loader.launch.PropertiesLauncher')
     }
 }
 

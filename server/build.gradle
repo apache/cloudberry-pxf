@@ -29,10 +29,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.15.RELEASE'
 }
 
-// override Spring Framework version to pick the Spring MVC 5.3.33 with the async race condition fix
-// https://github.com/spring-projects/spring-framework/issues/32342
-ext['spring-framework.version'] = '5.3.33'
-ext['tomcat.version'] = '9.0.118'
+ext['tomcat.version'] = '10.1.60'
 
 def javaProjects = subprojects.findAll {
     it.name.startsWith("pxf-")
@@ -118,14 +115,8 @@ configure(javaProjects) {
             dependency("org.mortbay.jetty:jetty-util:6.1.26")
             dependency("org.objenesis:objenesis:2.1")
 
-            // revert once springboot provided postgresql is upgraded to bundle postgresql:42.7.2+
-            dependency("org.postgresql:postgresql:42.7.2")
+            dependency("org.postgresql:postgresql:42.7.13")
 
-            dependency("org.apache.tomcat.embed:tomcat-embed-core:9.0.118")
-            dependency("org.apache.tomcat.embed:tomcat-embed-el:9.0.118")
-            dependency("org.apache.tomcat.embed:tomcat-embed-websocket:9.0.118")
-
-            dependency("org.simplify4u:slf4j-mock:2.3.0")
             dependency("org.threeten:threeten-extra:1.5.0")
             dependency("org.tukaani:xz:1.8")
             dependency("org.wildfly.openssl:wildfly-openssl:1.0.7.Final")
@@ -235,19 +226,14 @@ configure(javaProjects) {
                 entry("aws-java-sdk-kms")
                 entry("aws-java-sdk-s3")
             }
+            dependency("org.apache.httpcomponents:httpclient:4.5.14") // Used by AWS SDK
 
             dependency("org.apache.logging.log4j:log4j-spring-boot:2.25.4")
-
-            // JAVA 21 support
-            dependencySet(group:"org.mockito", version:"4.11.0") {
-                entry("mockito-core")
-                entry("mockito-inline")
-            }
-            dependencySet(group:"net.bytebuddy", version:"1.14.19") {
-                entry("byte-buddy")
-                entry("byte-buddy-agent")
-            }
         }
+    }
+
+    dependencies {
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     }
 
     task removeIdeaOutDirectory(type: Delete) {

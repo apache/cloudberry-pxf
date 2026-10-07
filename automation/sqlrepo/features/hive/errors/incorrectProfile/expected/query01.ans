@@ -13,4 +13,4 @@
 -- s/DETAIL/GP_IGNORE: DETAIL/
 -- end_matchsubs
 SELECT *  FROM pxf_hive_small_data ORDER BY t1;
-ERROR:  remote component error (500) from 'SOME_IP:SOME_PORT':  type  Exception report   message   org.apache.hadoop.hbase.TableNotFoundException: hive_small_data    description   The server encountered an internal error that prevented it from fulfilling this request.    exception   javax.servlet.ServletException: org.apache.hadoop.hbase.TableNotFoundException: hive_small_data (libchurl.c:xxx)
+ERROR:  remote component error (500) from 'SOME_IP:SOME_PORT':  type  Exception report   message   org.apache.hadoop.hbase.TableNotFoundException: hive_small_data    description   The server encountered an internal error that prevented it from fulfilling this request.    exception   jakarta.servlet.ServletException: org.apache.hadoop.hbase.TableNotFoundException: hive_small_data (libchurl.c:xxx)

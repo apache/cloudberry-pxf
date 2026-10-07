@@ -19,7 +19,7 @@ You can supply the JDBC driver class name, database URL, and client credentials 
 
 ## JDBC Driver JAR Registration
 
-PXF is bundled with the `postgresql-42.7.2.jar` JAR file. If you require a different JDBC driver, ensure that you install the JDBC driver JAR file for the external SQL database in the `$PXF_BASE/lib` directory on each Apache Cloudberry host. Be sure to install JDBC driver JAR files that are compatible with your JRE version. See [Registering PXF Library Dependencies](../../../administering/reg_jar_depend.md) for additional information.
+PXF is bundled with the `postgresql-42.7.8.jar` JAR file. If you require a different JDBC driver, ensure that you install the JDBC driver JAR file for the external SQL database in the `$PXF_BASE/lib` directory on each Apache Cloudberry host. Be sure to install JDBC driver JAR files that are compatible with your JRE version. See [Registering PXF Library Dependencies](../../../administering/reg_jar_depend.md) for additional information.
 
 ## JDBC Server Configuration
 

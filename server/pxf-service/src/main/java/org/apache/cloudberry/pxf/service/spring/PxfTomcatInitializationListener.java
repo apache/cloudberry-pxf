@@ -40,7 +40,7 @@ public class PxfTomcatInitializationListener implements ApplicationListener<Serv
                 log.info("    - disableUploadTmeout   ={}", nioHandler.getDisableUploadTimeout());
                 log.info("    - connectionUploadTmeout={}", nioHandler.getConnectionUploadTimeout());
                 log.info("    - maxHeaderCount        ={}", nioHandler.getMaxHeaderCount());
-                log.info("    - maxHttpHeaderSize     ={}", nioHandler.getMaxHttpHeaderSize());
+                log.info("    - maxHttpRequestHeaderSize={}", nioHandler.getMaxHttpRequestHeaderSize());
                 log.info("    - maxThreads            ={}", nioHandler.getMaxThreads());
                 log.info("    - minSpareThreads       ={}", nioHandler.getMinSpareThreads());
             }

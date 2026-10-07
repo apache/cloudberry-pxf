@@ -244,7 +244,7 @@
             <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfThreadPoolTaskExecutor.java</exclude>
             <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfTomcatCustomizer.java</exclude>
             <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfTomcatInitializationListener.java</exclude>
-            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfWebMvcTagsContributor.java</exclude>
+            <exclude>server/pxf-service/src/main/java/org/apache/cloudberry/pxf/service/spring/PxfServerRequestObservationConvention.java</exclude>
             <exclude>server/doc/dependency_decisions.yml</exclude>
             <exclude>server/doc/README.md</exclude>
             <exclude>server/pxf-hdfs/build.gradle</exclude>
