@@ -1,0 +1,18 @@
+-- @description query01 for PXF parallel scan rescan - correlated subquery triggers rescan
+
+SET optimizer = off;
+SET
+SET enable_parallel = true;
+SET
+SET max_parallel_workers_per_gather = 4;
+SET
+SELECT t.id, (SELECT count(*) FROM pxf_parallel_enabled WHERE id <= t.id) AS running_count
+FROM pxf_parallel_enabled t
+WHERE t.id IN (1, 5000, 10000)
+ORDER BY t.id;
+  id   | running_count
+-------+---------------
+     1 |             1
+  5000 |          5000
+ 10000 |         10000
+(3 rows)

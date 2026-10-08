@@ -1,0 +1,13 @@
+-- @description query09 for PXF parallel scan correctness - COUNT DISTINCT no duplicates
+
+SET optimizer = off;
+SET
+SET enable_parallel = true;
+SET
+SET max_parallel_workers_per_gather = 4;
+SET
+SELECT count(DISTINCT id) FROM pxf_parallel_enabled;
+ count
+-------
+ 10000
+(1 row)
