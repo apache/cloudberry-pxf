@@ -24,7 +24,7 @@
 
   <groupId>org.apache.cloudberry</groupId>
   <artifactId>cloudberry-pxf</artifactId>
-  <version>2.1.0-incubating</version>
+  <version>2.2.0-incubating</version>
   <packaging>pom</packaging>
 
   <name>Apache Cloudberry PXF (Incubating)</name>
