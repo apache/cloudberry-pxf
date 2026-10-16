@@ -58,6 +58,8 @@ public class JdbcAccessorTest {
 
         accessor = new JdbcAccessor(mockConnectionManager, mockSecureLogin);
         configuration = new Configuration();
+        configuration.set("jdbc.user", "test-user");
+        configuration.set("jdbc.password", "test-password");
         context = new RequestContext();
         context.setConfig("default");
         context.setDataSource("test-table");
