@@ -1,0 +1,13 @@
+-- @description query05 for PXF parallel scan correctness - MIN/MAX/AVG aggregates
+
+SET optimizer = off;
+SET
+SET enable_parallel = true;
+SET
+SET max_parallel_workers_per_gather = 4;
+SET
+SELECT min(id), max(id), avg(id) FROM pxf_parallel_enabled;
+ min |  max  |          avg
+-----+-------+-----------------------
+   1 | 10000 | 5000.5000000000000000
+(1 row)
