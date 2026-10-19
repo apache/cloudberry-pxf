@@ -46,6 +46,7 @@ import org.apache.cloudberry.pxf.plugins.hdfs.utilities.RecordkeyAdapter;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -410,7 +411,9 @@ public class AvroResolver extends BasePlugin implements Resolver {
     int setArrayField(List<OneField> record, Object fieldValue,
                       Schema arraySchema, DataType gpdbColType) {
         Schema typeSchema = arraySchema.getElementType();
-        GenericData.Array<?> array = (GenericData.Array<?>) fieldValue;
+        // Since Avro 1.12 arrays of primitives are read as PrimitivesArrays.*Array,
+        // which do not extend GenericData.Array
+        Collection<?> array = (Collection<?>) fieldValue;
         int length = array.size();
         for (Object o : array) {
             populateRecord(record, o, typeSchema, gpdbColType);
