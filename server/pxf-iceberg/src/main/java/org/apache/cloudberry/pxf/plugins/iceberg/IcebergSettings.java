@@ -7,6 +7,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.cloudberry.pxf.api.model.RequestContext;
 
 import java.util.Map;
+import java.util.Objects;
 
 import static org.apache.iceberg.SnapshotRef.MAIN_BRANCH;
 
@@ -36,6 +37,20 @@ public class IcebergSettings {
     @EqualsAndHashCode.Exclude
     private final Configuration configuration;
 
+
+    /**
+     * Whether a catalog created for the other settings can be reused for these ones. Per-query options
+     * (branch, fragment size) do not matter, so concurrent queries using different branches share a catalog.
+     */
+    public boolean hasSameCatalogConfig(IcebergSettings other) {
+        return other != null
+                && Objects.equals(catalogName, other.catalogName)
+                && catalogType == other.catalogType
+                && Objects.equals(catalogProperties, other.catalogProperties)
+                && ssl == other.ssl
+                && Objects.equals(sslTrustStorePath, other.sslTrustStorePath)
+                && Objects.equals(sslTrustStorePassword, other.sslTrustStorePassword);
+    }
 
     public static IcebergSettings create(Configuration configuration, RequestContext context) {
         Map<String, String> configs = configuration.getPropsWithPrefix(ICEBERG_CONFIG_PREFIX);

@@ -36,6 +36,7 @@ public class WriteSynchronizer {
             semaphore.acquire();
         } catch (InterruptedException e) {
             log.error("Error during write opening", e);
+            Thread.currentThread().interrupt();
             return false;
         }
         return true;
@@ -44,8 +45,12 @@ public class WriteSynchronizer {
     public Collection<FileToCommit> saveAndGetFullListIfCompleted(int segmentId, FilesToCommitProvider filesProvider) throws Exception {
         log.info("Complete transaction id {}, segment id {}, current number of active threads is {}",
                 transactionId, segmentId, getNumberOfActiveThreads());
-        files.put(segmentId, filesProvider.get());
-        semaphore.release();
+        try {
+            files.put(segmentId, filesProvider.get());
+        } finally {
+            // release the permit even if the segment failed, otherwise the other segments never complete
+            semaphore.release();
+        }
         return tryToCompleteEverything(segmentId);
     }
 

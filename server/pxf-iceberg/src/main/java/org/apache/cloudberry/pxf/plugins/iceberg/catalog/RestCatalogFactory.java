@@ -40,7 +40,7 @@ public class RestCatalogFactory implements CatalogFactory {
         StorageType.findByWarehouse(props.get(CatalogProperties.WAREHOUSE_LOCATION))
                 .filter(StorageType.S3::equals)
                 .ifPresent(storageType -> {
-                    props.put(CatalogProperties.FILE_IO_IMPL, S3FileIO.class.getName());
+                    props.putIfAbsent(CatalogProperties.FILE_IO_IMPL, S3FileIO.class.getName());
                 });
     }
 

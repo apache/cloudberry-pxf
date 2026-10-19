@@ -28,6 +28,7 @@ public class IcebergReader implements Closeable {
     protected final TableScan tableScan;
     protected final FileScanTask task;
     private final AtomicLong counter = new AtomicLong(0);
+    private CloseableIterable<Record> records;
     private CloseableIterator<Record> recordsToRead;
 
     public boolean open() {
@@ -35,15 +36,23 @@ public class IcebergReader implements Closeable {
         if(taskRecords == 0){
             return false;
         }
-        this.recordsToRead = readRecords();
+        this.records = readRecords();
+        this.recordsToRead = records.iterator();
         return true;
     }
 
     @Override
     public void close() throws IOException {
         log.info("Reading of {} records from {} has been finished", counter.get(), task.file().location());
-        if(recordsToRead != null){
-            recordsToRead.close();
+        try {
+            if(recordsToRead != null){
+                recordsToRead.close();
+            }
+        } finally {
+            // closing the iterator alone leaves the file reader open (e.g. the ORC Reader)
+            if(records != null){
+                records.close();
+            }
         }
     }
 
@@ -55,7 +64,7 @@ public class IcebergReader implements Closeable {
         return new OneRow(recordsToRead.next());
     }
 
-    private CloseableIterator<Record> readRecords() {
+    private CloseableIterable<Record> readRecords() {
         var io = tableScan.table().io();
         DeleteFilter<Record> deletes = new GenericDeleteFilter(io, task, tableScan.table().schema(), tableScan.schema());
         Schema readSchema = deletes.requiredSchema();
@@ -65,8 +74,7 @@ public class IcebergReader implements Closeable {
                 PartitionUtil.constantsMap(task, IdentityPartitionConverters::convertConstant)
         );
         records = deletes.filter(records);
-        records = applyResidual(records, readSchema, task.residual());
-        return records.iterator();
+        return applyResidual(records, readSchema, task.residual());
     }
 
     private CloseableIterable<Record> applyResidual(CloseableIterable<Record> records, Schema recordSchema, Expression residual) {

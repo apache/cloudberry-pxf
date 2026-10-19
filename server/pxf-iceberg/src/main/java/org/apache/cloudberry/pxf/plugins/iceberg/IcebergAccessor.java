@@ -81,11 +81,17 @@ public class IcebergAccessor extends BasePlugin implements Accessor {
     }
 
     @Override
-    public void closeForWrite() {
+    public synchronized void closeForWrite() {
+        // may be called twice (pxf_cancel_backend and the write service) or after a failed openForWrite
+        if(writer == null) {
+            return;
+        }
         log.info("Closing writing to {}, segment is {}, transaction id is {}",
                 context.getDataSource(), context.getSegmentId(), context.getTransactionId());
+        IcebergWriter writerToClose = writer;
+        writer = null;
         try {
-            var result = writer.completeAndGetFilesToCommit();
+            var result = writerToClose.completeAndGetFilesToCommit();
             if(CollectionUtils.isEmpty(result)) {
                 return;
             }

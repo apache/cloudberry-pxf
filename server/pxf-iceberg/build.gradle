@@ -72,6 +72,7 @@ dependencies {
     implementation("org.apache.hive:hive-exec:${hiveVersion}:core")    { transitive = false }
     implementation("org.apache.hive:hive-serde")                       { transitive = false }
     implementation("org.apache.thrift:libthrift")                        { transitive = false }
+    implementation("org.apache.thrift:libfb303")                         { transitive = false } // ThriftHiveMetastore.Client extends FacebookService.Client
     implementation("javax.jdo:jdo-api")                                  { transitive = false }
 
     // AWS SDK v2 (required by iceberg-aws for S3FileIO and Glue catalog)

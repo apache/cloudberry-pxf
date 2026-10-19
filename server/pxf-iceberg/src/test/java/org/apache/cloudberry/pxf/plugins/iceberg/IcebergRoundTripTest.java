@@ -184,7 +184,7 @@ public class IcebergRoundTripTest {
             for (int i = 0; i < ROWS; i++) {
                 ((LongColumnVector) batch.cols[0]).vector[i] = i;
                 ((BytesColumnVector) batch.cols[1]).setVal(i, ("name-" + i).getBytes(StandardCharsets.UTF_8));
-                ((DecimalColumnVector) batch.cols[2]).set(i, HiveDecimal.create(i + ".25"));
+                ((DecimalColumnVector) batch.cols[2]).set(i, HiveDecimal.create(i + ".5"));
                 ((LongColumnVector) batch.cols[3]).vector[i] = LocalDate.parse("2024-01-0" + (i % 9 + 1)).toEpochDay();
                 ((TimestampColumnVector) batch.cols[4]).set(i,
                         Timestamp.from(LocalDateTime.parse("2024-01-02T03:04:0" + i).toInstant(ZoneOffset.UTC)));
@@ -214,7 +214,7 @@ public class IcebergRoundTripTest {
 
         List<List<String>> expected = new ArrayList<>();
         for (int i = firstId; i < ROWS; i++) {
-            expected.add(List.of(String.valueOf(i), "name-" + i, i + ".25",
+            expected.add(List.of(String.valueOf(i), "name-" + i, i + ".50",
                     "2024-01-0" + (i % 9 + 1), LocalDateTime.parse("2024-01-02T03:04:0" + i).toString()));
         }
         assertEquals(expected, actual);
@@ -224,7 +224,8 @@ public class IcebergRoundTripTest {
         return List.of(
                 new OneField(DataType.INTEGER.getOID(), i),
                 new OneField(DataType.TEXT.getOID(), "name-" + i),
-                new OneField(DataType.NUMERIC.getOID(), i + ".25"),
+                // scale 1 for a decimal(10, 2) column, the resolver has to rescale it
+                new OneField(DataType.NUMERIC.getOID(), i + ".5"),
                 new OneField(DataType.DATE.getOID(), "2024-01-0" + (i % 9 + 1)),
                 new OneField(DataType.TIMESTAMP.getOID(), "2024-01-02 03:04:0" + i)
         );
