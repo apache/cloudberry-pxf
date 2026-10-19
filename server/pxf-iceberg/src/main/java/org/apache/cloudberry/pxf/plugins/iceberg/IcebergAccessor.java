@@ -1,6 +1,5 @@
 package org.apache.cloudberry.pxf.plugins.iceberg;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cloudberry.pxf.plugins.iceberg.reader.*;
 import org.apache.cloudberry.pxf.plugins.iceberg.catalog.CatalogProvider;
 import org.apache.cloudberry.pxf.plugins.iceberg.table.TableWrapper;
@@ -10,16 +9,11 @@ import org.apache.iceberg.data.Record;
 import org.apache.cloudberry.pxf.api.OneRow;
 import org.apache.cloudberry.pxf.api.model.Accessor;
 import org.apache.cloudberry.pxf.api.model.BasePlugin;
-import org.apache.cloudberry.pxf.api.model.ProtocolVersionV1Aware;
 import org.apache.cloudberry.pxf.api.utilities.SpringContext;
 import org.springframework.util.CollectionUtils;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-
 @Slf4j
-public class IcebergAccessor extends BasePlugin implements Accessor, ProtocolVersionV1Aware {
+public class IcebergAccessor extends BasePlugin implements Accessor {
 
     private final CatalogProvider catalogProvider;
     private final ReaderProvider readerProvider;
@@ -28,8 +22,6 @@ public class IcebergAccessor extends BasePlugin implements Accessor, ProtocolVer
     private IcebergSettings settings;
     private IcebergReader reader;
     private IcebergWriter writer;
-
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public IcebergAccessor() {
         this(SpringContext.getBean(CatalogProvider.class),
@@ -102,28 +94,5 @@ public class IcebergAccessor extends BasePlugin implements Accessor, ProtocolVer
             throw new RuntimeException(e);
         }
     }
-
-    @Override
-    public byte[] closeForWriteAndReturnMetadata() throws Exception {
-        var result = new WriteResult(context.getSegmentId(), writer.completeAndGetFilesToCommit());
-        return objectMapper.writeValueAsBytes(result);
-    }
-
-    @Override
-    public void commit(List<byte[]> fullMetadata) {
-        var files = fullMetadata.stream()
-                .map(metadata -> {
-                    try {
-                        return objectMapper.readValue(metadata, WriteResult.class);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .flatMap(result -> result.files.stream())
-                .toList();
-        table.appendFiles(settings.getBranchName(), files);
-    }
-
-    record WriteResult(int segmentId, Collection<FileToCommit> files) {}
 
 }
