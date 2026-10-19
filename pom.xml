@@ -1346,7 +1346,7 @@
             <exclude>server/pxf-iceberg/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</exclude>
             <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/**</exclude>
             <exclude>server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/**</exclude>
-            <exclude>server/pxf-iceberg/src/test/java/org/apache/cloudberry/pxf/plugins/iceberg/**</exclude>
+            <exclude>server/pxf-iceberg/src/test/java/org/apache/cloudberry/pxf/plugins/iceberg/ExpressionBuilderTest.java</exclude>
 
             <!-- End of the Greengage files -->
 
