@@ -16,6 +16,11 @@ local segments to the Iceberg table once all of them have finished writing. The 
 "master-commit" protocol (`ext_protocol_version 'v1'`), which commits all files in a single
 snapshot from the coordinator, is not supported yet.
 
+Known limitations:
+- An `INSERT` is not atomic: each PXF host commits its own snapshot, and PXF has no way to tell a
+  plugin that a write failed, so a failed or cancelled `INSERT` may leave some of its rows in the table.
+- Only Parquet data files are written.
+
 There are few ways to define Cloudberry tables that will be used for work with Iceberg. 
 
 **Example of reading using external tables**
@@ -52,7 +57,7 @@ CREATE FOREIGN DATA WRAPPER iceberg_pxf_fdw
                    
 CREATE SERVER iceberg_rest_server
         FOREIGN DATA WRAPPER iceberg_pxf_fdw
-        OPTIONS (uri 'http://iceberg-rest:8181');
+        OPTIONS (catalog_type 'REST', uri 'http://iceberg-rest:8181');
                    
 CREATE USER MAPPING FOR CURRENT_USER SERVER iceberg_rest_server;  
 
@@ -80,7 +85,7 @@ CREATE FOREIGN DATA WRAPPER iceberg_pxf_fdw
 
 CREATE SERVER iceberg_hive_server
          FOREIGN DATA WRAPPER iceberg_pxf_fdw
-         OPTIONS (uri 'thrift://hive-metastore:9083');
+         OPTIONS (catalog_type 'HIVE_METASTORE', uri 'thrift://hive-metastore:9083');
 
 CREATE USER MAPPING FOR CURRENT_USER SERVER iceberg_hive_server;               
  
@@ -107,7 +112,7 @@ There are few options that help to configure working with Iceberg data source:
 |------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
 | uri                    | Catalog uri                                                                                                                                                                                                                                                      | iceberg.param.uri                                                   |
 | warehouse              | Data warehouse                                                                                                                                                                                                                                                   | iceberg.param.warehouse                                             |
-| catalog_type           | Catalog type, current supported values are REST, HIVE_METASTORE                                                                                                                                                                                                  | iceberg.config.catalog.type                                         |
+| catalog_type           | Catalog type (required), current supported values are REST, HIVE_METASTORE                                                                                                                                                                                               | iceberg.config.catalog.type                                         |
 | catalog_name           | Catalog name                                                                                                                                                                                                                                                     | iceberg.config.catalog.name                                         |
 | ssl                    | Parameter to enable the working with secured connections. For some cases it's optional, for example, in case of rest catalog if you don't need to use custom trust store it's enough to define uri address started from **https**  to start working through ssl. | iceberg.config.ssl.enabled                                          |
 | sslTrustStorePath      | The path to ssl trust store. If it's not defined and the value of **ssl** is **true**, connector uses JVM global trust store.                                                                                                                                    | iceberg.config.ssl.truststore.path                                  |
