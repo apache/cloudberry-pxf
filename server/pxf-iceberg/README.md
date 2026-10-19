@@ -2,19 +2,21 @@
 
 Overview
 
-Implementation an Apache Iceberg connector for PXF. 
+An Apache Iceberg connector for PXF, ported from
+[GreengageDB/pxf](https://github.com/GreengageDB/pxf) (`server/pxf-iceberg`).
 Covers:
 - Reading (Parquet, ORC, Avro formats via format-specific ReaderFactory impls)
 - Writing (Parquet only, via WriterFactory)
-- Supproted catalog types: Hive Metastore, REST
+- Supported catalog types: Hive Metastore, REST
 - Predicate pushdown and column projection during fragmentation
 - Iceberg branch support for reads and writes
 
-Also, plugin partially, for FDW tables only, supports master-commit protocol introduced in recent Greengage versions.
-This significantly reduces the amount of metadata stored by Iceberg, especially for large clusters with a lot of number of segments.
-**Important notes.** Since the final step of master-commit protocol is executed on master host it should have iceberg configs similar to segment host's configs. 
+Writes are committed per PXF host: each PXF instance appends the data files produced by its
+local segments to the Iceberg table once all of them have finished writing. The Greengage
+"master-commit" protocol (`ext_protocol_version 'v1'`), which commits all files in a single
+snapshot from the coordinator, is not supported yet.
 
-There are few ways to define Greengage tables that will be used for work with Iceberg. 
+There are few ways to define Cloudberry tables that will be used for work with Iceberg. 
 
 **Example of reading using external tables**
 ```sql
@@ -68,16 +70,6 @@ INSERT INTO fdw_iceberg
 SELECT * FROM fdw_iceberg;        
         
 ```
-
-Master-commit protocol is enabled by adding **ext_protocol_version** parameter with value **'v1'** to definition of foreign data wrapper.
-Example of such definition is below.
-```sql
-CREATE FOREIGN DATA WRAPPER iceberg_pxf_fdw
-                    HANDLER pxf_fdw_handler
-                    VALIDATOR pxf_fdw_validator
-                    OPTIONS ( protocol 'iceberg', mpp_execute 'all segments', ext_protocol_version 'v1' );
-```
-
 
 **Example of work using Foreign Data Wrappers through Hive Catalog**
 ```sql

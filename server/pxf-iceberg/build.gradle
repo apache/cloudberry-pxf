@@ -41,8 +41,6 @@ dependencies {
     implementation("org.apache.hadoop:hadoop-auth")                      { transitive = false }
     implementation("org.apache.hadoop:hadoop-yarn-api")                  { transitive = false } // Kerberos dependency
     implementation("org.apache.hadoop:hadoop-mapreduce-client-core")     { transitive = false }
-    implementation("org.apache.hadoop.thirdparty:hadoop-shaded-guava")   { transitive = false }
-    implementation("org.apache.hadoop.thirdparty:hadoop-shaded-protobuf_3_7") { transitive = false }
     implementation("org.apache.htrace:htrace-core4")                     { transitive = false }
     implementation("com.fasterxml.woodstox:woodstox-core")               { transitive = false }
     implementation("org.codehaus.woodstox:stax2-api")                    { transitive = false }
@@ -60,7 +58,7 @@ dependencies {
     // ORC format (required by iceberg-orc)
     implementation("org.apache.orc:orc-core")                            { transitive = false }
     implementation("org.apache.orc:orc-shims")                           { transitive = false }
-    implementation("io.arenadata.hive:hive-common")                      { transitive = false }
+    implementation("org.apache.hive:hive-common")                      { transitive = false }
     implementation("org.apache.hive:hive-storage-api")                   { transitive = false } // SearchArgument, VectorizedRowBatch, HiveDecimal
     implementation("com.google.protobuf:protobuf-java")                  { transitive = false }
     implementation("org.threeten:threeten-extra")                        { transitive = false }
@@ -69,9 +67,9 @@ dependencies {
     implementation("org.apache.avro:avro")                               { transitive = false }
 
     // Hive Metastore client (required by iceberg-hive-metastore)
-    implementation("io.arenadata.hive:hive-metastore")                   { transitive = false }
-    implementation("io.arenadata.hive:hive-exec:${hiveVersion}:core")    { transitive = false }
-    implementation("io.arenadata.hive:hive-serde")                       { transitive = false }
+    implementation("org.apache.hive:hive-metastore")                   { transitive = false }
+    implementation("org.apache.hive:hive-exec:${hiveVersion}:core")    { transitive = false }
+    implementation("org.apache.hive:hive-serde")                       { transitive = false }
     implementation("org.apache.thrift:libthrift")                        { transitive = false }
     implementation("javax.jdo:jdo-api")                                  { transitive = false }
 
@@ -97,7 +95,7 @@ dependencies {
     // Compression codecs
     implementation("org.apache.commons:commons-compress")                { transitive = false }
     implementation("com.github.luben:zstd-jni")                          { transitive = false }
-    implementation("org.lz4:lz4-java")                                   { transitive = false }
+    implementation("at.yawk.lz4:lz4-java")                                   { transitive = false }
     implementation("org.xerial.snappy:snappy-java")                      { transitive = false }
 
     // Common utilities

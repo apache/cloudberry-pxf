@@ -13,7 +13,6 @@ import org.apache.iceberg.io.BaseTaskWriter;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.PartitionedFanoutWriter;
 import org.apache.iceberg.io.UnpartitionedWriter;
-import org.apache.cloudberry.pxf.api.model.ProtocolVersion;
 import org.apache.cloudberry.pxf.api.model.RequestContext;
 import org.springframework.stereotype.Component;
 
@@ -39,10 +38,6 @@ public class WriterFactory {
     }
 
     private IcebergWriter addSynchronizationIfNeeded(IcebergWriter writer, RequestContext context) {
-        if(ProtocolVersion.V1.equals(context.getProtocolVersion())) {
-            // we don't need to add synchronization since it will be done by using master-commit protocol
-            return writer;
-        }
         var synchronizer = synchronizers.compute(context.getTransactionId(), (key, existed) -> {
             var current = existed != null ? existed : new WriteSynchronizer(key);
             if(current.open(context.getSegmentId())) {
