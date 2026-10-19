@@ -21,7 +21,8 @@ public class IcebergAccessor extends BasePlugin implements Accessor {
     private TableWrapper table;
     private IcebergSettings settings;
     private IcebergReader reader;
-    private IcebergWriter writer;
+    // volatile: closeForWrite() may run on the pxf_cancel_backend thread
+    private volatile IcebergWriter writer;
 
     public IcebergAccessor() {
         this(SpringContext.getBean(CatalogProvider.class),
