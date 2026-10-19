@@ -35,6 +35,12 @@ import org.apache.cloudberry.pxf.plugins.iceberg.table.TableWrapper;
 import org.apache.cloudberry.pxf.plugins.iceberg.writer.IcebergWriter;
 import org.apache.cloudberry.pxf.plugins.iceberg.writer.WriterFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hive.common.type.HiveDecimal;
+import org.apache.hadoop.hive.ql.exec.vector.BytesColumnVector;
+import org.apache.hadoop.hive.ql.exec.vector.DecimalColumnVector;
+import org.apache.hadoop.hive.ql.exec.vector.LongColumnVector;
+import org.apache.hadoop.hive.ql.exec.vector.TimestampColumnVector;
+import org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileFormat;
@@ -51,6 +57,9 @@ import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.types.Types;
+import org.apache.orc.OrcFile;
+import org.apache.orc.TypeDescription;
+import org.apache.orc.Writer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -58,7 +67,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -124,7 +138,7 @@ public class IcebergRoundTripTest {
     @ParameterizedTest
     @EnumSource(value = FileFormat.class, names = {"PARQUET", "ORC", "AVRO"})
     public void testReadFileFormat(FileFormat format) throws Exception {
-        appendWithGenericAppender(format);
+        appendDataFile(format);
 
         assertRows(table.newScan(), 0);
     }
@@ -132,26 +146,52 @@ public class IcebergRoundTripTest {
     @ParameterizedTest
     @EnumSource(value = FileFormat.class, names = {"PARQUET", "ORC", "AVRO"})
     public void testReadWithFilter(FileFormat format) throws Exception {
-        appendWithGenericAppender(format);
+        appendDataFile(format);
 
         assertRows(table.newScan().filter(Expressions.greaterThanOrEqual("id", 5)), 5);
     }
 
-    private void appendWithGenericAppender(FileFormat format) throws Exception {
+    private void appendDataFile(FileFormat format) throws Exception {
         File file = tempDir.resolve("data." + format.name().toLowerCase()).toFile();
-        FileAppender<Record> appender = new GenericAppenderFactory(SCHEMA).newAppender(Files.localOutput(file), format);
-        try (appender) {
-            for (int i = 0; i < ROWS; i++) {
-                appender.add((Record) resolver.setFields(fields(i)).getData());
-            }
-        }
-        DataFile dataFile = DataFiles.builder(PartitionSpec.unpartitioned())
+        DataFiles.Builder builder = DataFiles.builder(PartitionSpec.unpartitioned())
                 .withPath(file.getAbsolutePath())
-                .withFormat(format)
-                .withFileSizeInBytes(file.length())
-                .withMetrics(appender.metrics())
-                .build();
+                .withFormat(format);
+        if (format == FileFormat.ORC) {
+            // Iceberg's own ORC writer needs the "nohive" flavor of orc-core, while PXF ships the
+            // regular one, so write a plain ORC file and let the reader map columns by name
+            writeOrcFile(file);
+            builder.withRecordCount(ROWS);
+        } else {
+            FileAppender<Record> appender = new GenericAppenderFactory(SCHEMA).newAppender(Files.localOutput(file), format);
+            try (appender) {
+                for (int i = 0; i < ROWS; i++) {
+                    appender.add((Record) resolver.setFields(fields(i)).getData());
+                }
+            }
+            builder.withMetrics(appender.metrics());
+        }
+        DataFile dataFile = builder.withFileSizeInBytes(file.length()).build();
         table.newAppend().appendFile(dataFile).commit();
+    }
+
+    private void writeOrcFile(File file) throws Exception {
+        TypeDescription orcSchema = TypeDescription.fromString(
+                "struct<id:int,name:string,amount:decimal(10,2),created:date,updated:timestamp>");
+        Writer writer = OrcFile.createWriter(new org.apache.hadoop.fs.Path(file.getAbsolutePath()),
+                OrcFile.writerOptions(new Configuration()).setSchema(orcSchema).useUTCTimestamp(true));
+        try (writer) {
+            VectorizedRowBatch batch = orcSchema.createRowBatch(ROWS);
+            for (int i = 0; i < ROWS; i++) {
+                ((LongColumnVector) batch.cols[0]).vector[i] = i;
+                ((BytesColumnVector) batch.cols[1]).setVal(i, ("name-" + i).getBytes(StandardCharsets.UTF_8));
+                ((DecimalColumnVector) batch.cols[2]).set(i, HiveDecimal.create(i + ".25"));
+                ((LongColumnVector) batch.cols[3]).vector[i] = LocalDate.parse("2024-01-0" + (i % 9 + 1)).toEpochDay();
+                ((TimestampColumnVector) batch.cols[4]).set(i,
+                        Timestamp.from(LocalDateTime.parse("2024-01-02T03:04:0" + i).toInstant(ZoneOffset.UTC)));
+            }
+            batch.size = ROWS;
+            writer.addRowBatch(batch);
+        }
     }
 
     private void assertRows(TableScan scan, int firstId) throws Exception {
@@ -175,7 +215,7 @@ public class IcebergRoundTripTest {
         List<List<String>> expected = new ArrayList<>();
         for (int i = firstId; i < ROWS; i++) {
             expected.add(List.of(String.valueOf(i), "name-" + i, i + ".25",
-                    "2024-01-0" + (i % 9 + 1), "2024-01-02T03:04:0" + i));
+                    "2024-01-0" + (i % 9 + 1), LocalDateTime.parse("2024-01-02T03:04:0" + i).toString()));
         }
         assertEquals(expected, actual);
     }
