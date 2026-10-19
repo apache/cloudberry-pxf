@@ -294,6 +294,15 @@ Apache Cloudberry PXF includes codes from
 ----------------------------
    Apache License - Version 2.0
 
+      ORC readers adapted from Apache Iceberg's iceberg-orc module by
+      Arenadata (see NOTICE), so that they work with the hive-storage-api
+      flavor of Apache ORC shipped with PXF:
+
+      server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/
+
+----------------------------
+   Apache License - Version 2.0
+
       Gradle wrapper installer, adapted from Project Nessie
       (https://github.com/projectnessie/nessie), see NOTICE:
 
@@ -335,7 +344,7 @@ Apache Cloudberry PXF includes codes from
 ----------------------------
    Apache License - Version 2.0
 
-      server/pxf-iceberg/*
+      server/pxf-iceberg/
 
       Copyright (C) 2026 Arenadata
 
