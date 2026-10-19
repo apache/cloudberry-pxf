@@ -92,6 +92,8 @@ dependencies {
     implementation("io.airlift:aircompressor")                           { transitive = false }
     implementation("dev.failsafe:failsafe")                              { transitive = false }
     implementation("org.apache.httpcomponents.client5:httpclient5")      { transitive = false } // REST catalog
+    implementation("org.apache.httpcomponents.core5:httpcore5")          { transitive = false }
+    implementation("org.apache.httpcomponents.core5:httpcore5-h2")       { transitive = false }
 
     // Compression codecs
     implementation("org.apache.commons:commons-compress")                { transitive = false }
@@ -116,6 +118,7 @@ dependencies {
      * Test Dependencies
      *******************************/
 
+    testCompileOnly("org.apache.hadoop:hadoop-annotations")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
 }
