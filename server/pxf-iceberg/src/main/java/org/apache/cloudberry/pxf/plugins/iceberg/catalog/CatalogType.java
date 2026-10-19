@@ -2,6 +2,8 @@ package org.apache.cloudberry.pxf.plugins.iceberg.catalog;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Locale;
+
 public enum CatalogType {
     HIVE_METASTORE,
     REST,
@@ -14,6 +16,6 @@ public enum CatalogType {
         if(StringUtils.isEmpty(name)){
             throw new IllegalArgumentException("Catalog type can't be empty");
         }
-        return valueOf(name.toUpperCase());
+        return valueOf(name.toUpperCase(Locale.ROOT));
     }
 }

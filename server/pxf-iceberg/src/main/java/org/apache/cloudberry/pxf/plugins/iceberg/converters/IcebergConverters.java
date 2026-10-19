@@ -35,7 +35,9 @@ public interface IcebergConverters {
                     val -> Double.parseDouble(val.toString())
             ),
             // decimal converter
-            new SimpleIcebergConverter<>(Types.DecimalType.of(10, 5), DataType.FLOAT8, Double::parseDouble),
+            new SimpleIcebergConverter<>(Types.DecimalType.of(10, 5), DataType.FLOAT8, BigDecimal::new,
+                    val -> ((BigDecimal) val).doubleValue()
+            ),
             new SimpleIcebergConverter<>(Types.DecimalType.of(10, 5), DataType.NUMERIC, BigDecimal::new),
             //  date converter
             new SimpleIcebergConverter<>(Types.DateType.get(), DataType.DATE, LocalDate::parse),

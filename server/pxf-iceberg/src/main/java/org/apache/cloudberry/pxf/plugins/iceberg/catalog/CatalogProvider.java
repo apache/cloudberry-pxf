@@ -33,7 +33,7 @@ public class CatalogProvider implements AutoCloseable {
         var catalogKey = new CatalogKey(settings.getCatalogName(), settings.getCatalogType());
         AtomicReference<CatalogWrapper> toClose = new AtomicReference<>();
         var result = catalogs.compute(catalogKey, (key, current) -> {
-            if (current != null && Objects.equals(current.getSettings(), settings)) {
+            if (current != null && current.getSettings().hasSameCatalogConfig(settings)) {
                 return current;
             }
             toClose.set(current);

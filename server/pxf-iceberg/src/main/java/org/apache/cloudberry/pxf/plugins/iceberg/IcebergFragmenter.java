@@ -68,11 +68,12 @@ public class IcebergFragmenter extends BasePlugin implements Fragmenter {
     public FragmentStats getFragmentStats() throws Exception {
         var tableScan = buildTableScan();
         try(CloseableIterable<FileScanTask> tasks = tableScan.planFiles()) {
-            var counts = transformTasks(tasks, task -> task.file().recordCount(), (f1, f2) -> 0);
-            if(counts.isEmpty()){
+            // FragmentStats expects sizes in bytes, use the length of each (split) task
+            var sizes = transformTasks(tasks, FileScanTask::length, (f1, f2) -> 0);
+            if(sizes.isEmpty()){
                 return new FragmentStats(0, 0, 0);
             }
-            return new FragmentStats(counts.size(), counts.get(0), counts.stream().mapToLong(it -> it).sum());
+            return new FragmentStats(sizes.size(), sizes.get(0), sizes.stream().mapToLong(it -> it).sum());
         }
     }
 
