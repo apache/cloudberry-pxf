@@ -502,6 +502,7 @@ jobs:
           - profile
           - proxy
           - unused
+          - iceberg
           - features
           - features_fdw
           - load
@@ -693,6 +694,7 @@ jobs:
           - profile
           - proxy
           - unused
+          - iceberg
           - features
           - features_fdw
           - load
@@ -883,6 +885,7 @@ jobs:
           - profile
           - proxy
           - unused
+          - iceberg
           - features
           - features_fdw
           - load

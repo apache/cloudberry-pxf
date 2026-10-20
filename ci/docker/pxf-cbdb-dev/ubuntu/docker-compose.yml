@@ -50,7 +50,29 @@ services:
       # 5xx from Maven Central and single-source repos (top-q.co.il for
       # JSystem) once the cache is warm.
       - ../../../../../.m2:/home/gpadmin/.m2
+      - iceberg-warehouse:/tmp/iceberg-warehouse
     command: ["tail", "-f", "/dev/null"]
+
+  # Iceberg REST catalog for the iceberg test group. The warehouse is a local
+  # directory mounted at the same path here and in pxf-cbdb-dev, so the paths
+  # the catalog records are valid for PXF too; the catalog runs as gpadmin's
+  # uid so that PXF can write data files into table directories it creates.
+  iceberg-rest:
+    image: apache/iceberg-rest-fixture:1.9.2
+    container_name: iceberg-rest
+    hostname: iceberg-rest
+    user: "${PXF_GPADMIN_UID:-1000}:${PXF_GPADMIN_GID:-1000}"
+    environment:
+      CATALOG_WAREHOUSE: file:///tmp/iceberg-warehouse
+      CATALOG_IO__IMPL: org.apache.iceberg.hadoop.HadoopFileIO
+      # The default in-memory SQLite database is per connection and loses
+      # tables with pooled connections; keep the catalog in a file instead.
+      CATALOG_URI: jdbc:sqlite:file:/tmp/iceberg_catalog.db
+    volumes:
+      - iceberg-warehouse:/tmp/iceberg-warehouse
+
+volumes:
+  iceberg-warehouse:
 
 networks:
   default:
