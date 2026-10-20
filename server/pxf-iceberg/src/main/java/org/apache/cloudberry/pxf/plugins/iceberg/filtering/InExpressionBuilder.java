@@ -4,8 +4,6 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.cloudberry.pxf.api.filter.Operator;
 
-import static org.apache.cloudberry.pxf.plugins.iceberg.converters.IcebergConverters.getIcebergConverter;
-
 public class InExpressionBuilder extends AbstractExpressionBuilder {
 
     public InExpressionBuilder() {
@@ -17,10 +15,12 @@ public class InExpressionBuilder extends AbstractExpressionBuilder {
         if(!data.getCloudberryType().isArrayType()) {
             throw new IllegalStateException("Value should be array for operator " + getOperator());
         }
-        var converter = getIcebergConverter(data.getCloudberryType().getTypeElem(), data.getIcebergType());
+        var elementType = data.getCloudberryType().getTypeElem();
         return Expressions.in(
                 data.getColumnName(),
-                data.getCollectionData().stream().map(converter::convertFromCloudberryToIceberg).toList()
+                data.getCollectionData().stream()
+                        .map(value -> toIcebergLiteral(elementType, data.getIcebergType(), value))
+                        .toList()
         );
 
     }

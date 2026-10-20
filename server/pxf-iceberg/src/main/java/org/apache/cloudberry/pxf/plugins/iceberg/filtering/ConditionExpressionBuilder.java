@@ -7,8 +7,6 @@ import org.apache.cloudberry.pxf.api.filter.Operator;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-import static org.apache.cloudberry.pxf.plugins.iceberg.converters.IcebergConverters.getIcebergConverter;
-
 public class ConditionExpressionBuilder extends AbstractExpressionBuilder {
 
     public static Map<Operator, BiFunction<String, Object, Expression>> operators = Map.of(
@@ -29,7 +27,7 @@ public class ConditionExpressionBuilder extends AbstractExpressionBuilder {
     protected Expression buildAfterValidation(ExpressionData data) {
         return operators.get(getOperator()).apply(
             data.getColumnName(),
-            getIcebergConverter(data.getCloudberryType(), data.getIcebergType()).convertFromCloudberryToIceberg(data.getScalarOperandValue())
+            toIcebergLiteral(data.getCloudberryType(), data.getIcebergType(), data.getScalarOperandValue())
         );
     }
 }
