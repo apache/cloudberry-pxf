@@ -294,6 +294,41 @@ Apache Cloudberry PXF includes codes from
 ----------------------------
    Apache License - Version 2.0
 
+      ORC readers adapted by Arenadata from Apache Iceberg 1.10.1 (see
+      NOTICE), so that they work with the hive-storage-api flavor of Apache
+      ORC shipped with PXF. Paths of the originals are relative to the
+      Apache Iceberg source tree:
+
+      server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfExpressionToSearchArgument.java
+      (adapted from orc/src/main/java/org/apache/iceberg/orc/ExpressionToSearchArgument.java)
+
+      server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfGenericOrcReader.java
+      (adapted from orc/src/main/java/org/apache/iceberg/data/orc/GenericOrcReader.java)
+
+      server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfGenericOrcReaders.java
+      (adapted from orc/src/main/java/org/apache/iceberg/data/orc/GenericOrcReaders.java)
+
+      server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfOrcIterable.java
+      (adapted from orc/src/main/java/org/apache/iceberg/orc/OrcIterable.java)
+
+      server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfOrcReadBuilder.java
+      (adapted from ORC.ReadBuilder in orc/src/main/java/org/apache/iceberg/orc/ORC.java)
+
+      server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfOrcRowReader.java
+      (adapted from orc/src/main/java/org/apache/iceberg/orc/OrcRowReader.java)
+
+      server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfOrcValueReader.java
+      (adapted from orc/src/main/java/org/apache/iceberg/orc/OrcValueReader.java)
+
+      server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfOrcValueReaders.java
+      (adapted from orc/src/main/java/org/apache/iceberg/orc/OrcValueReaders.java)
+
+      server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfVectorizedRowBatchIterator.java
+      (adapted from orc/src/main/java/org/apache/iceberg/orc/VectorizedRowBatchIterator.java)
+
+----------------------------
+   Apache License - Version 2.0
+
       Gradle wrapper installer, adapted from Project Nessie
       (https://github.com/projectnessie/nessie), see NOTICE:
 
@@ -317,8 +352,52 @@ Apache Cloudberry PXF includes codes from
    Apache License - Version 2.0
 
       server/pxf-hbase-lib/build.gradle
-
       Copyright (C) 2024 Arenadata
+
+      server/pxf-iceberg/README.md
+      server/pxf-iceberg/build.gradle
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/IcebergAccessor.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/IcebergAutoConfiguration.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/IcebergFragmenter.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/IcebergResolver.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/IcebergSettings.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/CatalogFactory.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/CatalogKey.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/CatalogProvider.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/CatalogType.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/CatalogWrapper.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/HiveCatalogFactory.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/RestCatalogFactory.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/StorageType.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/converters/IcebergConverter.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/converters/IcebergConverters.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/converters/SimpleIcebergConverter.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/AbstractExpressionBuilder.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/ConditionExpressionBuilder.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/ExpressionBuilder.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/ExpressionData.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/InExpressionBuilder.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/InternalExpressionBuilder.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/IsNullExpressionBuilder.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/LogicalExpressionBuilder.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/NotExpressionBuilder.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/AvroReaderFactory.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/IcebergFragmentMetadata.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/IcebergReader.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/OrcReaderFactory.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/ParquetReaderFactory.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/ReaderFactory.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/ReaderProvider.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/table/TableWrapper.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/writer/FileToCommit.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/writer/IcebergWriter.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/writer/IcebergWriterImpl.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/writer/IcebergWriterWithSynchronization.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/writer/WriteSynchronizer.java
+      server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/writer/WriterFactory.java
+      server/pxf-iceberg/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+      server/pxf-iceberg/src/test/java/org/apache/cloudberry/pxf/plugins/iceberg/ExpressionBuilderTest.java
+      Copyright (C) 2026 Arenadata
 
       Licensed under the Apache License, Version 2.0 (the "License");
       you may not use this file except in compliance with the License.

@@ -1342,6 +1342,58 @@
                 retaining them in the source distribution.
             -->
             <exclude>server/pxf-hbase-lib/build.gradle</exclude>
+            <exclude>server/pxf-iceberg/README.md</exclude>
+            <exclude>server/pxf-iceberg/build.gradle</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/IcebergAccessor.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/IcebergAutoConfiguration.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/IcebergFragmenter.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/IcebergResolver.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/IcebergSettings.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/CatalogFactory.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/CatalogKey.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/CatalogProvider.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/CatalogType.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/CatalogWrapper.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/HiveCatalogFactory.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/RestCatalogFactory.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/catalog/StorageType.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/converters/IcebergConverter.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/converters/IcebergConverters.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/converters/SimpleIcebergConverter.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/AbstractExpressionBuilder.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/ConditionExpressionBuilder.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/ExpressionBuilder.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/ExpressionData.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/InExpressionBuilder.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/InternalExpressionBuilder.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/IsNullExpressionBuilder.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/LogicalExpressionBuilder.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/filtering/NotExpressionBuilder.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/AvroReaderFactory.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/IcebergFragmentMetadata.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/IcebergReader.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/OrcReaderFactory.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/ParquetReaderFactory.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/ReaderFactory.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/reader/ReaderProvider.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/table/TableWrapper.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/writer/FileToCommit.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/writer/IcebergWriter.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/writer/IcebergWriterImpl.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/writer/IcebergWriterWithSynchronization.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/writer/WriteSynchronizer.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/cloudberry/pxf/plugins/iceberg/writer/WriterFactory.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</exclude>
+            <exclude>server/pxf-iceberg/src/test/java/org/apache/cloudberry/pxf/plugins/iceberg/ExpressionBuilderTest.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfExpressionToSearchArgument.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfGenericOrcReader.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfGenericOrcReaders.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfOrcIterable.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfOrcReadBuilder.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfOrcRowReader.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfOrcValueReader.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfOrcValueReaders.java</exclude>
+            <exclude>server/pxf-iceberg/src/main/java/org/apache/iceberg/orc/PxfVectorizedRowBatchIterator.java</exclude>
 
             <!-- End of the Greengage files -->
 
