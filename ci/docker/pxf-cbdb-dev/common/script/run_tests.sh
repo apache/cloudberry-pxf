@@ -284,6 +284,57 @@ configure_pxf_default_hdfs_server() {
   JAVA_HOME="${JAVA_BUILD}" "${PXF_HOME}/bin/pxf" restart >/dev/null || true
 }
 
+# Iceberg REST catalog started next to pxf-cbdb-dev by docker-compose
+export ICEBERG_REST_URI=${ICEBERG_REST_URI:-http://iceberg-rest:8181}
+ICEBERG_WAREHOUSE_DIR=${ICEBERG_WAREHOUSE_DIR:-/tmp/iceberg-warehouse}
+
+# Point the iceberg_rest PXF server at the REST catalog and wait until the catalog is up
+configure_pxf_iceberg_server() {
+  # docker creates the shared warehouse volume owned by root; the catalog and
+  # PXF both write to it as gpadmin
+  if [ -d "${ICEBERG_WAREHOUSE_DIR}" ]; then
+    sudo chown gpadmin:gpadmin "${ICEBERG_WAREHOUSE_DIR}"
+  fi
+  local server_dir="${PXF_BASE}/servers/iceberg_rest"
+  mkdir -p "${server_dir}"
+  cat > "${server_dir}/iceberg-site.xml" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <property>
+    <name>iceberg.config.catalog.type</name>
+    <value>REST</value>
+  </property>
+  <property>
+    <name>iceberg.config.catalog.name</name>
+    <value>rest</value>
+  </property>
+  <property>
+    <name>iceberg.param.uri</name>
+    <value>${ICEBERG_REST_URI}</value>
+  </property>
+</configuration>
+EOF
+  JAVA_HOME="${JAVA_BUILD}" "${PXF_HOME}/bin/pxf" restart >/dev/null
+  echo "[run_tests] waiting for Iceberg REST catalog at ${ICEBERG_REST_URI}..."
+  for _ in {1..30}; do
+    if curl -sf "${ICEBERG_REST_URI}/v1/config" >/dev/null; then
+      echo "[run_tests] Iceberg REST catalog is ready"
+      return 0
+    fi
+    sleep 2
+  done
+  echo "[run_tests] ERROR: Iceberg REST catalog is not reachable at ${ICEBERG_REST_URI}"
+  return 1
+}
+
+iceberg_test() {
+  export PROTOCOL=
+  configure_pxf_iceberg_server
+  make GROUP="iceberg"
+  save_test_reports "iceberg"
+  echo "[run_tests] GROUP=iceberg finished"
+}
+
 ensure_gpupgrade_helpers() {
   export PXF_HOME=${PXF_HOME:-/usr/local/pxf}
   export PXF_BASE=${PXF_BASE:-/home/gpadmin/pxf-base}
@@ -458,7 +509,7 @@ generate_test_summary() {
 
     local group=$(basename "$group_dir")
     # Skip if it's not a test group directory
-    [[ "$group" =~ ^(hcfs|hdfs|hive|hbase|profile|proxy|unused|features|features_fdw|load|performance|fdw)$ ]] || continue
+    [[ "$group" =~ ^(hcfs|hdfs|hive|hbase|profile|proxy|unused|iceberg|features|features_fdw|load|performance|fdw)$ ]] || continue
 
     echo "Processing $group test reports from $group_dir"
 
@@ -633,6 +684,9 @@ run_single_group() {
       make GROUP="proxy"
       save_test_reports "proxy"
       ;;
+    iceberg)
+      iceberg_test
+      ;;
     hdfs|hcfs|profile|unused)
       export PROTOCOL=
       make GROUP="$group"
@@ -640,7 +694,7 @@ run_single_group() {
       ;;
     *)
       echo "Unknown test group: $group"
-      echo "Available groups: cli, external-table, fdw, server, hdfs, hcfs, hive, hbase, profile, proxy, unused, features, features_fdw, load, performance, bench"
+      echo "Available groups: cli, external-table, fdw, server, hdfs, hcfs, hive, hbase, profile, proxy, unused, iceberg, features, features_fdw, load, performance, bench"
       exit 1
       ;;
   esac
@@ -663,6 +717,9 @@ main() {
 
     # Run base tests (includes hdfs, hcfs, hive, etc.)
     base_test
+
+    # Run Iceberg tests against the REST catalog
+    iceberg_test
 
     # Run feature tests (union of features + gpdb tags, once per USE_FDW mode)
     feature_test "false"
