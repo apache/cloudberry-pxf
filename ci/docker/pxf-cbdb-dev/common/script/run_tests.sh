@@ -314,7 +314,7 @@ configure_pxf_iceberg_server() {
   </property>
 </configuration>
 EOF
-  JAVA_HOME="${JAVA_BUILD}" "${PXF_HOME}/bin/pxf" restart >/dev/null
+  JAVA_HOME="${JAVA_BUILD}" "${PXF_HOME}/bin/pxf" restart >/dev/null || true
   echo "[run_tests] waiting for Iceberg REST catalog at ${ICEBERG_REST_URI}..."
   for _ in {1..30}; do
     if curl -sf "${ICEBERG_REST_URI}/v1/config" >/dev/null; then
@@ -718,8 +718,13 @@ main() {
     # Run base tests (includes hdfs, hcfs, hive, etc.)
     base_test
 
-    # Run Iceberg tests against the REST catalog
-    iceberg_test
+    # Run Iceberg tests against the REST catalog; it is only started with the
+    # "iceberg" compose profile, so do not fail the whole run without it
+    if curl -sf "${ICEBERG_REST_URI}/v1/config" >/dev/null; then
+      iceberg_test
+    else
+      echo "[run_tests] WARNING: Iceberg REST catalog is not reachable at ${ICEBERG_REST_URI}, skipping GROUP=iceberg (start it with COMPOSE_PROFILES=iceberg)"
+    fi
 
     # Run feature tests (union of features + gpdb tags, once per USE_FDW mode)
     feature_test "false"
