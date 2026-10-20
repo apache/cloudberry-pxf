@@ -15,7 +15,7 @@ import java.util.List;
 @Getter
 public class ExpressionData {
     private String columnName;
-    private DataType greengageType;
+    private DataType cloudberryType;
     private Type icebergType;
     private String scalarOperandValue;
     @Singular

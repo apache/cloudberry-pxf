@@ -12,21 +12,21 @@ import java.util.function.Function;
 public class SimpleIcebergConverter<V> implements IcebergConverter<V> {
 
     private final Type icebergType;
-    private final DataType greengageType;
+    private final DataType cloudberryType;
     private final Function<String, V> icebergConverterFunction;
-    private final Function<Object, Object> greengageConverterFunction;
+    private final Function<Object, Object> cloudberryConverterFunction;
 
-    public SimpleIcebergConverter(Type icebergType, DataType greengageType, Function<String, V> icebergConverterFunction) {
-        this(icebergType, greengageType, icebergConverterFunction, Function.identity());
+    public SimpleIcebergConverter(Type icebergType, DataType cloudberryType, Function<String, V> icebergConverterFunction) {
+        this(icebergType, cloudberryType, icebergConverterFunction, Function.identity());
     }
 
     @Override
-    public V convertFromGreengageToIceberg(Object input) {
+    public V convertFromCloudberryToIceberg(Object input) {
         return input != null ? icebergConverterFunction.apply(input.toString()) : null;
     }
 
     @Override
-    public Object convertFromIcebergToGreengage(Object input) {
-        return input != null ? greengageConverterFunction.apply(input) : null;
+    public Object convertFromIcebergToCloudberry(Object input) {
+        return input != null ? cloudberryConverterFunction.apply(input) : null;
     }
 }

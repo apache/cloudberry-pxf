@@ -29,7 +29,7 @@ public class IcebergResolver extends BasePlugin implements Resolver {
                         getIcebergConverter(
                                 descriptor.getDataType(),
                                 findType(schema, descriptor)
-                        ).convertFromIcebergToGreengage(icebergRecord.getField(descriptor.columnName()))
+                        ).convertFromIcebergToCloudberry(icebergRecord.getField(descriptor.columnName()))
                 )).toList();
     }
 
@@ -43,7 +43,7 @@ public class IcebergResolver extends BasePlugin implements Resolver {
             ColumnDescriptor descriptor = context.getColumn(i);
             Type icebergType = findType(schema, descriptor);
             Object value = getIcebergConverter(descriptor.getDataType(), icebergType)
-                    .convertFromGreengageToIceberg(field.val);
+                    .convertFromCloudberryToIceberg(field.val);
             icebergRecord.setField(descriptor.columnName(), adjustDecimalScale(value, icebergType));
         }
         return new OneRow(icebergRecord);

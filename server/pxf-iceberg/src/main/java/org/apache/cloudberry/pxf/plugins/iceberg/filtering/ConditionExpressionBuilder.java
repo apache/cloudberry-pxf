@@ -29,7 +29,7 @@ public class ConditionExpressionBuilder extends AbstractExpressionBuilder {
     protected Expression buildAfterValidation(ExpressionData data) {
         return operators.get(getOperator()).apply(
             data.getColumnName(),
-            getIcebergConverter(data.getGreengageType(), data.getIcebergType()).convertFromGreengageToIceberg(data.getScalarOperandValue())
+            getIcebergConverter(data.getCloudberryType(), data.getIcebergType()).convertFromCloudberryToIceberg(data.getScalarOperandValue())
         );
     }
 }

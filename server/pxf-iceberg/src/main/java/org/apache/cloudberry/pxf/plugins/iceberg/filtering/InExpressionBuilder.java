@@ -14,13 +14,13 @@ public class InExpressionBuilder extends AbstractExpressionBuilder {
 
     @Override
     protected Expression buildAfterValidation(ExpressionData data) {
-        if(!data.getGreengageType().isArrayType()) {
+        if(!data.getCloudberryType().isArrayType()) {
             throw new IllegalStateException("Value should be array for operator " + getOperator());
         }
-        var converter = getIcebergConverter(data.getGreengageType().getTypeElem(), data.getIcebergType());
+        var converter = getIcebergConverter(data.getCloudberryType().getTypeElem(), data.getIcebergType());
         return Expressions.in(
                 data.getColumnName(),
-                data.getCollectionData().stream().map(converter::convertFromGreengageToIceberg).toList()
+                data.getCollectionData().stream().map(converter::convertFromCloudberryToIceberg).toList()
         );
 
     }

@@ -7,9 +7,9 @@ public interface IcebergConverter<V> {
 
     Type getIcebergType();
 
-    DataType getGreengageType();
+    DataType getCloudberryType();
 
-    V convertFromGreengageToIceberg(Object input);
+    V convertFromCloudberryToIceberg(Object input);
 
-    Object convertFromIcebergToGreengage(Object input);
+    Object convertFromIcebergToCloudberry(Object input);
 }
