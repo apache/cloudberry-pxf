@@ -358,9 +358,11 @@ feature_test(){
   fi
   # "features" and "gpdb" tags largely overlap; union them so each test
   # runs once per USE_FDW mode instead of once per tag
-  make GROUP="features,gpdb" $extra_args
+  local test_status=0
+  make GROUP="features,gpdb" $extra_args || test_status=$?
   save_test_reports "$report_name"
   echo "[run_tests] GROUP=features,gpdb $extra_args finished"
+  return "$test_status"
 }
 
 bench_prepare_env() {

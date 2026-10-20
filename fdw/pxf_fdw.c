@@ -102,6 +102,7 @@ static bool pxfIsForeignScanParallelSafe(PlannerInfo *root, RelOptInfo *rel, Ran
 /* Cloudberry gang-parallel support */
 static void InitGangParallelState(PxfFdwScanState *pxfsstate);
 static void InitCopyStateVirtual(PxfFdwScanState *pxfsstate);
+static void CleanupScanState(PxfFdwScanState *pxfsstate);
 
 /*
  * Foreign-data wrapper handler functions:
@@ -432,10 +433,12 @@ pxfBeginForeignScan(ForeignScanState *node, int eflags)
 	node->fdw_state = (void *) pxfsstate;
 
 	/*
-	 * In parallel mode, defer connection setup to IterateForeignScan where
-	 * fragments are assigned. In non-parallel mode, initialize immediately.
+	 * Only a parallel-aware ForeignScan may split fragments among gang workers.
+	 * A parallel-safe ordinary scan can also run inside a parallel slice, but
+	 * each worker must be able to read the full physical-segment partition.
+	 * Defer setup for the parallel-aware scan until the worker ID is available.
 	 */
-	if (!options->enable_parallel)
+	if (!options->enable_parallel || !foreignScan->scan.plan.parallel_aware)
 	{
 		/* Set up callback to identify error foreign relation. */
 		ErrorContextCallback errcallback;
@@ -489,13 +492,13 @@ pxfIterateForeignScan(ForeignScanState *node)
 			ErrorContextCallback begincb;
 
 			/*
-			 * Detect Cloudberry gang-parallel case: enable_parallel is set
-			 * and CBDB's gang expansion has created parallel workers on this
-			 * segment (TotalParallelWorkerNumberOfSlice > 0), but PG DSM
-			 * callbacks were not invoked.
+			 * Split fragments only for the selected parallel-aware scan. A
+			 * parallel-safe ordinary scan in the same slice must retain its
+			 * physical segment ID so every worker can see its full input.
 			 */
 			if (!pxfsstate->gang_parallel &&
 				pxfsstate->options->enable_parallel &&
+				node->ss.ps.plan->parallel_aware &&
 				TotalParallelWorkerNumberOfSlice > 0)
 			{
 				elog(DEBUG1, "pxf_fdw: segment %d activating gang-parallel mode "
@@ -562,20 +565,14 @@ pxfReScanForeignScan(ForeignScanState *node)
 
 	PxfFdwScanState *pxfsstate = (PxfFdwScanState *) node->fdw_state;
 
-	if (pxfsstate->gang_parallel)
-	{
-		/* Gang-parallel: single connection with virtual segment ID. */
-		if (pxfsstate->cstate != NULL)
-			EndCopyFrom(pxfsstate->cstate);
-		InitCopyStateVirtual(pxfsstate);
-	}
-	else
-	{
-		/* Non-parallel: original code path */
-		if (pxfsstate->cstate != NULL)
-			EndCopyFrom(pxfsstate->cstate);
-		InitCopyState(pxfsstate);
-	}
+	/* A rescan may precede the first IterateForeignScan. Close the old scan
+	 * and let IterateForeignScan initialize it with the selected plan and the
+	 * worker ID, which is available only at execution time. */
+	CleanupScanState(pxfsstate);
+	pxfsstate->gang_parallel = false;
+	pxfsstate->worker_index = -1;
+	pxfsstate->virtual_seg_id = -1;
+	pxfsstate->virtual_seg_count = -1;
 
 	elog(DEBUG5, "pxf_fdw: pxfReScanForeignScan ends on segment: %d", PXF_SEGMENT_ID);
 }
@@ -594,23 +591,7 @@ pxfEndForeignScan(ForeignScanState *node)
 	/* if pxfsstate is NULL, we are in EXPLAIN; nothing to do */
 	if (pxfsstate)
 	{
-		if (pxfsstate->churl_handle != NULL)
-		{
-			churl_cleanup(pxfsstate->churl_handle, false);
-			pxfsstate->churl_handle = NULL;
-		}
-
-		if (pxfsstate->churl_headers != NULL)
-		{
-			churl_headers_cleanup(pxfsstate->churl_headers);
-			pxfsstate->churl_headers = NULL;
-		}
-
-		if (pxfsstate->cstate != NULL)
-		{
-			EndCopyFrom(pxfsstate->cstate);
-			pxfsstate->cstate = NULL;
-		}
+		CleanupScanState(pxfsstate);
 
 		/* Free the URI buffer */
 		pfree(pxfsstate->uri.data);
@@ -620,6 +601,29 @@ pxfEndForeignScan(ForeignScanState *node)
 	}
 
 	elog(DEBUG5, "pxf_fdw: pxfEndForeignScan ends on segment: %d", PXF_SEGMENT_ID);
+}
+
+/* Release every resource owned by one import before it is restarted. */
+static void
+CleanupScanState(PxfFdwScanState *pxfsstate)
+{
+	if (pxfsstate->churl_handle != NULL)
+	{
+		churl_cleanup(pxfsstate->churl_handle, false);
+		pxfsstate->churl_handle = NULL;
+	}
+
+	if (pxfsstate->churl_headers != NULL)
+	{
+		churl_headers_cleanup(pxfsstate->churl_headers);
+		pxfsstate->churl_headers = NULL;
+	}
+
+	if (pxfsstate->cstate != NULL)
+	{
+		EndCopyFrom(pxfsstate->cstate);
+		pxfsstate->cstate = NULL;
+	}
 }
 
 /*
@@ -945,8 +949,8 @@ InitCopyStateVirtual(PxfFdwScanState *pxfsstate)
  * InitGangParallelState
  *		Initialize gang-parallel state for Cloudberry's gang expansion model.
  *
- * Called on first IterateForeignScan when we detect that enable_parallel=true
- * and CBDB's gang expansion has created parallel workers on this segment
+ * Called on first IterateForeignScan for a selected parallel-aware scan when
+ * CBDB's gang expansion has created parallel workers on this segment
  * (TotalParallelWorkerNumberOfSlice > 0), but PG's DSM callbacks were not
  * invoked.
  *
@@ -968,8 +972,10 @@ InitGangParallelState(PxfFdwScanState *pxfsstate)
 	int		num_workers = TotalParallelWorkerNumberOfSlice;
 	int		worker_id = ParallelWorkerNumberOfSlice;
 
-	if (num_workers <= 0 || worker_id < 0)
-		return;		/* not in gang-parallel mode */
+	if (num_workers <= 0 || worker_id < 0 || worker_id >= num_workers ||
+		seg_id < 0 || seg_count <= 0 || seg_id >= seg_count)
+		elog(ERROR, "pxf_fdw: invalid gang worker %d/%d or segment %d/%d",
+			 worker_id, num_workers, seg_id, seg_count);
 
 	pxfsstate->gang_parallel = true;
 	pxfsstate->worker_index = worker_id;
@@ -1264,4 +1270,3 @@ pxfIsForeignScanParallelSafe(PlannerInfo *root,
 	 */
 	return options->enable_parallel;
 }
-
