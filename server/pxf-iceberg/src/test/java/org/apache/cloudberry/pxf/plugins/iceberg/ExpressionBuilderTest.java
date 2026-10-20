@@ -25,12 +25,14 @@ public class ExpressionBuilderTest {
             new ColumnDescriptor("id", 23, 0, "int4", null, true),
             new ColumnDescriptor("first_name", 25, 1, "text", null, true),
             new ColumnDescriptor("last_name", 25, 2, "text", null, true),
-            new ColumnDescriptor("age", 23, 3, "int4", null, true)
+            new ColumnDescriptor("age", 23, 3, "int4", null, true),
+            new ColumnDescriptor("total", 20, 4, "int8", null, true)
         ), Map.of(
             "id", Types.IntegerType.get(),
             "first_name", Types.StringType.get(),
             "last_name", Types.StringType.get(),
-            "age", Types.IntegerType.get()
+            "age", Types.IntegerType.get(),
+            "total", Types.LongType.get()
         ));
 
     @ParameterizedTest
@@ -48,7 +50,12 @@ public class ExpressionBuilderTest {
             new Object[] {"a1o8", Expressions.isNull("first_name") },
             new Object[] {"a1o8l2", Expressions.not(Expressions.isNull("first_name")) },
             new Object[] {"a0m1007s1d1s1d2o10l2", Expressions.not(Expressions.in("id", List.of(1, 2))) },
-            new Object[] {"a0m1007s1d1s1d2o10a3c23s2d26o2l0", and(in("id", List.of(1, 2)), greaterThan("age", 26)) }
+            new Object[] {"a0m1007s1d1s1d2o10a3c23s2d26o2l0", and(in("id", List.of(1, 2)), greaterThan("age", 26)) },
+            // int4 constant on a bigint column, as Cloudberry sends "total < 0"
+            new Object[] {"a4c23s1d0o1", lessThan("total", 0L) },
+            // int8 constant on an int column
+            new Object[] {"a0c20s10d9000000000o5", equal("id", 9000000000L) },
+            new Object[] {"a4m1007s1d1s1d2o10", in("total", List.of(1L, 2L)) }
         );
     }
 
