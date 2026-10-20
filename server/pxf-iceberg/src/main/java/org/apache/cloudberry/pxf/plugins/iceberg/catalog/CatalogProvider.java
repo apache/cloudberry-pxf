@@ -30,7 +30,7 @@ public class CatalogProvider implements AutoCloseable {
     }
 
     public CatalogWrapper get(IcebergSettings settings) {
-        var catalogKey = new CatalogKey(settings.getCatalogName(), settings.getCatalogType());
+        var catalogKey = new CatalogKey(settings.getServerName(), settings.getCatalogName(), settings.getCatalogType());
         AtomicReference<CatalogWrapper> toClose = new AtomicReference<>();
         var result = catalogs.compute(catalogKey, (key, current) -> {
             if (current != null && current.getSettings().hasSameCatalogConfig(settings)) {

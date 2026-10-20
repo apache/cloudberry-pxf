@@ -79,7 +79,7 @@ public class IcebergFragmenter extends BasePlugin implements Fragmenter {
 
     private <T> List<T> transformTasks(CloseableIterable<FileScanTask> tasks, Function<FileScanTask, T> transformer, Comparator<T> comparator){
         return StreamSupport.stream(tasks.spliterator(), false)
-                .filter(task -> task.file().recordCount() > 0)
+                .filter(task -> task.file().recordCount() != 0) // skip known-empty files only
                 .flatMap(task -> splitTask(task, settings.getFragmentSize()))
                 .map(transformer)
                 .sorted(comparator)

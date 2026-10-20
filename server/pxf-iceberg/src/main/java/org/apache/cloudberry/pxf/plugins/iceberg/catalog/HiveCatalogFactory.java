@@ -44,9 +44,14 @@ public class HiveCatalogFactory implements CatalogFactory {
         if(!settings.isSsl()) {
             return conf;
         }
-        conf.set("metastore.use.SSL", "true");
-        conf.set("metastore.truststore.path", getSSLTruststorePath(settings));
-        conf.set("metastore.truststore.password", ObjectUtils.firstNonNull(settings.getSslTrustStorePassword(), JVM_TRUSTSTORE_DEFAULT_PASSWORD));
+        String trustStorePath = getSSLTruststorePath(settings);
+        String trustStorePassword = ObjectUtils.firstNonNull(settings.getSslTrustStorePassword(), JVM_TRUSTSTORE_DEFAULT_PASSWORD);
+        // Hive 2.3 (shipped with PXF) reads the hive.metastore.* keys, Hive 3+ the metastore.* ones
+        for (String prefix : new String[]{"hive.metastore.", "metastore."}) {
+            conf.set(prefix + "use.SSL", "true");
+            conf.set(prefix + "truststore.path", trustStorePath);
+            conf.set(prefix + "truststore.password", trustStorePassword);
+        }
         conf.set(CACHE_TOKEN_CONFIG_NAME, Integer.toString(settings.hashCode()));
         return conf;
     }
