@@ -58,8 +58,11 @@ services:
   # directory mounted at the same path here and in pxf-cbdb-dev, so the paths
   # the catalog records are valid for PXF too; the catalog runs as gpadmin's
   # uid so that PXF can write data files into table directories it creates.
+  # Only started with the "iceberg" profile (COMPOSE_PROFILES=iceberg), so the
+  # other test groups do not depend on pulling this image.
   iceberg-rest:
     image: apache/iceberg-rest-fixture:1.9.2
+    profiles: ["iceberg"]
     container_name: iceberg-rest
     hostname: iceberg-rest
     user: "${PXF_GPADMIN_UID:-1000}:${PXF_GPADMIN_GID:-1000}"
