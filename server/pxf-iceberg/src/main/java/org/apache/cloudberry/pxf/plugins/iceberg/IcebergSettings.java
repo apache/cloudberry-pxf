@@ -24,6 +24,7 @@ public class IcebergSettings {
             REF_OPTION_NAME = "ref",
             FRAGMENT_SIZE_OPTION_NAME = "fragmentSize";
 
+    private final String serverName;
     private final String catalogName;
     private final CatalogType catalogType;
     private final Map<String, String> catalogProperties;
@@ -44,6 +45,7 @@ public class IcebergSettings {
      */
     public boolean hasSameCatalogConfig(IcebergSettings other) {
         return other != null
+                && Objects.equals(serverName, other.serverName)
                 && Objects.equals(catalogName, other.catalogName)
                 && catalogType == other.catalogType
                 && Objects.equals(catalogProperties, other.catalogProperties)
@@ -55,6 +57,7 @@ public class IcebergSettings {
     public static IcebergSettings create(Configuration configuration, RequestContext context) {
         Map<String, String> configs = configuration.getPropsWithPrefix(ICEBERG_CONFIG_PREFIX);
         return new IcebergSettings(
+            context.getServerName(),
             configs.get(ICEBERG_CATALOG_NAME),
             CatalogType.findByName(configs.get(ICEBERG_CATALOG_TYPE)),
             configuration.getPropsWithPrefix(ICEBERG_PARAM_PREFIX),
