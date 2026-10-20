@@ -26,7 +26,7 @@ public abstract class AbstractExpressionBuilder implements InternalExpressionBui
         if(requirement.columnName && StringUtils.isEmpty(data.getColumnName())) {
             throw new IllegalStateException("Column should be defined for operator " + getOperator());
         }
-        if(requirement.dataType && data.getGreengageType() == null) {
+        if(requirement.dataType && data.getCloudberryType() == null) {
             throw new IllegalStateException("Value data type should be defined for operator " + getOperator());
         }
         if(requirement.collectionData && CollectionUtils.isEmpty(data.getCollectionData())) {

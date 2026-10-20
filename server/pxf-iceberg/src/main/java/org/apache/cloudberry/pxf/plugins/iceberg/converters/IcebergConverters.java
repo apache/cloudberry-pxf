@@ -59,23 +59,23 @@ public interface IcebergConverters {
     );
 
     Map<Pair<DataType, Type>, IcebergConverter<?>> convertersByTypes = converters.stream()
-            .collect(toMap(c -> Pair.of(c.getGreengageType(), c.getIcebergType()), Function.identity()));
+            .collect(toMap(c -> Pair.of(c.getCloudberryType(), c.getIcebergType()), Function.identity()));
 
     // it's introduced mostly because of decimal types that requires the same values of precision and scale
     Map<Pair<DataType, Type.TypeID>, IcebergConverter<?>> convertersByTypeIds = converters.stream()
             .filter(c -> Type.TypeID.DECIMAL.equals(c.getIcebergType().typeId()))
-            .collect(toMap(c -> Pair.of(c.getGreengageType(), c.getIcebergType().typeId()), Function.identity(), (prev, current) -> current));
+            .collect(toMap(c -> Pair.of(c.getCloudberryType(), c.getIcebergType().typeId()), Function.identity(), (prev, current) -> current));
 
-    static EnumSet<DataType> getGreengageSupportedTypes() {
+    static EnumSet<DataType> getCloudberrySupportedTypes() {
         return EnumSet.copyOf(convertersByTypes.keySet().stream().map(Pair::getLeft).toList());
     }
 
-    static IcebergConverter<?> getIcebergConverter(DataType greengageType, Type icebergType) {
-        var converter = convertersByTypes.get(Pair.of(greengageType, icebergType));
+    static IcebergConverter<?> getIcebergConverter(DataType cloudberryType, Type icebergType) {
+        var converter = convertersByTypes.get(Pair.of(cloudberryType, icebergType));
         if(converter != null) {
             return converter;
         }
-        converter = convertersByTypeIds.get(Pair.of(greengageType, icebergType.typeId()));
+        converter = convertersByTypeIds.get(Pair.of(cloudberryType, icebergType.typeId()));
         if(converter != null) {
             return converter;
         }

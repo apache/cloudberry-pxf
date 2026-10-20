@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static org.apache.cloudberry.pxf.plugins.iceberg.converters.IcebergConverters.getGreengageSupportedTypes;
+import static org.apache.cloudberry.pxf.plugins.iceberg.converters.IcebergConverters.getCloudberrySupportedTypes;
 import static java.util.stream.Collectors.toMap;
 
 
@@ -52,7 +52,7 @@ public class ExpressionBuilder implements TreeVisitor {
                 toMap(ColumnDescriptor::columnIndex, ColumnDescriptor::columnName)
         );
         this.icebergTypes = icebergTypes;
-        this.dataTypePruner = new SupportedDataTypePruner(columns, getGreengageSupportedTypes());
+        this.dataTypePruner = new SupportedDataTypePruner(columns, getCloudberrySupportedTypes());
     }
 
     public Expression build(String filterString) {
@@ -92,7 +92,7 @@ public class ExpressionBuilder implements TreeVisitor {
             throw new IllegalStateException("Wrong filter state");
         }
         if (node instanceof ScalarOperandNode scalarOperand) {
-            dataBuilder.greengageType(scalarOperand.getDataType())
+            dataBuilder.cloudberryType(scalarOperand.getDataType())
                     .scalarOperandValue(scalarOperand.getValue());
         } else if (node instanceof ColumnIndexOperandNode columnNode) {
             var columnName = columnsByIndex.get(columnNode.index());
@@ -100,7 +100,7 @@ public class ExpressionBuilder implements TreeVisitor {
                     .icebergType(icebergTypes.get(columnName));
         } else if (node instanceof CollectionOperandNode collectionNode) {
             dataBuilder.collectionData(collectionNode.getData())
-                    .greengageType(collectionNode.getDataType());
+                    .cloudberryType(collectionNode.getDataType());
         }
         return node;
     }
