@@ -12,11 +12,13 @@ import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 /**
- * Tests for PG-style Gather parallel scan on PXF FDW foreign tables.
+ * Tests for Cloudberry gang-parallel scan on PXF FDW foreign tables.
  *
  * Verifies:
  * - Correctness: count, sum, ordering match between parallel and non-parallel scans
- * - EXPLAIN: Gather node present when parallel enabled, absent when disabled
+ * - EXPLAIN: Parallel Foreign Scan present when parallel enabled, absent when disabled
+ * - Parallel Append: UNION ALL and partitioned tables return every row
+ * - Option precedence: table-level enable_parallel overrides the server level
  */
 @WorksWithFDW
 public class ParallelScanTest extends BaseFeature {
