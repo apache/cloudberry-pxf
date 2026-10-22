@@ -402,6 +402,7 @@ PxfGetOptions(Oid foreigntableid)
 	ForeignServer		 *server;
 	ForeignDataWrapper	 *wrapper;
 	List				 *options;
+	bool				  enable_parallel_set = false;
 	PxfOptions			 *opt;
 	ListCell			 *lc;
 	List				 *copy_options,
@@ -460,7 +461,18 @@ PxfGetOptions(Oid foreigntableid)
 		else if (strcmp(def->defname, FDW_OPTION_DISABLE_PPD) == 0)
 			opt->disable_ppd = defGetBoolean(def);
 		else if (strcmp(def->defname, FDW_OPTION_ENABLE_PARALLEL) == 0)
-			opt->enable_parallel = defGetBoolean(def);
+		{
+			/*
+			 * Valid at both table and server level. Options are listed with
+			 * the table first, so keep the first value to let the table
+			 * override the server.
+			 */
+			if (!enable_parallel_set)
+			{
+				opt->enable_parallel = defGetBoolean(def);
+				enable_parallel_set = true;
+			}
+		}
 		else if (strcmp(def->defname, FDW_OPTION_FORMAT) == 0)
 		{
 			opt->format = defGetString(def);

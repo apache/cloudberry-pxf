@@ -278,8 +278,20 @@ pxfGetForeignPaths(PlannerInfo *root,
 											  fpinfo->retrieved_attrs),
 			 root);
 
-	/* Path 2: parallel partial (only if enabled and planner allows) */
-	if (options->enable_parallel && baserel->consider_parallel)
+	/*
+	 * Path 2: parallel partial (only if enabled and planner allows)
+	 *
+	 * Fragments are split statically among all gang workers of the slice, so
+	 * every worker must execute this scan. A Parallel Append runs each child
+	 * in only some of the workers and would lose the fragments assigned to
+	 * the others. Partitions and flattened UNION ALL members are append rel
+	 * children (not RELOPT_BASEREL); other set-operation branches and
+	 * subqueries are planned at query_level > 1 and their partial paths may
+	 * also end up under a Parallel Append. Offer the partial path only for a
+	 * top-level base relation.
+	 */
+	if (options->enable_parallel && baserel->consider_parallel &&
+		baserel->reloptkind == RELOPT_BASEREL && root->query_level == 1)
 	{
 		int			workers = max_parallel_workers_per_gather;
 
