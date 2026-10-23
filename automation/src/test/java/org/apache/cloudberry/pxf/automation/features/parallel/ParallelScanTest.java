@@ -113,8 +113,10 @@ public class ParallelScanTest extends BaseFeature {
         }
         String secondPath = protocol.getExternalTablePath(hdfs.getBasePath(), secondDir);
 
-        gpdb.runQuery("DROP TABLE IF EXISTS pxf_parallel_partitioned CASCADE");
-        gpdb.runQuery("CREATE TABLE pxf_parallel_partitioned (id integer, val text) PARTITION BY RANGE (id)");
+        // runQuery fails on any NOTICE, so ignore the one DROP ... IF EXISTS raises
+        gpdb.runQuery("DROP TABLE IF EXISTS pxf_parallel_partitioned CASCADE", true, false);
+        gpdb.runQuery("CREATE TABLE pxf_parallel_partitioned (id integer, val text) PARTITION BY RANGE (id)"
+                + " DISTRIBUTED BY (id)");
         gpdb.runQuery("CREATE FOREIGN TABLE pxf_parallel_partitioned_1 PARTITION OF pxf_parallel_partitioned"
                 + " FOR VALUES FROM (1) TO (10001)"
                 + serverAndOptions("pxf_parallel_partitioned_1", tablePath, "enable_parallel=true"));
@@ -149,7 +151,7 @@ public class ParallelScanTest extends BaseFeature {
     }
 
     private void createServer(String name, String fdw, String enableParallel) throws Exception {
-        gpdb.runQuery("DROP SERVER IF EXISTS " + name + " CASCADE");
+        gpdb.runQuery("DROP SERVER IF EXISTS " + name + " CASCADE", true, false);
         gpdb.runQuery(String.format("CREATE SERVER %s FOREIGN DATA WRAPPER %s"
                 + " OPTIONS (config 'default', enable_parallel '%s')", name, fdw, enableParallel));
         gpdb.runQuery("CREATE USER MAPPING FOR CURRENT_USER SERVER " + name);
