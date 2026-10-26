@@ -1,0 +1,23 @@
+-- @description query02 for PXF parallel scan EXPLAIN - no Parallel Foreign Scan when parallel disabled
+-- start_matchsubs
+--
+-- m/Gather Motion \d+:1  \(slice\d+; segments: \d+\)/
+-- s/Gather Motion \d+:1  \(slice\d+; segments: \d+\)/Gather Motion N:1  (sliceN; segments: N)/
+--
+-- m/actual rows=\d+ loops=\d+/
+-- s/actual rows=\d+ loops=\d+/actual rows=N loops=N/
+--
+-- end_matchsubs
+SET optimizer = off;
+SET
+SET enable_parallel = false;
+SET
+EXPLAIN (COSTS OFF) SELECT count(*) FROM pxf_parallel_disabled;
+                       QUERY PLAN
+---------------------------------------------------------
+ Finalize Aggregate
+   ->  Gather Motion 3:1  (slice1; segments: 3)
+         ->  Partial Aggregate
+               ->  Foreign Scan on pxf_parallel_disabled
+ Optimizer: Postgres query optimizer
+(5 rows)

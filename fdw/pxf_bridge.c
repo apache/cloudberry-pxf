@@ -23,6 +23,7 @@
 
 #include "cdb/cdbtm.h"
 #include "cdb/cdbvars.h"
+#include "utils/builtins.h"
 
 /* helper function declarations */
 static void BuildUriForRead(PxfFdwScanState *pxfsstate);
@@ -181,4 +182,67 @@ FillBuffer(PxfFdwScanState *pxfsstate, char *start, int minlen, int maxlen)
 	}
 
 	return ptr - start;
+}
+
+/*
+ * ============================================================================
+ * Cloudberry Gang-Parallel Support (Virtual Segment ID)
+ *
+ * In Cloudberry, parallel execution uses "gang expansion" where
+ * multiple processes share the same physical segment ID. PostgreSQL's DSM
+ * callbacks (InitializeDSMForeignScan, InitializeWorkerForeignScan) are
+ * NOT invoked in this model.
+ *
+ * Instead of fragment-by-fragment coordination, we use "virtual segment IDs":
+ * each gang worker sends a unique virtual segment ID to PXF, so PXF's
+ * existing round-robin fragment distribution splits the data among workers
+ * automatically — no PXF server changes needed.
+ *
+ * Example: 3 physical segments × 4 workers = 12 virtual segments.
+ * Worker i on physical segment S sends virtual_seg_id = S + i * seg_count,
+ * with virtual_seg_count = seg_count * workers.
+ * ============================================================================
+ */
+
+/*
+ * PxfBridgeImportStartVirtual
+ *		Start import with virtual segment ID for Cloudberry gang-parallel mode.
+ *
+ * Same as PxfBridgeImportStart, but after building the standard HTTP headers,
+ * overrides X-GP-SEGMENT-ID and X-GP-SEGMENT-COUNT with the virtual values.
+ * This makes PXF's round-robin assign a unique subset of fragments to each
+ * gang worker, eliminating data duplication.
+ */
+void
+PxfBridgeImportStartVirtual(PxfFdwScanState *pxfsstate,
+							int virtualSegId, int virtualSegCount)
+{
+	char		seg_id_str[16];
+	char		seg_count_str[16];
+
+	pxfsstate->churl_headers = churl_headers_init();
+
+	BuildUriForRead(pxfsstate);
+	BuildHttpHeaders(pxfsstate->churl_headers,
+					 pxfsstate->options,
+					 pxfsstate->relation,
+					 pxfsstate->filter_str,
+					 pxfsstate->retrieved_attrs,
+					 pxfsstate->projectionInfo);
+
+	/* Override physical segment ID/count with virtual values */
+	pg_ltoa(virtualSegId, seg_id_str);
+	pg_ltoa(virtualSegCount, seg_count_str);
+	churl_headers_override(pxfsstate->churl_headers, "X-GP-SEGMENT-ID", seg_id_str);
+	churl_headers_override(pxfsstate->churl_headers, "X-GP-SEGMENT-COUNT", seg_count_str);
+
+	elog(DEBUG3, "pxf_fdw: PxfBridgeImportStartVirtual physical_seg=%d "
+		 "virtual_seg_id=%d virtual_seg_count=%d",
+		 PXF_SEGMENT_ID, virtualSegId, virtualSegCount);
+
+	pxfsstate->churl_handle = churl_init_download(pxfsstate->uri.data,
+												   pxfsstate->churl_headers);
+
+	/* read some bytes to make sure the connection is established */
+	churl_read_check_connectivity(pxfsstate->churl_handle);
 }

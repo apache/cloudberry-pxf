@@ -364,6 +364,18 @@
             <exclude>automation/README.Linux.md</exclude>
             <exclude>automation/sqlrepo/features/reader/multi_block/expected/**</exclude>
             <exclude>automation/sqlrepo/features/reader/multi_block/sql/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/append/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/append/sql/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/correctness/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/correctness/sql/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/explain/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/explain/sql/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/option_precedence/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/option_precedence/sql/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/rescan/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/rescan/sql/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/single_fragment/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/single_fragment/sql/**</exclude>
             <exclude>automation/sqlrepo/proxy/small_data/expected/**</exclude>
             <exclude>automation/sqlrepo/proxy/small_data/sql/**</exclude>
             <exclude>automation/sqlrepo/proxy/hive_small_data/expected/**</exclude>

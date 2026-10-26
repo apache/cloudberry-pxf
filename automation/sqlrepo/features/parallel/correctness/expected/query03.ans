@@ -1,0 +1,21 @@
+-- @description query03 for PXF parallel scan correctness - cross-check parallel vs non-parallel count
+
+SET optimizer = off;
+SET
+SET enable_parallel = false;
+SET
+SELECT count(*) AS non_parallel_count FROM pxf_parallel_disabled;
+ non_parallel_count
+--------------------
+              10000
+(1 row)
+
+SET enable_parallel = true;
+SET
+SET max_parallel_workers_per_gather = 4;
+SET
+SELECT count(*) AS parallel_count FROM pxf_parallel_enabled;
+ parallel_count
+----------------
+          10000
+(1 row)
