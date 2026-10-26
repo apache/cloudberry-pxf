@@ -47,6 +47,31 @@ under the License.
         </optionMappings>
     </profile>
 
+    <!-- ==================== ICEBERG PROFILE ==================== -->
+    <profile>
+        <name>iceberg</name>
+        <description>A profile for reading and writing data using Iceberg</description>
+        <plugins>
+            <fragmenter>org.apache.cloudberry.pxf.plugins.iceberg.IcebergFragmenter</fragmenter>
+            <accessor>org.apache.cloudberry.pxf.plugins.iceberg.IcebergAccessor</accessor>
+            <resolver>org.apache.cloudberry.pxf.plugins.iceberg.IcebergResolver</resolver>
+        </plugins>
+        <optionMappings>
+            <mapping option="catalog_type" property="iceberg.config.catalog.type"/>
+            <mapping option="catalog_name" property="iceberg.config.catalog.name"/>
+            <mapping option="ssl" property="iceberg.config.ssl.enabled"/>
+            <mapping option="sslTrustStorePath" property="iceberg.config.ssl.truststore.path"/>
+            <mapping option="sslTrustStorePassword" property="iceberg.config.ssl.truststore.password"/>
+            <mapping option="uri" property="iceberg.param.uri"/>
+            <mapping option="warehouse" property="iceberg.param.warehouse"/>
+            <mapping option="s3_endpoint" property="iceberg.param.s3.endpoint"/>
+            <mapping option="s3_path_style_access" property="iceberg.param.s3.path-style-access"/>
+            <mapping option="s3_access_key_id" property="iceberg.param.s3.access-key-id"/>
+            <mapping option="s3_secret_access_key" property="iceberg.param.s3.secret-access-key"/>
+            <mapping option="aws_region" property="iceberg.param.client.region"/>
+        </optionMappings>
+    </profile>
+
     <!-- ==================== HBASE PROFILE ==================== -->
     <profile>
         <name>hbase</name>
