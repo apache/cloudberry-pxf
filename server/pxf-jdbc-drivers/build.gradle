@@ -22,7 +22,7 @@ dependencies {
     // Its version is defined in server/build.gradle
 
     // Clickhouse
-    implementation('com.clickhouse:clickhouse-jdbc:0.9.8:all')                { transitive = false }
+    implementation('com.clickhouse:clickhouse-jdbc:0.11.0:all')                { transitive = false }
 
     // Oracle
     implementation('com.oracle.database.jdbc:ojdbc11:23.3.0.23.09')

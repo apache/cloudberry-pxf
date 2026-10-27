@@ -53,7 +53,6 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
     // PXF protocol compression options passed via LOCATION user parameters.
     private static final String PROTOCOL_COMPRESS_ENABLED = "compress=true";
     private static final String PROTOCOL_COMPRESS_ALGORITHM_LZ4 = "compress_algorithm=lz4";
-    private static final String HTTP_CONNECTION_PROVIDER_APACHE = "http_connection_provider=APACHE_HTTP_CLIENT";
 
     /** PXF external/foreign table column definitions — same for read and write tests. */
     private static final String[] CLICKHOUSE_PXF_FIELDS = new String[] {
@@ -103,7 +102,7 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
                 { "24" },
                 // ClickHouse 25.10+ doesn't work with old JDBC drivers
                 // https://github.com/ClickHouse/clickhouse-java/issues/2636
-                 { "26.2" },
+                 { "26.9" },
         };
     }
 
@@ -138,11 +137,6 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
     }
 
     @Test(groups = {"testcontainers", "pxf-jdbc"})
-    public void readSupportedTypesWithHttpConnectionProvider() throws Exception {
-        runReadSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), false, true);
-    }
-
-    @Test(groups = {"testcontainers", "pxf-jdbc"})
     public void writeSupportedTypes() throws Exception {
         runWriteSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), false);
     }
@@ -152,21 +146,7 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
         runWriteSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), true);
     }
 
-    @Test(groups = {"testcontainers", "pxf-jdbc"})
-    public void writeSupportedTypesWithHttpConnectionProvider() throws Exception {
-        runWriteSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), false, true);
-    }
-
-    @Test(groups = {"testcontainers", "pxf-jdbc"})
-    public void writeSupportedTypesWithHttpConnectionProviderAndCompression() throws Exception {
-        runWriteSupportedTypes(clickhouseContainer.getInternalJdbcUrl(), clickhouseContainer.getJdbcUrl(), true, true);
-    }
-
     private void runReadSupportedTypes(String internalJdbcUrl, String externalJdbcUrl, boolean enableProtocolCompression) throws Exception {
-        runReadSupportedTypes(internalJdbcUrl, externalJdbcUrl, enableProtocolCompression, false);
-    }
-
-    private void runReadSupportedTypes(String internalJdbcUrl, String externalJdbcUrl, boolean enableProtocolCompression, boolean enableHttpConnectionProvider) throws Exception {
         createAndSeedClickhouseReadTable(externalJdbcUrl);
 
         ExternalTable pxfRead = TableFactory.getPxfJdbcReadableTable(
@@ -183,9 +163,6 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
             pxfRead.addUserParameter(PROTOCOL_COMPRESS_ENABLED);
             pxfRead.addUserParameter(PROTOCOL_COMPRESS_ALGORITHM_LZ4);
         }
-        if (enableHttpConnectionProvider) {
-            pxfRead.addUserParameter(HTTP_CONNECTION_PROVIDER_APACHE);
-        }
         cloudberry.createTableAndVerify(pxfRead);
 
         try {
@@ -196,10 +173,6 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
     }
 
     private void runWriteSupportedTypes(String internalJdbcUrl, String externalJdbcUrl, boolean enableProtocolCompression) throws Exception {
-        runWriteSupportedTypes(internalJdbcUrl, externalJdbcUrl, enableProtocolCompression, false);
-    }
-
-    private void runWriteSupportedTypes(String internalJdbcUrl, String externalJdbcUrl, boolean enableProtocolCompression, boolean enableHttpConnectionProvider) throws Exception {
         createClickhouseWriteTable(externalJdbcUrl);
 
         ExternalTable pxfWrite = TableFactory.getPxfJdbcWritableTable(
@@ -216,9 +189,6 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
             pxfWrite.addUserParameter(PROTOCOL_COMPRESS_ENABLED);
             pxfWrite.addUserParameter(PROTOCOL_COMPRESS_ALGORITHM_LZ4);
         }
-        if (enableHttpConnectionProvider) {
-            pxfWrite.addUserParameter(HTTP_CONNECTION_PROVIDER_APACHE);
-        }
         cloudberry.createTableAndVerify(pxfWrite);
 
         ExternalTable pxfVerify = TableFactory.getPxfJdbcReadableTable(
@@ -234,9 +204,6 @@ public class JdbcClickhouseTest extends AbstractTestcontainersTest {
         if (enableProtocolCompression) {
             pxfVerify.addUserParameter(PROTOCOL_COMPRESS_ENABLED);
             pxfVerify.addUserParameter(PROTOCOL_COMPRESS_ALGORITHM_LZ4);
-        }
-        if (enableHttpConnectionProvider) {
-            pxfVerify.addUserParameter(HTTP_CONNECTION_PROVIDER_APACHE);
         }
         cloudberry.createTableAndVerify(pxfVerify);
 
