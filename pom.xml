@@ -316,7 +316,6 @@
             <exclude>server/pxf-hive/src/main/java/org/apache/cloudberry/pxf/plugins/hive/HiveProtocolHandler.java</exclude>
             <exclude>server/pxf-hive/src/main/java/org/apache/cloudberry/pxf/plugins/hive/orc/PxfReaderImpl.java</exclude>
             <exclude>server/pxf-hive/src/main/java/org/apache/hadoop/hive/ql/io/orc/PxfRecordReaderImpl.java</exclude>
-            <exclude>server/pxf-hive/src/main/java/org/apache/hadoop/hive/metastore/HiveMetaStoreClientCompatibility1xx.java</exclude>
             <exclude>server/pxf-json/build.gradle</exclude>
             <exclude>server/pxf-json/src/test/resources/test-write-rows-one.jsonl</exclude>
             <exclude>server/pxf-json/src/test/resources/test-write-rows-three.jsonl</exclude>

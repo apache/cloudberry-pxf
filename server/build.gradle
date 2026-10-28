@@ -176,11 +176,9 @@ configure(javaProjects) {
                 entry("hive-metastore")
                 entry("hive-serde")
                 entry("hive-common")
-            }
-            // 1.2.2 breaks on CDH-5.x
-            dependencySet(group:"org.apache.hive", version:"1.1.0") {
                 entry("hive-jdbc")
                 entry("hive-service")
+                entry("hive-service-rpc")
             }
             dependencySet(group:"org.apache.hive.shims", version:"${hiveVersion}") {
                 entry("hive-shims-common")
@@ -201,10 +199,8 @@ configure(javaProjects) {
             }
 
             // Thrift dependencies
-            dependencySet(group:"org.apache.thrift", version:"0.9.3") {
-                entry("libfb303")
-                entry("libthrift")
-            }
+            dependency("org.apache.thrift:libfb303:0.9.3")
+            dependency("org.apache.thrift:libthrift:0.14.1")
 
             // ORC dependencies
             dependencySet(group:"org.apache.orc", version:"${orcVersion}") {

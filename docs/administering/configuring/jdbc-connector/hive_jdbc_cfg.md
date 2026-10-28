@@ -13,7 +13,7 @@ This topic describes how to configure the PXF JDBC Connector to access Hive. Whe
 
 ## JDBC Server Configuration
 
-The PXF JDBC Connector is installed with the JAR files required to access Hive via JDBC, `hive-jdbc-<version>.jar` and `hive-service-<version>.jar`, and automatically registers these JARs.
+The PXF JDBC Connector is installed with the JAR files required to access Hive via JDBC, including `hive-jdbc-<version>.jar`, `hive-service-<version>.jar`, and `hive-service-rpc-<version>.jar`, and automatically registers these JARs.
 
 When you configure a PXF JDBC server for Hive access, you must specify the JDBC driver class name, database URL, and client credentials just as you would when configuring a client connection to an SQL database.
 
