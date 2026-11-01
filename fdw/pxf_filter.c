@@ -44,6 +44,7 @@ static bool SupportedOperatorTypeScalarArrayOpExpr(Oid type,
 												   bool useOr);
 static void ScalarConstToStr(Const *constval, StringInfo buf);
 static void ListConstToStr(Const *constval, StringInfo buf);
+static bool ConstArrayHasNulls(Node *node);
 static List *AppendAttrFromVar(Var *var, List *attrs);
 static void AddExtraAndExpressionItems(List *expressionItems,
 									   int extraAndOperatorsNum);
@@ -937,6 +938,13 @@ ScalarArrayOpExprToPxfFilter(ScalarArrayOpExpr *expr, PxfFilterDesc *filter)
 												expr->useOr))
 		return false;
 
+	/*
+	 * a NULL array or an array with NULL elements, e.g. IN (1, NULL),
+	 * cannot be serialized - leave the expression to the executor
+	 */
+	if (ConstArrayHasNulls(leftop) || ConstArrayHasNulls(rightop))
+		return false;
+
 	if (IsA(leftop, Var) &&IsA(rightop, Const))
 	{
 		filter->l.opcode = PXF_ATTR_CODE;
@@ -1295,6 +1303,27 @@ ScalarConstToStr(Const *constval, StringInfo buf)
 				 constval->consttype, extval);
 
 	}
+}
+
+/*
+* ConstArrayHasNulls
+*
+* Returns true if the node is a NULL array constant or an array constant
+* with NULL elements.
+*/
+static bool
+ConstArrayHasNulls(Node *node)
+{
+	Const	   *constval;
+
+	if (!IsA(node, Const))
+		return false;
+
+	constval = (Const *) node;
+	if (constval->constisnull)
+		return true;
+
+	return array_contains_nulls(DatumGetArrayTypeP(constval->constvalue));
 }
 
 /*
