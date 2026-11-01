@@ -214,6 +214,12 @@ SELECT * FROM test_filter WHERE t0 IN     ('C','D') ORDER BY t0, a1;
  D  |  3 | f  |      | DD  | DD | a0m1009s1dCs1dDo10
 (2 rows)
 
+SELECT * FROM test_filter WHERE t0 IN     ('C',NULL) ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4  | e5 | filtervalue 
+----+----+----+------+-----+----+-------------
+ C  |  2 |    | 2.21 | CC  | CC | No filter
+(1 row)
+
 SELECT * FROM test_filter WHERE t0 NOT IN ('C','D') ORDER BY t0, a1;
  t0 | a1 | b2 |  c3  | d4  | e5 | filtervalue 
 ----+----+----+------+-----+----+-------------
@@ -329,6 +335,12 @@ SELECT * FROM test_filter WHERE a1 IN     (2,3) ORDER BY t0, a1;
  C  |  2 |    | 2.21 | CC  | CC | a1m1007s1d2s1d3o10
  D  |  3 | f  |      | DD  | DD | a1m1007s1d2s1d3o10
 (2 rows)
+
+SELECT * FROM test_filter WHERE a1 IN     (2,NULL) ORDER BY t0, a1;
+ t0 | a1 | b2 |  c3  | d4  | e5 | filtervalue 
+----+----+----+------+-----+----+-------------
+ C  |  2 |    | 2.21 | CC  | CC | No filter
+(1 row)
 
 SELECT * FROM test_filter WHERE a1 NOT IN (2,3) ORDER BY t0, a1;
  t0 | a1 | b2 |  c3  | d4  | e5 | filtervalue 
