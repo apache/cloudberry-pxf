@@ -157,6 +157,18 @@ class FragmenterServiceTest {
     }
 
     @Test
+    public void testFragmenterCallIsNotCachedForDifferentCommandsInTransaction() throws Throwable {
+        // begin; select ...; insert ...; select ...; - the second select must not reuse the first list
+        context1.setTransactionId("XID-XYZ-123456");
+        context1.setGpCommandCount(1);
+
+        context2.setTransactionId("XID-XYZ-123456");
+        context2.setGpCommandCount(3);
+
+        testContextsAreNotCached(context1, context2);
+    }
+
+    @Test
     public void testFragmenterCallIsNotCachedForDifferentFilters() throws Throwable {
         context1.setTransactionId("XID-XYZ-123456");
         context1.setFilterString("a3c25s10d2016-01-03o6");
