@@ -1,0 +1,75 @@
+# --------------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements. See the NOTICE file distributed
+# with this work for additional information regarding copyright
+# ownership. The ASF licenses this file to You under the Apache
+# License, Version 2.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy of the
+# License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# permissions and limitations under the License.
+#
+# --------------------------------------------------------------------
+# GitHub Actions Workflow: Binary LICENSE/NOTICE check
+# --------------------------------------------------------------------
+# Description:
+#
+#   The convenience binary packages ship the PXF server as a Spring Boot
+#   application JAR that bundles its entire runtime classpath.  This job
+#   builds that JAR and verifies that LICENSE-binary, NOTICE-binary and
+#   licenses-binary/ still describe exactly what is inside it.
+#
+#   Only the server is built, so this needs no Apache Cloudberry
+#   installation and finishes in a few minutes.
+#
+#   See package/licensing/README.md for how to update the inventory when
+#   this job fails.
+# --------------------------------------------------------------------
+
+name: Binary LICENSE/NOTICE Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    paths:
+      - 'server/**/build.gradle'
+      - 'server/gradle.properties'
+      - 'LICENSE-binary'
+      - 'NOTICE-binary'
+      - 'licenses-binary/**'
+      - 'package/licensing/**'
+      - 'Makefile'
+      - '.github/workflows/binary-license-check.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_HOME: "/usr/lib/jvm/java-11-openjdk"
+
+jobs:
+  binary-license-check:
+    name: Verify LICENSE-binary and NOTICE-binary
+    runs-on: ubuntu-latest
+    container:
+      image: apache/incubator-cloudberry:cbdb-build-rocky9-latest
+      options: --user root
+    steps:
+      - name: Checkout PXF source
+        uses: actions/checkout@v4
+
+      - name: Build the PXF server application JAR
+        run: make -C server stage-notest
+
+      - name: Check LICENSE-binary and NOTICE-binary against the built JAR
+        run: python3 package/licensing/generate-binary-license.py --check
