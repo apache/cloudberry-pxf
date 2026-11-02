@@ -23,6 +23,7 @@
 
 #include "cdb/cdbtm.h"
 #include "cdb/cdbvars.h"
+#include "utils/builtins.h"
 
 /* helper function declarations */
 static void BuildUriForRead(PxfFdwScanState *pxfsstate);
@@ -70,6 +71,22 @@ PxfBridgeImportStart(PxfFdwScanState *pxfsstate)
 					 pxfsstate->filter_str,
 					 pxfsstate->retrieved_attrs,
 					 pxfsstate->projectionInfo);
+
+	/*
+	 * A gang-parallel scan reports a virtual segment, so that the server's
+	 * round-robin fragment split gives each gang worker a disjoint subset of
+	 * the fragments of its physical segment.
+	 */
+	if (pxfsstate->gang_parallel)
+	{
+		char		seg_id_str[12];
+		char		seg_count_str[12];
+
+		pg_ltoa(pxfsstate->virtual_seg_id, seg_id_str);
+		pg_ltoa(pxfsstate->virtual_seg_count, seg_count_str);
+		churl_headers_override(pxfsstate->churl_headers, "X-GP-SEGMENT-ID", seg_id_str);
+		churl_headers_override(pxfsstate->churl_headers, "X-GP-SEGMENT-COUNT", seg_count_str);
+	}
 
 	pxfsstate->churl_handle = churl_init_download(pxfsstate->uri.data, pxfsstate->churl_headers);
 

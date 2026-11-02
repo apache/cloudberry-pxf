@@ -12,6 +12,7 @@
 #include "pxf_bridge.h"
 #include "pxf_filter.h"
 
+#include "access/parallel.h"
 #include "access/reloptions.h"
 #include "access/table.h"
 #include "cdb/cdbsreh.h"
@@ -24,6 +25,7 @@
 #include "foreign/fdwapi.h"
 #include "foreign/foreign.h"
 #include "nodes/pg_list.h"
+#include "optimizer/cost.h"
 #include "optimizer/optimizer.h"
 #include "optimizer/paths.h"
 #include "optimizer/pathnode.h"
@@ -93,6 +95,14 @@ static void EndCopyModify(CopyToState cstate);
 static void PxfBeginScanErrorCallback(void *arg);
 static void PxfCopyFromErrorCallback(void *arg);
 
+/* Parallel scan support */
+static bool pxfIsForeignScanParallelSafe(PlannerInfo *root, RelOptInfo *rel, RangeTblEntry *rte);
+static double SegmentRows(RelOptInfo *baserel, ForeignPath *path);
+static void AddPartialPath(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid);
+static void StartScan(ForeignScanState *node, PxfFdwScanState *pxfsstate);
+static void InitGangParallelState(PxfFdwScanState *pxfsstate);
+static void CleanupScanState(PxfFdwScanState *pxfsstate);
+
 /*
  * Foreign-data wrapper handler functions:
  * returns a struct with pointers to the
@@ -147,6 +157,9 @@ pxf_fdw_handler(PG_FUNCTION_ARGS)
 	fdw_routine->EndForeignInsert = pxfEndForeignInsert;
 	fdw_routine->EndForeignModify = pxfEndForeignModify;
 	fdw_routine->IsForeignRelUpdatable = pxfIsForeignRelUpdatable;
+
+	/* parallel scan support */
+	fdw_routine->IsForeignScanParallelSafe = pxfIsForeignScanParallelSafe;
 
 	PG_RETURN_POINTER(fdw_routine);
 }
@@ -267,10 +280,15 @@ pxfGetForeignPaths(PlannerInfo *root,
 
 
 
+	/* charge for processing the rows the planner will assume per segment */
+	path->path.total_cost += cpu_tuple_cost * SegmentRows(baserel, path);
+
 	/*
-	 * Create a ForeignPath node and add it as only possible path.
+	 * Add the ForeignPath node, and a parallel-aware one if it is allowed.
 	 */
 	add_path(baserel, (Path *) path, root);
+
+	AddPartialPath(root, baserel, foreigntableid);
 
 	elog(DEBUG5, "pxf_fdw: pxfGetForeignPaths ends on segment: %d", PXF_SEGMENT_ID);
 }
@@ -382,7 +400,7 @@ pxfBeginForeignScan(ForeignScanState *node, int eflags)
 	 * Save state in node->fdw_state.  We must save enough information to call
 	 * BeginCopyFrom() again.
 	 */
-	pxfsstate = (PxfFdwScanState *) palloc(sizeof(PxfFdwScanState));
+	pxfsstate = (PxfFdwScanState *) palloc0(sizeof(PxfFdwScanState));
 	initStringInfo(&pxfsstate->uri);
 
 	pxfsstate->filter_str = filter_str;
@@ -392,18 +410,15 @@ pxfBeginForeignScan(ForeignScanState *node, int eflags)
 	pxfsstate->retrieved_attrs = retrieved_attrs;
 	pxfsstate->projectionInfo = node->ss.ps.ps_ProjInfo;
 
-    /* Set up callback to identify error foreign relation. */
-    ErrorContextCallback errcallback;
-    errcallback.callback = PxfBeginScanErrorCallback;
-    errcallback.arg = (void *) pxfsstate;
-    errcallback.previous = error_context_stack;
-    error_context_stack = &errcallback;
-
-	InitCopyState(pxfsstate);
 	node->fdw_state = (void *) pxfsstate;
 
-    /* Restore the previous error callback */
-    error_context_stack = errcallback.previous;
+	/*
+	 * A parallel-aware scan needs this gang worker's number, which is set
+	 * only when the executor starts running the slice, so it is started on
+	 * the first IterateForeignScan instead.
+	 */
+	if (!foreignScan->scan.plan.parallel_aware)
+		StartScan(node, pxfsstate);
 
     elog(DEBUG5, "pxf_fdw: pxfBeginForeignScan ends on segment: %d", PXF_SEGMENT_ID);
 }
@@ -425,6 +440,10 @@ pxfIterateForeignScan(ForeignScanState *node)
 	TupleTableSlot *slot = node->ss.ss_ScanTupleSlot;
 	ErrorContextCallback errcallback;
 	bool		found;
+
+	/* a parallel-aware scan, or a rescanned one, has not been started yet */
+	if (pxfsstate->cstate == NULL)
+		StartScan(node, pxfsstate);
 
 	/* Set up callback to identify error line number. */
 	errcallback.callback = PxfCopyFromErrorCallback;
@@ -487,8 +506,14 @@ pxfReScanForeignScan(ForeignScanState *node)
 
 	PxfFdwScanState *pxfsstate = (PxfFdwScanState *) node->fdw_state;
 
-	EndCopyFrom(pxfsstate->cstate);
-	InitCopyState(pxfsstate);
+	/*
+	 * Close the current import; the next IterateForeignScan starts a new one.
+	 * A gang worker of a parallel-aware scan keeps its virtual segment, so a
+	 * rescan returns the same fragments again.  The planner does not put a
+	 * partial path on the inner side of a join or below a SubPlan, so this
+	 * happens only for scans that are not parallel-aware today.
+	 */
+	CleanupScanState(pxfsstate);
 
 	elog(DEBUG5, "pxf_fdw: pxfReScanForeignScan ends on segment: %d", PXF_SEGMENT_ID);
 }
@@ -514,7 +539,7 @@ pxfEndForeignScan(ForeignScanState *node)
 
 	/* if pxfsstate is NULL, we are in EXPLAIN; nothing to do */
 	if (pxfsstate)
-		EndCopyFrom(pxfsstate->cstate);
+		CleanupScanState(pxfsstate);
 
 	elog(DEBUG5, "pxf_fdw: pxfEndForeignScan ends on segment: %d", PXF_SEGMENT_ID);
 }
@@ -709,7 +734,7 @@ pxfIsForeignRelUpdatable(Relation rel)
 }
 
 /*
- * Initiates a copy state for pxfBeginForeignScan() and pxfReScanForeignScan()
+ * Initiates a copy state for a scan, see StartScan()
  */
 static void
 InitCopyState(PxfFdwScanState *pxfsstate)
@@ -1006,4 +1031,188 @@ PxfCopyFromErrorCallback(void *arg)
             }
         }
     }
+}
+
+/*
+ * pxfIsForeignScanParallelSafe
+ *		A scan may run in a parallel worker only when enable_parallel is set.
+ */
+static bool
+pxfIsForeignScanParallelSafe(PlannerInfo *root, RelOptInfo *rel, RangeTblEntry *rte)
+{
+	return PxfGetOptions(rte->relid)->enable_parallel;
+}
+
+/*
+ * SegmentRows
+ *		The rows per segment that the planner assumes for a scan.
+ *
+ * set_foreign_pathlist() multiplies the rows of a strewn ForeignPath in the
+ * pathlist by numsegments * 10 (adjust_costs_for_mpp_foreign_scan), but not
+ * those of a partial path, so the partial path must apply it itself.
+ */
+static double
+SegmentRows(RelOptInfo *baserel, ForeignPath *path)
+{
+	double		rows = baserel->rows;
+
+	if (CdbPathLocus_IsStrewn(path->path.locus) && path->path.locus.numsegments > 1)
+		rows *= path->path.locus.numsegments * 10;
+
+	return rows;
+}
+
+/*
+ * AddPartialPath
+ *		Offer a parallel-aware scan for Cloudberry gang-parallel execution.
+ *
+ * Each of the W gang workers of a segment reports a virtual segment to PXF
+ * (see InitGangParallelState), and the server's round-robin split then gives
+ * every worker a disjoint subset of the fragments of its segment.  The split
+ * is static, so it is correct only when every gang worker of the slice runs
+ * the scan to the end.
+ */
+static void
+AddPartialPath(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid)
+{
+	PxfFdwRelationInfo *fpinfo = (PxfFdwRelationInfo *) baserel->fdw_private;
+	PxfOptions *options = PxfGetOptions(foreigntableid);
+	int			workers = max_parallel_workers_per_gather;
+	ForeignPath *path;
+	double		rows;
+
+	if (!options->enable_parallel || workers <= 0 || !baserel->consider_parallel)
+		return;
+
+	/*
+	 * A Parallel Append runs each child in only some of the workers, which
+	 * would lose the fragments assigned to the others.  Partitions and
+	 * flattened UNION ALL members are append rel children (not
+	 * RELOPT_BASEREL); other set-operation branches and subqueries are
+	 * planned at query_level > 1 and may also end up under a Parallel Append.
+	 */
+	if (baserel->reloptkind != RELOPT_BASEREL || root->query_level != 1)
+		return;
+
+	/*
+	 * The segment reject limit is counted by each process, so W workers would
+	 * accept W times as many rejected rows per segment, and a percentage
+	 * limit would be checked against each worker's smaller row count.
+	 */
+	if (options->reject_limit != -1)
+		return;
+
+	path = create_foreignscan_path(root, baserel,
+								   NULL,	/* default pathtarget */
+								   baserel->rows,
+								   DEFAULT_PXF_FDW_STARTUP_COST,
+								   DEFAULT_PXF_FDW_STARTUP_COST,
+								   NIL, /* no pathkeys */
+								   NULL,	/* no outer rel either */
+								   NULL,	/* no extra plan */
+								   fpinfo->retrieved_attrs);
+
+	/* split the rows and the per-row cost of the non-parallel path */
+	rows = SegmentRows(baserel, path);
+	path->path.rows = clamp_row_est(rows / workers);
+	path->path.total_cost += cpu_tuple_cost * rows / workers;
+	path->path.parallel_aware = true;
+	path->path.parallel_safe = true;
+	path->path.parallel_workers = workers;
+	path->path.locus.parallel_workers = workers;
+
+	add_partial_path(baserel, (Path *) path);
+}
+
+/*
+ * StartScan
+ *		Start the import of a scan: on the first IterateForeignScan of a
+ *		parallel-aware scan or of a rescanned one, otherwise in
+ *		BeginForeignScan.
+ */
+static void
+StartScan(ForeignScanState *node, PxfFdwScanState *pxfsstate)
+{
+	ErrorContextCallback errcallback;
+	MemoryContext oldcxt;
+
+	/*
+	 * Decide from the plan only: a parallel-aware scan must split its
+	 * fragments, while an ordinary scan in a parallel slice must read the
+	 * whole segment in every worker.
+	 */
+	if (node->ss.ps.plan->parallel_aware && TotalParallelWorkerNumberOfSlice > 0 &&
+		!pxfsstate->gang_parallel)
+		InitGangParallelState(pxfsstate);
+
+	/* Set up callback to identify error foreign relation. */
+	errcallback.callback = PxfBeginScanErrorCallback;
+	errcallback.arg = (void *) pxfsstate;
+	errcallback.previous = error_context_stack;
+	error_context_stack = &errcallback;
+
+	oldcxt = MemoryContextSwitchTo(node->ss.ps.state->es_query_cxt);
+	InitCopyState(pxfsstate);
+	MemoryContextSwitchTo(oldcxt);
+
+	/* Restore the previous error callback */
+	error_context_stack = errcallback.previous;
+}
+
+/*
+ * InitGangParallelState
+ *		Compute the virtual segment of this gang worker.
+ *
+ * With N segments and W gang workers per segment, worker w of segment s
+ * reports segment s + w * N out of N * W.  The server assigns fragment i
+ * to virtual segment (i + shift) % (N * W), which belongs to physical
+ * segment (i + shift) % N, so each segment reads the same fragments as
+ * without parallelism, and its workers split them disjointly.
+ */
+static void
+InitGangParallelState(PxfFdwScanState *pxfsstate)
+{
+	int			seg_id = PXF_SEGMENT_ID;
+	int			seg_count = PXF_SEGMENT_COUNT;
+	int			num_workers = TotalParallelWorkerNumberOfSlice;
+	int			worker_id = ParallelWorkerNumberOfSlice;
+
+	if (worker_id < 0 || worker_id >= num_workers ||
+		seg_id < 0 || seg_id >= seg_count)
+		elog(ERROR, "pxf_fdw: invalid gang worker %d/%d or segment %d/%d",
+			 worker_id, num_workers, seg_id, seg_count);
+
+	pxfsstate->gang_parallel = true;
+	pxfsstate->virtual_seg_id = seg_id + worker_id * seg_count;
+	pxfsstate->virtual_seg_count = seg_count * num_workers;
+
+	elog(DEBUG1, "pxf_fdw: segment %d gang worker %d/%d reads as virtual segment %d/%d",
+		 seg_id, worker_id, num_workers,
+		 pxfsstate->virtual_seg_id, pxfsstate->virtual_seg_count);
+}
+
+/*
+ * CleanupScanState
+ *		Release the resources of the current import.
+ */
+static void
+CleanupScanState(PxfFdwScanState *pxfsstate)
+{
+	if (pxfsstate->churl_handle != NULL)
+	{
+		churl_cleanup(pxfsstate->churl_handle, false);
+		pxfsstate->churl_handle = NULL;
+	}
+
+	if (pxfsstate->churl_headers != NULL)
+	{
+		churl_headers_cleanup(pxfsstate->churl_headers);
+		pxfsstate->churl_headers = NULL;
+	}
+
+	if (pxfsstate->cstate != NULL)
+	{
+		EndCopyFrom(pxfsstate->cstate);
+		pxfsstate->cstate = NULL;
+	}
 }

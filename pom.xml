@@ -1351,6 +1351,20 @@
 
             <exclude>.github/pull_request_template.md</exclude>
             <exclude>server/gradle/wrapper/gradle-8.14.4-wrapper.jar.sha256</exclude>
+            <exclude>automation/sqlrepo/features/parallel/append/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/append/sql/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/correctness/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/correctness/sql/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/explain/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/explain/sql/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/option_precedence/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/option_precedence/sql/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/reject_limit/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/reject_limit/sql/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/rescan/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/rescan/sql/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/single_fragment/expected/**</exclude>
+            <exclude>automation/sqlrepo/features/parallel/single_fragment/sql/**</exclude>
 
           </excludes>
 
