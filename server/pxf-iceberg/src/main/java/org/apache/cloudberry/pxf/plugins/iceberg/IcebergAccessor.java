@@ -102,4 +102,21 @@ public class IcebergAccessor extends BasePlugin implements Accessor {
         }
     }
 
+    @Override
+    public synchronized void abortWrite() {
+        // the write failed or was cancelled, don't commit the files and delete them
+        if(writer == null) {
+            return;
+        }
+        log.info("Aborting writing to {}, segment is {}, transaction id is {}",
+                context.getDataSource(), context.getSegmentId(), context.getTransactionId());
+        IcebergWriter writerToAbort = writer;
+        writer = null;
+        try {
+            writerToAbort.abort();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
