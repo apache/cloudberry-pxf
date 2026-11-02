@@ -22,6 +22,8 @@ package org.apache.cloudberry.pxf.plugins.iceberg;
 import io.github.resilience4j.retry.Retry;
 import org.apache.cloudberry.pxf.api.OneField;
 import org.apache.cloudberry.pxf.api.OneRow;
+import org.apache.cloudberry.pxf.api.error.PxfRuntimeException;
+import org.apache.cloudberry.pxf.api.error.UnsupportedTypeException;
 import org.apache.cloudberry.pxf.api.io.DataType;
 import org.apache.cloudberry.pxf.api.model.RequestContext;
 import org.apache.cloudberry.pxf.api.utilities.ColumnDescriptor;
@@ -49,6 +51,7 @@ import org.apache.iceberg.Files;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.Record;
@@ -56,6 +59,7 @@ import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileAppender;
+import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Types;
 import org.apache.orc.OrcFile;
 import org.apache.orc.TypeDescription;
@@ -78,6 +82,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Writes rows to a local Hadoop table and reads them back through the plugin's
@@ -133,6 +140,105 @@ public class IcebergRoundTripTest {
         tableWrapper.appendFiles(null, writer.completeAndGetFilesToCommit());
 
         assertRows(table.newScan(), 0);
+    }
+
+    @Test
+    public void testWriteKeepsColumnMetrics() throws Exception {
+        writeRows();
+
+        DataFile dataFile = table.currentSnapshot().addedDataFiles(table.io()).iterator().next();
+        assertEquals(FileFormat.PARQUET, dataFile.format());
+        assertEquals(ROWS, dataFile.recordCount());
+        assertEquals(0, dataFile.nullValueCounts().get(1));
+        assertEquals(0, (int) Conversions.fromByteBuffer(Types.IntegerType.get(), dataFile.lowerBounds().get(1)));
+        assertEquals(ROWS - 1, (int) Conversions.fromByteBuffer(Types.IntegerType.get(), dataFile.upperBounds().get(1)));
+    }
+
+    @Test
+    public void testWriteFollowsTableProperties() throws Exception {
+        table.updateProperties()
+                .set(TableProperties.DEFAULT_FILE_FORMAT, "avro")
+                .commit();
+        writeRows();
+
+        DataFile dataFile = table.currentSnapshot().addedDataFiles(table.io()).iterator().next();
+        assertEquals(FileFormat.AVRO, dataFile.format());
+        assertTrue(dataFile.location().endsWith(".avro"));
+        assertRows(table.newScan(), 0);
+    }
+
+    @Test
+    public void testWriteOrcTableFallsBackToParquet() throws Exception {
+        table.updateProperties()
+                .set(TableProperties.DEFAULT_FILE_FORMAT, "orc")
+                .commit();
+        writeRows();
+
+        DataFile dataFile = table.currentSnapshot().addedDataFiles(table.io()).iterator().next();
+        assertEquals(FileFormat.PARQUET, dataFile.format());
+        assertRows(table.newScan(), 0);
+    }
+
+    @Test
+    public void testAbortedWriteIsNotCommitted() throws Exception {
+        IcebergWriter writer = new WriterFactory().create(new TableWrapper(Retry.ofDefaults("test"), table), context, null);
+        for (int i = 0; i < ROWS; i++) {
+            writer.write((Record) resolver.setFields(fields(i)).getData());
+        }
+        writer.abort();
+
+        assertNull(table.currentSnapshot());
+        try (var files = java.nio.file.Files.walk(tempDir.resolve("table"))) {
+            assertEquals(List.of(), files.filter(f -> f.toString().endsWith(".parquet")).toList());
+        }
+    }
+
+    @Test
+    public void testWriteNullIntoRequiredColumn() {
+        List<OneField> row = new ArrayList<>(fields(0));
+        row.set(0, new OneField(DataType.INTEGER.getOID(), null));
+
+        PxfRuntimeException e = assertThrows(PxfRuntimeException.class, () -> resolver.setFields(row));
+        assertTrue(e.getMessage().contains("null value in column id"), e.getMessage());
+    }
+
+    @Test
+    public void testWriteUnsupportedColumnType() {
+        context.getTupleDescription().set(4, new ColumnDescriptor("updated", DataType.TIMESTAMP_WITH_TIME_ZONE.getOID(), 4, "timestamptz", null));
+        context.setMetadata(new Schema(
+                Types.NestedField.required(1, "id", Types.IntegerType.get()),
+                Types.NestedField.optional(2, "name", Types.StringType.get()),
+                Types.NestedField.optional(3, "amount", Types.DecimalType.of(10, 2)),
+                Types.NestedField.optional(4, "created", Types.DateType.get()),
+                Types.NestedField.optional(5, "updated", Types.TimeType.get())));
+
+        // fails before any value is converted, even for a NULL
+        List<OneField> row = new ArrayList<>(fields(0));
+        row.set(4, new OneField(DataType.TIMESTAMP_WITH_TIME_ZONE.getOID(), null));
+        UnsupportedTypeException e = assertThrows(UnsupportedTypeException.class, () -> resolver.setFields(row));
+        assertTrue(e.getMessage().contains("Column updated of type timestamptz cannot be written to Iceberg column of type time"), e.getMessage());
+    }
+
+    @Test
+    public void testWriteIntoWiderColumns() {
+        context.setMetadata(new Schema(
+                Types.NestedField.required(1, "id", Types.LongType.get()),
+                Types.NestedField.optional(2, "name", Types.StringType.get()),
+                Types.NestedField.optional(3, "amount", Types.DecimalType.of(10, 2)),
+                Types.NestedField.optional(4, "created", Types.DateType.get()),
+                Types.NestedField.optional(5, "updated", Types.TimestampType.withoutZone())));
+
+        Record record = (Record) resolver.setFields(fields(7)).getData();
+        assertEquals(7L, record.getField("id"));
+    }
+
+    private void writeRows() throws Exception {
+        TableWrapper tableWrapper = new TableWrapper(Retry.ofDefaults("test"), table);
+        IcebergWriter writer = new WriterFactory().create(tableWrapper, context, null);
+        for (int i = 0; i < ROWS; i++) {
+            writer.write((Record) resolver.setFields(fields(i)).getData());
+        }
+        tableWrapper.appendFiles(null, writer.completeAndGetFilesToCommit());
     }
 
     @ParameterizedTest

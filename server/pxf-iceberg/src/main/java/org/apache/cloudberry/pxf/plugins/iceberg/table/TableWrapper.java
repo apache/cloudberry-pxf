@@ -1,12 +1,12 @@
 package org.apache.cloudberry.pxf.plugins.iceberg.table;
 
-import org.apache.cloudberry.pxf.plugins.iceberg.writer.FileToCommit;
 import io.github.resilience4j.retry.Retry;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.AppendFiles;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableScan;
@@ -32,19 +32,18 @@ public class TableWrapper {
         return table.newScan();
     }
 
-    public void appendFiles(String branchName, Collection<FileToCommit> files) {
+    public void appendFiles(String branchName, Collection<DataFile> files) {
         retry.executeRunnable(() -> tryToAppendFiles(branchName,files));
     }
 
-    private void tryToAppendFiles(String branchName, Collection<FileToCommit> files) {
+    private void tryToAppendFiles(String branchName, Collection<DataFile> files) {
         log.debug("Prepare new append for branch {}", branchName);
         table.refresh();
         var branchToSave = checkOrCreateBranch(branchName);
         table.refresh();
         AppendFiles appendFiles = table.newAppend().toBranch(branchToSave);
         files.stream()
-                .peek(file -> log.info("Appending file {} to branch {}", file.path(), branchToSave))
-                .map(file -> file.toDataFile(table.spec()))
+                .peek(file -> log.info("Appending file {} to branch {}", file.location(), branchToSave))
                 .forEach(appendFiles::appendFile);
         log.debug("Apply new append for branch {}", branchToSave);
         appendFiles.apply();
