@@ -17,15 +17,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.InputStream;
 import java.security.PrivilegedAction;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -190,6 +194,41 @@ public class WriteServiceImplTest {
         inOrder.verify(mockInputStream).close();
         inOrder.verify(mockBridge).endIteration();
         inOrder.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void testWriteDataExceptionAbortsTheWrite() throws Exception {
+        when(mockMetricReporter.getReportFrequency()).thenReturn(1L);
+        when(mockBridge.beginIteration()).thenReturn(true);
+        when(mockBridge.setNext(any(DataInputStream.class))).thenThrow(new RuntimeException("bad record"));
+
+        assertThrows(Exception.class, () -> writeService.writeData(mockContext, mockInputStream));
+
+        verify(mockBridge).abortIteration();
+        verify(mockBridge, never()).endIteration();
+    }
+
+    @Test
+    public void testWriteDataIncompleteBodyAbortsTheWrite() throws Exception {
+        when(mockMetricReporter.getReportFrequency()).thenReturn(1L);
+        when(mockBridge.beginIteration()).thenReturn(true);
+        // the client went away in the middle of the chunked body
+        when(mockInputStream.read()).thenThrow(new EOFException("Unexpected EOF read on the socket"));
+        // like GPDBWritable, take an EOFException for the end of data
+        when(mockBridge.setNext(any(DataInputStream.class))).thenAnswer(invocation -> {
+            try {
+                ((DataInputStream) invocation.getArgument(0)).readInt();
+                return true;
+            } catch (EOFException e) {
+                return false;
+            }
+        });
+
+        Exception e = assertThrows(Exception.class, () -> writeService.writeData(mockContext, mockInputStream));
+        assertTrue(e.getMessage().contains("request body is incomplete"), e.getMessage());
+
+        verify(mockBridge).abortIteration();
+        verify(mockBridge, never()).endIteration();
     }
 
     // helper for reading mock stream to a mock input stream
