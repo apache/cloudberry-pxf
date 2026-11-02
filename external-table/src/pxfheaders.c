@@ -26,6 +26,7 @@
 #include "utils/timestamp.h"
 #include "nodes/makefuncs.h"
 #include "cdb/cdbvars.h"
+#include "utils/guc.h"
 
 /* helper function declarations */
 static void add_alignment_size_httpheader(CHURL_HEADERS headers);
@@ -130,7 +131,12 @@ build_http_headers(PxfInputData *input)
 				 extractPxfAttributes(input->quals, &qualsAreSupported);
 		/* projection information is incomplete if columns from WHERE clause wasn't extracted */
 		/* if any of expressions in WHERE clause is not supported - do not send any projection information at all*/
-		if (qualsAreSupported &&
+		/*
+		 * with gp_external_enable_filter_pushdown off the quals are not passed
+		 * to the protocol at all, so an empty list doesn't mean there is no
+		 * WHERE clause, and the columns used only there would not be read
+		 */
+		if (gp_external_enable_filter_pushdown && qualsAreSupported &&
 			(qualsAttributes != NIL || list_length(input->quals) == 0))
 		{
 			add_projection_desc_httpheader_pg12(headers, proj_info, qualsAttributes, rel);
