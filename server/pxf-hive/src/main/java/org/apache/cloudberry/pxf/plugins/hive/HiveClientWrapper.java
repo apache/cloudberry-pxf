@@ -3,8 +3,6 @@ package org.apache.cloudberry.pxf.plugins.hive;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.metastore.HiveMetaHookLoader;
-import org.apache.hadoop.hive.metastore.HiveMetaStoreClientCompatibility1xx;
 import org.apache.hadoop.hive.metastore.IMetaStoreClient;
 import org.apache.hadoop.hive.metastore.MetaStoreUtils;
 import org.apache.hadoop.hive.metastore.RetryingMetaStoreClient;
@@ -367,22 +365,10 @@ public class HiveClientWrapper {
     public static class HiveClientFactory {
         MetaStoreClientHolder initHiveClient(HiveConf hiveConf) throws MetaException {
             try {
-                return new MetaStoreClientHolder(
-                        RetryingMetaStoreClient.getProxy(
-                                hiveConf,
-                                new Class[]{HiveConf.class, HiveMetaHookLoader.class, Boolean.class},
-                                new Object[]{hiveConf, null, true},
-                                null,
-                                HiveMetaStoreClientCompatibility1xx.class.getName()
-                        )
-                );
+                return new MetaStoreClientHolder(RetryingMetaStoreClient.getProxy(hiveConf, true));
             } catch (RuntimeException ex) {
-                // Report MetaException if found in the stack. A RuntimeException
-                // was thrown when the HiveMetaStoreClientCompatibility1xx
-                // failed to instantiate with a MetaException cause.
-                // java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.metastore.HiveMetaStoreClientCompatibility1xx
-                // and it reports an error message that is hard to interpret
-                // by the user/admin
+                // Unwrap MetaException from reflective client construction to report
+                // the underlying connection error to the user.
                 Throwable e = ex;
                 while (e.getCause() != null) {
                     if (e.getCause() instanceof MetaException) {

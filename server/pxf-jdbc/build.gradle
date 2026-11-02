@@ -33,6 +33,7 @@ dependencies {
 
     implementation("org.apache.hive:hive-jdbc")                      { transitive = false }
     implementation("org.apache.hive:hive-service")                   { transitive = false }
+    implementation("org.apache.hive:hive-service-rpc")               { transitive = false }
     implementation("org.apache.thrift:libthrift")                    { transitive = false }
     implementation("org.apache.hive:hive-common")                    { transitive = false }
     implementation("org.apache.hive.shims:hive-shims-0.23")          { transitive = false }

@@ -86,29 +86,20 @@ public class JdbcHiveTest extends BaseFeature {
             "t2    text",
             "num1  int",
             "dub1  double precision",
-            // Hive JDBC driver 1.1.0 does not support BigDecimal
-            // https://issues.apache.org/jira/browse/HIVE-13614
-            // fixed in 2.3.0
-            // "dec1   numeric",
-            // Hive JDBC driver does not quote value as required
-            // https://issues.apache.org/jira/browse/HIVE-11748
-            // fixed in 2.0.0
+            // Hive JDBC driver does not support setObject(LocalDateTime)
             // "tm    timestamp",
             "r     real",
             "bg    bigint",
             "b     boolean",
             "tn    smallint",
             "sml   smallint",
-            // Hive JDBC driver does not quote value as required
-            // https://issues.apache.org/jira/browse/HIVE-11024
-            // fixed in 1.3.0, 2.0.0
+            // Hive JDBC driver does not support setObject(LocalDate)
             // "dt    date",
             "vc1   varchar(5)",
             "c1    char(3)",
             // Hive JDBC driver does not support setBytes()
-            // https://github.com/apache/hive/blob/dc8891ec9459d2eff5a23154383ec3bd19481fd2/jdbc/src/java/org/apache/hive/jdbc/HivePreparedStatement.java#L251-L254
-            // not yet fixed
-            //"bin   bytea"
+            // "bin   bytea",
+            "dec1  numeric(38,18)"
     };
 
     private static final String[] HIVE_WRITE_TYPES_TABLE_FIELDS = new String[] {
@@ -122,7 +113,8 @@ public class JdbcHiveTest extends BaseFeature {
             "tn    tinyint",
             "sml   smallint",
             "vc1   varchar(5)",
-            "c1    char(3)"
+            "c1    char(3)",
+            "dec1  decimal(38,18)"
     };
 
     private Hive hive;
@@ -166,7 +158,7 @@ public class JdbcHiveTest extends BaseFeature {
     }
 
     protected void createTables(Hive hive, String serverName, String gpdbTypesTableName, String gpdbQueryTableName) throws Exception {
-        String jdbcUrl = HIVE_JDBC_URL_PREFIX + hive.getHost() + ":10000/default";
+        String jdbcUrl = HIVE_JDBC_URL_PREFIX + hive.getHost() + ":10000/default;auth=noSasl";
         String user = null;
 
         // On kerberized cluster, enabled then we need the hive/hiveserver2_hostname principal in the connection string.
@@ -219,7 +211,7 @@ public class JdbcHiveTest extends BaseFeature {
             hiveReadable = TableFactory.getPxfJdbcReadableTable(
                     hiveReadableName, GPDB_WRITE_TYPES_TABLE_FIELDS, targetHiveTable.getFullName(), serverName);
         } else {
-            String jdbcUrl = String.format("%s%s:10000/default", HIVE_JDBC_URL_PREFIX, hive.getHost());
+            String jdbcUrl = String.format("%s%s:10000/default;auth=noSasl", HIVE_JDBC_URL_PREFIX, hive.getHost());
             // create GPDB external table for writing data from GPDB to Hive with JDBC profile
             hiveWritable = TableFactory.getPxfJdbcWritableTable(
                     hiveWritableName, GPDB_WRITE_TYPES_TABLE_FIELDS, targetHiveTable.getFullName(),
@@ -245,7 +237,7 @@ public class JdbcHiveTest extends BaseFeature {
         runSqlTest("features/jdbc/hive");
     }
 
-    @Test(enabled = false, groups = {"features", "gpdb", "security"})
+    @Test(groups = {"features", "gpdb", "security"})
     public void jdbcHiveWrite() throws Exception {
         prepareDataForWriteTest();
         createTablesForWriteTest(hive, "hive", "db-hive");

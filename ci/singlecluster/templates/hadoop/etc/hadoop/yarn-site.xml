@@ -25,6 +25,12 @@
             <value>org.apache.hadoop.mapred.ShuffleHandler</value>
         </property>
 
+        <!-- Allow concurrent Hive JDBC sessions to run their Tez application masters. -->
+        <property>
+            <name>yarn.scheduler.capacity.root.default.maximum-am-resource-percent</name>
+            <value>0.75</value>
+        </property>
+
         <property>
             <name>yarn.scheduler.minimum-allocation-mb</name>
             <value>1024</value>
