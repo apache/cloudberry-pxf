@@ -37,8 +37,6 @@ public class ExpressionBuilder implements TreeVisitor {
             new NotExpressionBuilder()
     ).collect(toMap(InternalExpressionBuilder::getOperator, Function.identity()));
 
-    private static final TreeVisitor operatorPruner = new SupportedOperatorPruner(EnumSet.copyOf(expressionBuilders.keySet()));
-
     public static ExpressionBuilder create(List<ColumnDescriptor> columns, Map<String, Type> icebergTypes) {
         return new ExpressionBuilder(columns, icebergTypes);
     }
@@ -46,6 +44,7 @@ public class ExpressionBuilder implements TreeVisitor {
     private final Map<Integer, String> columnsByIndex;
     private final Map<String, Type> icebergTypes;
     private final TreeVisitor dataTypePruner;
+    private final TreeVisitor operatorPruner;
 
     public ExpressionBuilder(List<ColumnDescriptor> columns, Map<String, Type> icebergTypes) {
         this.columnsByIndex = columns.stream().collect(
@@ -53,6 +52,8 @@ public class ExpressionBuilder implements TreeVisitor {
         );
         this.icebergTypes = icebergTypes;
         this.dataTypePruner = new SupportedDataTypePruner(columns, getCloudberrySupportedTypes());
+        this.operatorPruner = new IcebergOperatorPruner(EnumSet.copyOf(expressionBuilders.keySet()),
+                columnsByIndex, icebergTypes);
     }
 
     public Expression build(String filterString) {
