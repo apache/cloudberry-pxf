@@ -86,6 +86,7 @@ static int	pxfIsForeignRelUpdatable(Relation rel);
  */
 static PxfFdwModifyState *InitForeignModify(Relation relation);
 static void FinishForeignModify(PxfFdwModifyState *pxfmstate);
+static void AbortForeignModify(void *arg);
 static void InitCopyState(PxfFdwScanState *pxfsstate);
 static void InitCopyStateForModify(PxfFdwModifyState *pxfmstate);
 static CopyToState BeginCopyToModify(Relation forrel, List *options);
@@ -587,11 +588,20 @@ InitForeignModify(Relation relation)
 
 	tupDesc = RelationGetDescr(relation);
 	options = PxfGetOptions(foreigntableid);
-	pxfmstate = palloc(sizeof(PxfFdwModifyState));
+	pxfmstate = palloc0(sizeof(PxfFdwModifyState));
 
 	initStringInfo(&pxfmstate->uri);
 	pxfmstate->relation = relation;
 	pxfmstate->options = options;
+
+	/*
+	 * If the query fails, EndForeignInsert is not called. Close the connection
+	 * when the executor's memory goes away then, without finishing the request,
+	 * so that PXF doesn't take the data sent so far for a complete write.
+	 */
+	pxfmstate->abort_callback.func = AbortForeignModify;
+	pxfmstate->abort_callback.arg = pxfmstate;
+	MemoryContextRegisterResetCallback(CurrentMemoryContext, &pxfmstate->abort_callback);
 
 	InitCopyStateForModify(pxfmstate);
 
@@ -691,6 +701,21 @@ FinishForeignModify(PxfFdwModifyState *pxfmstate)
 	pxfmstate->cstate = NULL;
 	PxfBridgeCleanup(pxfmstate);
 
+}
+
+/*
+ * Closes the connection to PXF if the insert did not finish normally
+ */
+static void
+AbortForeignModify(void *arg)
+{
+	PxfFdwModifyState *pxfmstate = (PxfFdwModifyState *) arg;
+
+	if (pxfmstate->churl_handle != NULL)
+	{
+		churl_cleanup(pxfmstate->churl_handle, true);
+		pxfmstate->churl_handle = NULL;
+	}
 }
 
 /*

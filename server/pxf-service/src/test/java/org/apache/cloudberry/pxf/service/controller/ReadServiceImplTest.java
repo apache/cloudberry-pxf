@@ -287,7 +287,7 @@ public class ReadServiceImplTest {
         doAnswer(invocation -> {
             cancelBridge.countDown();
             return null;
-        }).when(mockBridge1).endIteration();
+        }).when(mockBridge1).abortIteration();
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {

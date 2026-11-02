@@ -59,4 +59,13 @@ public interface Bridge {
      * @throws Exception when an error occurs during the operation
      */
     void endIteration() throws Exception;
+
+    /**
+     * Ends the iteration after a failure or a cancel, instead of {@link #endIteration()}.
+     * The default implementation calls {@link #endIteration()}.
+     * @throws Exception when an error occurs during the operation
+     */
+    default void abortIteration() throws Exception {
+        endIteration();
+    }
 }

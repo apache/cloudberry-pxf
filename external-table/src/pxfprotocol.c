@@ -40,6 +40,7 @@ Datum		pxfprotocol_validate_urls(PG_FUNCTION_ARGS);
 /* helper function declarations */
 static gphadoop_context *create_context(PG_FUNCTION_ARGS, bool is_import);
 static void cleanup_context(gphadoop_context *context);
+static void abort_context(void *arg);
 static void check_caller(PG_FUNCTION_ARGS, const char *func_name);
 
 /*
@@ -185,6 +186,16 @@ create_context(PG_FUNCTION_ARGS, bool is_import)
 	context->filterstr = filterstr;
 	context->proj_info = proj_info;
 	context->quals     = filter_quals;
+
+	/*
+	 * The protocol's memory context is deleted at the end of the transaction,
+	 * also when the query failed and there was no last call. Close the
+	 * connection then without finishing the request, so that PXF doesn't take
+	 * the data sent so far for a complete write.
+	 */
+	context->abort_callback.func = abort_context;
+	context->abort_callback.arg = context;
+	MemoryContextRegisterResetCallback(CurrentMemoryContext, &context->abort_callback);
 	context->completed = false;
 	return context;
 }
@@ -199,7 +210,23 @@ cleanup_context(gphadoop_context *context)
 	{
 		gpbridge_cleanup(context);
 		pfree(context->uri.data);
-		pfree(context);
+		/* the context itself is freed with the memory context, see abort_context() */
+	}
+}
+
+/*
+ * Closes the connection to PXF if the context was not cleaned up by the last
+ * call, i.e. the query failed or was cancelled
+ */
+static void
+abort_context(void *arg)
+{
+	gphadoop_context *context = (gphadoop_context *) arg;
+
+	if (context->churl_handle != NULL)
+	{
+		churl_cleanup(context->churl_handle, true);
+		context->churl_handle = NULL;
 	}
 }
 
