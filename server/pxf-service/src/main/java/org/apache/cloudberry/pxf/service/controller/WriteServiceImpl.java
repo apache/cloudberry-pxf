@@ -14,6 +14,8 @@ import org.apache.cloudberry.pxf.service.security.SecurityService;
 import org.springframework.stereotype.Service;
 
 import java.io.DataInputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -65,7 +67,8 @@ public class WriteServiceImpl extends BaseServiceImpl<OperationStats> implements
         OperationResult operationResult = new OperationResult();
 
         // dataStream (and inputStream as the result) will close automatically at the end of the try block
-        CountingInputStream countingInputStream = new CountingInputStream(inputStream);
+        FailureTrackingInputStream trackingInputStream = new FailureTrackingInputStream(inputStream);
+        CountingInputStream countingInputStream = new CountingInputStream(trackingInputStream);
         try (DataInputStream dataStream = new DataInputStream(countingInputStream)) {
             // expose the bridge so pxf_cancel_backend can end it mid-write
             attachBridge(bridge);
@@ -79,11 +82,22 @@ public class WriteServiceImpl extends BaseServiceImpl<OperationStats> implements
                         "Write to resource %s cancelled by pxf_cancel_backend",
                         context.getDataSource()));
             }
+            if (trackingInputStream.getFailure() != null) {
+                // the record readers take an EOFException for the end of data
+                throw new PxfRuntimeException(String.format(
+                        "Write to resource %s was interrupted, the request body is incomplete",
+                        context.getDataSource()), trackingInputStream.getFailure());
+            }
         } catch (Exception e) {
             operationResult.setException(e);
         } finally {
             try {
-                bridge.endIteration();
+                // don't let a failed or cancelled write commit the data written so far
+                if (operationResult.getException() == null) {
+                    bridge.endIteration();
+                } else {
+                    bridge.abortIteration();
+                }
             } catch (Exception e) {
                 if (operationResult.getException() == null) {
                     operationResult.setException(e);
@@ -101,5 +115,53 @@ public class WriteServiceImpl extends BaseServiceImpl<OperationStats> implements
         }
 
         return operationResult;
+    }
+
+    /**
+     * Remembers an error reading the request body. When the client goes away in the middle of
+     * a request, e.g. because its transaction was aborted, the chunked body ends with an
+     * EOFException, which the record readers can't tell from the end of data.
+     */
+    private static class FailureTrackingInputStream extends FilterInputStream {
+
+        private volatile IOException failure;
+
+        FailureTrackingInputStream(InputStream in) {
+            super(in);
+        }
+
+        IOException getFailure() {
+            return failure;
+        }
+
+        @Override
+        public int read() throws IOException {
+            try {
+                return super.read();
+            } catch (IOException e) {
+                failure = e;
+                throw e;
+            }
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            try {
+                return super.read(b, off, len);
+            } catch (IOException e) {
+                failure = e;
+                throw e;
+            }
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            try {
+                return super.skip(n);
+            } catch (IOException e) {
+                failure = e;
+                throw e;
+            }
+        }
     }
 }

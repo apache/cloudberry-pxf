@@ -72,4 +72,16 @@ public interface Accessor extends Plugin {
      * @throws Exception if closing the resource failed
      */
     void closeForWrite() throws Exception;
+
+    /**
+     * Closes the resource after a write that failed or was cancelled, instead of
+     * {@link #closeForWrite()}. Accessors that can discard the data written so far
+     * should do it here rather than make the partial data visible.
+     * The default implementation calls {@link #closeForWrite()}.
+     *
+     * @throws Exception if closing the resource failed
+     */
+    default void abortWrite() throws Exception {
+        closeForWrite();
+    }
 }

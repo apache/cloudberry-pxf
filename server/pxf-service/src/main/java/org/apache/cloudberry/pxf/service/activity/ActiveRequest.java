@@ -115,7 +115,7 @@ class ActiveRequest {
      * Requests cancellation of this request if it is still active: raises the
      * {@link #cancelled} flag and ends the current bridge to unblock a pending
      * read. Safe to call concurrently with the worker's own bridge lifecycle;
-     * {@code endIteration()} must therefore be idempotent enough to tolerate a
+     * {@code abortIteration()} must therefore be idempotent enough to tolerate a
      * double close (its error is logged and swallowed).
      *
      * @return {@code true} if the request was still active and was signalled
@@ -129,7 +129,7 @@ class ActiveRequest {
             cancelled = true;
             if (bridge != null) {
                 try {
-                    bridge.endIteration();
+                    bridge.abortIteration();
                 } catch (Exception e) {
                     log.warn("Ignoring error while cancelling bridge for {}", describe(), e);
                 }
