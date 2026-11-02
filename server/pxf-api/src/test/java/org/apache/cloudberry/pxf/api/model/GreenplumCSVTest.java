@@ -35,6 +35,15 @@ public class GreenplumCSVTest {
     }
 
     @Test
+    public void testToCsvFieldQuotesValueOfNull() {
+        // unquoted, these values would be read back as NULL
+        assertEquals("\"\"", gpCSV.toCsvField("", true, true, true));
+        gpCSV.withValueOfNull("NULL");
+        assertEquals("\"NULL\"", gpCSV.toCsvField("NULL", true, true, true));
+        assertSame("", gpCSV.toCsvField("", true, true, true));
+    }
+
+    @Test
     public void testToCsvHandlesNullInputs() {
         String input = "a";
         gpCSV.withNewline(null);

@@ -215,7 +215,8 @@ public class GreenplumCSV {
      * @param s                        the input string
      * @param prependQuoteChar         true to prepend the quote char to s, false otherwise
      * @param appendQuoteChar          true to append the quote char to s, false otherwise
-     * @param skipIfQuotingIsNotNeeded skip if quoting is not needed
+     * @param skipIfQuotingIsNotNeeded skip if quoting is not needed, i.e. there are no special
+     *                                 characters and the string differs from the NULL value
      * @return an escaped CSV string
      */
     public String toCsvField(String s,
@@ -255,8 +256,10 @@ public class GreenplumCSV {
         total += quotes;
 
         // if there are QUOTE, DELIMITER, NEWLINE characters
-        // in the string we also need to quote the CSV field
-        if (length == total || (skipIfQuotingIsNotNeeded && quotes == 0 && specialChars == 0))
+        // in the string we also need to quote the CSV field,
+        // as well as a value that reads as NULL unquoted, e.g. an empty string
+        if (length == total || (skipIfQuotingIsNotNeeded && quotes == 0 && specialChars == 0
+                && !s.equals(valueOfNull)))
             return s;
 
         char[] chars = new char[total];
