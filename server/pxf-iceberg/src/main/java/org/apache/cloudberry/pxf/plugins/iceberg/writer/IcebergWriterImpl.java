@@ -1,6 +1,7 @@
 package org.apache.cloudberry.pxf.plugins.iceberg.writer;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.BaseTaskWriter;
 
@@ -19,12 +20,18 @@ public class IcebergWriterImpl implements IcebergWriter {
     }
 
     @Override
-    public Collection<FileToCommit> completeAndGetFilesToCommit() throws IOException {
+    public Collection<DataFile> completeAndGetFilesToCommit() throws IOException {
         try{
-            return Arrays.stream(writer.dataFiles()).map(FileToCommit::from).toList();
+            // the writer's own data files keep the column metrics and the file format
+            return Arrays.asList(writer.dataFiles());
         } finally {
             writer.close();
         }
+    }
+
+    @Override
+    public void abort() throws IOException {
+        writer.abort();
     }
 
 }
