@@ -70,7 +70,7 @@ You do **not** need a `servers/clickhouse/jdbc-site.xml` if you pass connection 
 
 Automated tests exercise ClickHouse server versions **24** and **26** together with the ClickHouse JDBC drivers.
 
-For ClickHouse we recommend latest clickhouse-jdbc-all:0.9.7 or newer (fat jar version with shaded dependencies). In case you observe HTTP reliably issues you can use Apache HttpClient: add the JDBC URL parameter `http_connection_provider=APACHE_HTTP_CLIENT` (for example `jdbc:clickhouse://clickhousehost:8123/default?http_connection_provider=APACHE_HTTP_CLIENT`).
+For ClickHouse we recommend latest clickhouse-jdbc-all:0.11.0 or newer (fat jar version with shaded dependencies).
 
 
 ## Read from the ClickHouse Table
