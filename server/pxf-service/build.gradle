@@ -29,6 +29,7 @@ dependencies {
     implementation(project(':pxf-jdbc'))
     implementation(project(':pxf-json'))
     implementation(project(':pxf-s3'))
+    implementation(project(':pxf-iceberg'))
     implementation(project(':pxf-diagnostic'))
 
     implementation("com.google.guava:guava")

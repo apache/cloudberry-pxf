@@ -40,6 +40,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -298,6 +299,27 @@ public class BridgeOutputBuilderTest {
 
         outputQueue.get(0).write(dos);
         assertEquals("0,0.0,0.0,0,0,true,\\x00,value,value,\"va\"\"lue\",0," + datetime + "," + date + ",,HELLO\n",
+                new String(dos.getOutput(), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void testCSVSerializationOfLocalDateTime() throws Exception {
+        RequestContext context = new RequestContext();
+        context.setFormat("CSV");
+        addColumn(context, 0, DataType.TIMESTAMP, "col0");
+        addColumn(context, 1, DataType.TIMESTAMP, "col1");
+
+        BridgeOutputBuilder builder = makeBuilder(context);
+
+        LocalDateTime localDateTime = LocalDateTime.of(2024, 1, 2, 3, 4, 0, 123456000);
+        List<Writable> outputQueue = builder.makeOutput(Arrays.asList(
+                new OneField(DataType.TIMESTAMP.getOID(), localDateTime),
+                new OneField(DataType.TIMESTAMP.getOID(), Timestamp.valueOf(localDateTime))
+        ));
+
+        assertEquals(1, outputQueue.size());
+        outputQueue.get(0).write(dos);
+        assertEquals("2024-01-02 03:04:00.123456,2024-01-02 03:04:00.123456\n",
                 new String(dos.getOutput(), StandardCharsets.UTF_8));
     }
 
