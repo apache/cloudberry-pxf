@@ -51,7 +51,7 @@
 #
 #   5. test-pxf (matrix: 10 platforms)
 #      Downloads both the Cloudberry artifact and the PXF package
-#      artifact into a FRESH container.  Installs Java, installs the
+#      artifact into a FRESH container.  Sets up the JDK, installs the
 #      PXF package, spins up gpdemo, and runs PXF smoke tests.
 #      No build step ever touched this container.
 #
@@ -587,17 +587,17 @@ jobs:
       matrix:
         platform:
           # RPM — Rocky Linux 8/9/10
-          - {target_os: rocky8,  target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
-          - {target_os: rocky8,  target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
-          - {target_os: rocky9,  target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
-          - {target_os: rocky9,  target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
-          - {target_os: rocky10, target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
-          - {target_os: rocky10, target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
+          - {target_os: rocky8,  target_arch: x86_64, java_version: 11, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
+          - {target_os: rocky8,  target_arch: arm64,  java_version: 11, package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
+          - {target_os: rocky9,  target_arch: x86_64, java_version: 17, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
+          - {target_os: rocky9,  target_arch: arm64,  java_version: 17, package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
+          - {target_os: rocky10, target_arch: x86_64, java_version: 21, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
+          - {target_os: rocky10, target_arch: arm64,  java_version: 21, package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
           # DEB — Ubuntu 22.04/24.04
-          - {target_os: ubuntu22.04, target_arch: x86_64, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
-          - {target_os: ubuntu22.04, target_arch: arm64,  package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
-          - {target_os: ubuntu24.04, target_arch: x86_64, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
-          - {target_os: ubuntu24.04, target_arch: arm64,  package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
+          - {target_os: ubuntu22.04, target_arch: x86_64, java_version: 11, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
+          - {target_os: ubuntu22.04, target_arch: arm64,  java_version: 11, package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
+          - {target_os: ubuntu24.04, target_arch: x86_64, java_version: 21, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
+          - {target_os: ubuntu24.04, target_arch: arm64,  java_version: 21, package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
 
     steps:
       - name: Free disk space
@@ -638,6 +638,39 @@ jobs:
           ls -la "${CB_INSTALL_DIR}/bin/"
           echo "=== Cloudberry ready. ==="
 
+      - name: Set up JDK ${{ matrix.platform.java_version }}
+        shell: bash
+        env:
+          JAVA_VERSION: ${{ matrix.platform.java_version }}
+        run: |
+          set -euo pipefail
+          # Build and run PXF on each distribution's own default OpenJDK
+          # (see java_version in the matrix). The Cloudberry build images
+          # already ship some of them (11 on Rocky 8, 21 on Rocky 10); the
+          # install is a no-op there.
+          if command -v apt-get >/dev/null 2>&1; then
+            apt-get update
+            apt-get install -y "openjdk-${JAVA_VERSION}-jdk-headless"
+          else
+            dnf install -y "java-${JAVA_VERSION}-openjdk-devel"
+          fi
+
+          JAVA_HOME=""
+          for javac in /usr/lib/jvm/*/bin/javac; do
+            if [[ -x "${javac}" && "$("${javac}" -version 2>&1)" == "javac ${JAVA_VERSION}."* ]]; then
+              JAVA_HOME="$(dirname "$(dirname "$(readlink -f "${javac}")")")"
+              break
+            fi
+          done
+          if [[ -z "${JAVA_HOME}" ]]; then
+            echo "::error::Cannot locate a JDK ${JAVA_VERSION} under /usr/lib/jvm"
+            ls -la /usr/lib/jvm/ || true
+            exit 1
+          fi
+          echo "=== JAVA_HOME=${JAVA_HOME} ==="
+          "${JAVA_HOME}/bin/javac" -version
+          echo "JAVA_HOME=${JAVA_HOME}" >> "${GITHUB_ENV}"
+
       - name: Download verified PXF source
         uses: actions/download-artifact@v4
         with:
@@ -665,11 +698,8 @@ jobs:
           pxf_source_dir="${GITHUB_WORKSPACE}/${source_root_name}"
           chown -R gpadmin:gpadmin "${pxf_source_dir}"
 
-          # ---- Detect JAVA_HOME ----
-          JAVA_HOME=$(find /usr/lib/jvm -maxdepth 1 -name 'java-11*' -type d | head -1 || true)
-          if [[ -z "${JAVA_HOME}" ]]; then
-            echo "::error::Cannot locate JAVA_HOME under /usr/lib/jvm"
-            ls -la /usr/lib/jvm/ || true
+          if [[ -z "${JAVA_HOME:-}" || ! -x "${JAVA_HOME}/bin/javac" ]]; then
+            echo "::error::JDK is not available at JAVA_HOME=${JAVA_HOME:-<unset>}"
             exit 1
           fi
           echo "=== JAVA_HOME=${JAVA_HOME} ==="
@@ -754,17 +784,17 @@ jobs:
       matrix:
         platform:
           # RPM — Rocky Linux 8/9/10
-          - {target_os: rocky8,  target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
-          - {target_os: rocky8,  target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
-          - {target_os: rocky9,  target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
-          - {target_os: rocky9,  target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
-          - {target_os: rocky10, target_arch: x86_64, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
-          - {target_os: rocky10, target_arch: arm64,  package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
+          - {target_os: rocky8,  target_arch: x86_64, java_version: 11, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
+          - {target_os: rocky8,  target_arch: arm64,  java_version: 11, package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky8-latest}
+          - {target_os: rocky9,  target_arch: x86_64, java_version: 17, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
+          - {target_os: rocky9,  target_arch: arm64,  java_version: 17, package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky9-latest}
+          - {target_os: rocky10, target_arch: x86_64, java_version: 21, package_type: rpm, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
+          - {target_os: rocky10, target_arch: arm64,  java_version: 21, package_type: rpm, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-rocky10-latest}
           # DEB — Ubuntu 22.04/24.04
-          - {target_os: ubuntu22.04, target_arch: x86_64, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
-          - {target_os: ubuntu22.04, target_arch: arm64,  package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
-          - {target_os: ubuntu24.04, target_arch: x86_64, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
-          - {target_os: ubuntu24.04, target_arch: arm64,  package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
+          - {target_os: ubuntu22.04, target_arch: x86_64, java_version: 11, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
+          - {target_os: ubuntu22.04, target_arch: arm64,  java_version: 11, package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu22.04-latest}
+          - {target_os: ubuntu24.04, target_arch: x86_64, java_version: 21, package_type: deb, runner: ubuntu-24.04,     build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
+          - {target_os: ubuntu24.04, target_arch: arm64,  java_version: 21, package_type: deb, runner: ubuntu-24.04-arm, build_container_image: apache/incubator-cloudberry:cbdb-build-ubuntu24.04-latest}
 
     steps:
       - name: Initialize container
@@ -789,21 +819,38 @@ jobs:
           ls -la "${CB_INSTALL_DIR}/bin/"
           echo "=== Cloudberry ready. ==="
 
-      - name: Install Java
+      - name: Set up JDK ${{ matrix.platform.java_version }}
         shell: bash
         env:
-          TARGET_OS: ${{ matrix.platform.target_os }}
+          JAVA_VERSION: ${{ matrix.platform.java_version }}
         run: |
           set -euo pipefail
-          echo "=== Installing Java 11... ==="
-          if [[ "${TARGET_OS}" == rocky* ]]; then
-            dnf install -y java-11-openjdk
+          # Build and run PXF on each distribution's own default OpenJDK
+          # (see java_version in the matrix). The Cloudberry build images
+          # already ship some of them (11 on Rocky 8, 21 on Rocky 10); the
+          # install is a no-op there.
+          if command -v apt-get >/dev/null 2>&1; then
+            apt-get update
+            apt-get install -y "openjdk-${JAVA_VERSION}-jdk-headless"
           else
-            apt-get update && apt-get install -y openjdk-11-jdk
+            dnf install -y "java-${JAVA_VERSION}-openjdk-devel"
           fi
 
-          JAVA_HOME=$(find /usr/lib/jvm -maxdepth 1 -name 'java-11*' -type d | head -1 || true)
+          JAVA_HOME=""
+          for javac in /usr/lib/jvm/*/bin/javac; do
+            if [[ -x "${javac}" && "$("${javac}" -version 2>&1)" == "javac ${JAVA_VERSION}."* ]]; then
+              JAVA_HOME="$(dirname "$(dirname "$(readlink -f "${javac}")")")"
+              break
+            fi
+          done
+          if [[ -z "${JAVA_HOME}" ]]; then
+            echo "::error::Cannot locate a JDK ${JAVA_VERSION} under /usr/lib/jvm"
+            ls -la /usr/lib/jvm/ || true
+            exit 1
+          fi
           echo "=== JAVA_HOME=${JAVA_HOME} ==="
+          "${JAVA_HOME}/bin/javac" -version
+          echo "JAVA_HOME=${JAVA_HOME}" >> "${GITHUB_ENV}"
 
       - name: Download PXF package
         uses: actions/download-artifact@v4
@@ -861,10 +908,8 @@ jobs:
           GPHOME="/usr/local/cloudberry-db"
           source "${GPHOME}/cloudberry-env.sh"
 
-          # Detect JAVA_HOME
-          JAVA_HOME=$(find /usr/lib/jvm -maxdepth 1 -name 'java-11*' -type d | head -1 || true)
-          if [[ -z "${JAVA_HOME}" ]]; then
-            echo "ERROR: Cannot locate JAVA_HOME"
+          if [[ -z "${JAVA_HOME:-}" || ! -x "${JAVA_HOME}/bin/java" ]]; then
+            echo "ERROR: JDK is not available at JAVA_HOME=${JAVA_HOME:-<unset>}"
             exit 1
           fi
 
@@ -927,7 +972,7 @@ jobs:
           SCRIPT
 
           chmod +x /tmp/run_pxf_smoke_test.sh
-          su - gpadmin -c "/tmp/run_pxf_smoke_test.sh"
+          su - gpadmin -c "JAVA_HOME='${JAVA_HOME}' /tmp/run_pxf_smoke_test.sh"
           test_status=$?
 
           {
