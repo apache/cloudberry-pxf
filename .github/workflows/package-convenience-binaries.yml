@@ -713,6 +713,11 @@ jobs:
             export JAVA_HOME='${JAVA_HOME}'
             export GOPATH=\$HOME/go
             export PATH=\$PATH:/usr/local/go/bin:\$GOPATH/bin
+            # RHEL/Rocky 10 runs check-rpaths in rpmbuild's %install and
+            # rejects pxf.so and pxf_fdw.so, whose RUNPATH points at the
+            # Cloudberry libraries in /usr/local/cloudberry-db/lib on purpose.
+            # Allow only that class (0x0002, absolute non-system path).
+            export QA_RPATHS=0x0002
             if [[ '${PACKAGE_TYPE}' == 'deb' ]]; then make deb 2>&1; else make rpm 2>&1; fi
           "
           echo "=== PXF build complete. ==="
