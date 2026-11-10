@@ -70,7 +70,7 @@ You do **not** need a `servers/clickhouse/jdbc-site.xml` if you pass connection 
 
 Automated tests exercise ClickHouse server versions **24** and **26** together with the ClickHouse JDBC drivers.
 
-For ClickHouse we recommend latest clickhouse-jdbc-all:0.11.0 or newer (fat jar version with shaded dependencies).
+For ClickHouse we recommend latest clickhouse-jdbc-all:0.11.1 or newer (fat jar version with shaded dependencies).
 
 
 ## Read from the ClickHouse Table
