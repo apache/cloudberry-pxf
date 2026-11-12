@@ -9,12 +9,17 @@ import org.apache.cloudberry.pxf.plugins.jdbc.utils.ConnectionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -23,16 +28,21 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
 public class JdbcAccessorTest {
+
+    @TempDir
+    Path tempDirectory;
 
     private Configuration configuration;
     private JdbcAccessor accessor;
@@ -103,22 +113,25 @@ public class JdbcAccessorTest {
             accessor.afterPropertiesSet();
             Exception e = assertThrows(RuntimeException.class,
                     () -> accessor.openForRead());
-            assertEquals("Failed to read text of query foo : File '/non-existing-directory/foo.sql' does not exist", e.getMessage());
+            assertInstanceOf(NoSuchFileException.class, e.getCause().getCause());
+            assertEquals("Failed to read text of query foo : /non-existing-directory", e.getMessage());
             jdbcBasePluginMockedStatic.verify(() -> JdbcBasePlugin.closeConnection(mockConnection));
         }
     }
 
     @Test
-    public void testReadFromQueryFailsWhenQueryFileIsNotFoundInExistingDirectory() throws SQLException {
+    public void testReadFromQueryFailsWhenQueryFileIsNotFoundInExistingDirectory() throws Exception {
         try (MockedStatic<JdbcBasePlugin> jdbcBasePluginMockedStatic = mockStatic(JdbcBasePlugin.class)) {
             wireMocksForRead();
-            configuration.set("pxf.config.server.directory", "/tmp/");
+            configuration.set("pxf.config.server.directory", tempDirectory.toString());
             context.setDataSource("query:foo");
             accessor.setRequestContext(context);
             accessor.afterPropertiesSet();
             Exception e = assertThrows(RuntimeException.class,
                     () -> accessor.openForRead());
-            assertEquals("Failed to read text of query foo : File '/tmp/foo.sql' does not exist", e.getMessage());
+            assertInstanceOf(NoSuchFileException.class, e.getCause().getCause());
+            assertEquals("Failed to read text of query foo : " +
+                    tempDirectory.toRealPath().resolve("foo.sql"), e.getMessage());
             jdbcBasePluginMockedStatic.verify(() -> JdbcBasePlugin.closeConnection(mockConnection));
         }
     }
@@ -137,6 +150,47 @@ public class JdbcAccessorTest {
             assertEquals("Query text file is empty for query emptyquery", e.getMessage());
             jdbcBasePluginMockedStatic.verify(() -> JdbcBasePlugin.closeConnection(mockConnection));
         }
+    }
+
+    @Test
+    public void testReadFromQueryFailsWhenSymbolicLinkEscapesServerDirectory() throws Exception {
+        Path serverDirectory = Files.createDirectory(tempDirectory.resolve("server"));
+        Path otherDirectory = Files.createDirectory(tempDirectory.resolve("server-other"));
+        Path outsideQuery = Files.write(otherDirectory.resolve("report.sql"),
+                "SELECT secret FROM private_table".getBytes(StandardCharsets.UTF_8));
+        Files.createSymbolicLink(serverDirectory.resolve("report.sql"), outsideQuery);
+        configuration.set("pxf.config.server.directory", serverDirectory.toString());
+        context.setDataSource("query:report");
+        accessor.setRequestContext(context);
+        accessor.afterPropertiesSet();
+
+        try (MockedStatic<JdbcBasePlugin> jdbcBasePluginMockedStatic = mockStatic(JdbcBasePlugin.class)) {
+            wireMocksForRead();
+
+            Exception e = assertThrows(PxfRuntimeException.class, () -> accessor.openForRead());
+            assertEquals("Query file must reside in the server configuration directory", e.getMessage());
+            verify(mockConnection, never()).createStatement();
+            jdbcBasePluginMockedStatic.verify(() -> JdbcBasePlugin.closeConnection(mockConnection));
+        }
+    }
+
+    @Test
+    public void testReadFromQueryWithSymbolicLinksWithinServerDirectory() throws Exception {
+        Path serverDirectory = Files.createDirectory(tempDirectory.resolve("server"));
+        Path queryFile = Files.write(serverDirectory.resolve("report.sql"),
+                "SELECT 1".getBytes(StandardCharsets.UTF_8));
+        Files.createSymbolicLink(serverDirectory.resolve("alias.sql"), queryFile);
+        Path serverLink = Files.createSymbolicLink(tempDirectory.resolve("server-link"), serverDirectory);
+        configuration.set("pxf.config.server.directory", serverLink.toString());
+        context.setDataSource("query:alias");
+        wireMocksForReadWithCreateStatement();
+        when(mockStatement.executeQuery(any())).thenReturn(mockResultSet);
+
+        accessor.setRequestContext(context);
+        accessor.afterPropertiesSet();
+        accessor.openForRead();
+
+        verify(mockStatement).executeQuery("SELECT  FROM (SELECT 1) pxfsubquery");
     }
 
     @Test

@@ -33,9 +33,9 @@ import org.apache.cloudberry.pxf.plugins.jdbc.writercallable.WriterCallableFacto
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -354,11 +354,16 @@ public class JdbcAccessor extends JdbcBasePlugin implements Accessor {
 
         String queryText;
         try {
-            File queryFile = new File(serverDirectory, queryName + ".sql");
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Reading text of query={} from {}", queryName, queryFile.getCanonicalPath());
+            Path serverDirectoryPath = Path.of(serverDirectory).toRealPath();
+            Path queryFile = serverDirectoryPath.resolve(queryName + ".sql").toRealPath();
+            // Resolve symbolic links and compare directory objects, not string prefixes.
+            if (!serverDirectoryPath.equals(queryFile.getParent())) {
+                throw new IllegalArgumentException("Query file must reside in the server configuration directory");
             }
-            queryText = FileUtils.readFileToString(queryFile, Charset.defaultCharset());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Reading text of query={} from {}", queryName, queryFile);
+            }
+            queryText = FileUtils.readFileToString(queryFile.toFile(), Charset.defaultCharset());
         } catch (IOException e) {
             throw new RuntimeException(String.format("Failed to read text of query %s : %s", queryName, e.getMessage()), e);
         }
