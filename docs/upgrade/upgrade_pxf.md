@@ -89,3 +89,16 @@ After you install the new version of PXF, perform the following procedure:
     ``` shell
     gpadmin@coordinator$ pxf cluster start
     ```
+
+## Backward-Incompatible Changes
+
+### Migrating Avro Schemas Previously Read from Local Paths
+
+Earlier PXF releases searched the PXF host's local file system before the classpath and the configured file system. Tables that relied on this behavior must be updated. For example, `SCHEMA=/opt/pxf/schemas/example.avsc` no longer opens that file directly on the PXF host, even when the file exists.
+
+Choose one of the following migration options:
+
+- Place the schema in the file system configured by `SERVER` and update `SCHEMA` to its path relative to `pxf.fs.basePath` (or the file system root). For example, with `pxf.fs.basePath=/data`, place the schema at `/data/schemas/example.avsc` and use `SCHEMA=/schemas/example.avsc`.
+- Place the schema in `$PXF_BASE/conf` on every PXF host and use its relative classpath name. For example, place it at `$PXF_BASE/conf/schemas/example.avsc` and use `SCHEMA=schemas/example.avsc`. Synchronize the configuration with `pxf cluster sync`.
+
+These changes apply to both `.avsc` and `.avro` schema files, for read and write operations. With a `file:avro` profile, schema paths are resolved relative to the required `pxf.fs.basePath` of the file server, just like data paths.

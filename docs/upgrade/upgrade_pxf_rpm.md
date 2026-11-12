@@ -6,6 +6,8 @@ sidebar_position: 4
 
 If you installed PXF from the `rpm` or `deb` package and have configured and are using PXF in your current Apache Cloudberry installation, you must perform some upgrade actions when you install a new version of PXF.
 
+Before upgrading, review the [backward-incompatible changes](./upgrade_pxf.md#backward-incompatible-changes).
+
 The PXF upgrade procedure has two parts. You perform one procedure before, and one procedure after, you install the new version:
 
 -   [Step 1: Complete the PXF Pre-Upgrade Actions](#step-1-complete-the-pxf-pre-upgrade-actions)

@@ -128,6 +128,8 @@ You can use the `pxf.fs.basePath` property to restrict a user's access to files 
 
 When you configure the `pxf.fs.basePath` property for a server, PXF considers the file path specified in the `CREATE EXTERNAL TABLE` `LOCATION` clause to be relative to this base path setting, and constructs the remote path accordingly.
 
+Avro schema paths resolved in the configured file system also use this base path, including absolute paths in the `SCHEMA` option. For example, with `pxf.fs.basePath=/data`, `SCHEMA=/schemas/example.avsc` resolves to `/data/schemas/example.avsc`. A relative schema name found in the PXF classpath is loaded from the classpath instead. See [Avro Schemas and Data](../../access-hadoop/hdfs_avro.md#avro-schemas-and-data).
+
 > <b>Note:</b> You must set `pxf.fs.basePath` when you configure a PXF server for access to a network file system with a `file:*` profile. This property is optional for a PXF server that accesses a file in Hadoop or in an object store.
 
 

@@ -312,8 +312,7 @@ public class HdfsReadableAvroTest extends BaseFeature {
     @Test(groups = {"features", "gpdb", "hcfs", "security"})
     public void avroComplexReadSchemaFromSegmentHosts() throws Exception {
         prepareReadableTable("avrotest_complex", AVRO_ALL_TYPES_FIELDS, hdfsPath + avroComplexFileName + SUFFIX_AVRO);
-        String schemaPath = remotePublicStage + "/" + complexAvroFile;
-        exTable.setExternalDataSchema(schemaPath);
+        exTable.setExternalDataSchema(complexAvroFile);
         gpdb.createTableAndVerify(exTable);
         // Verify results
         runSqlTest("features/hdfs/readable/avro/complex_types");
