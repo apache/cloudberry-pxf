@@ -1,0 +1,22 @@
+-- @description query04 for PXF parallel scan correctness - ORDER BY with LIMIT
+
+SET optimizer = off;
+SET
+SET enable_parallel = true;
+SET
+SET max_parallel_workers_per_gather = 4;
+SET
+SELECT id, val FROM pxf_parallel_enabled ORDER BY id LIMIT 10;
+ id |  val
+----+-------
+  1 | row_1
+  2 | row_2
+  3 | row_3
+  4 | row_4
+  5 | row_5
+  6 | row_6
+  7 | row_7
+  8 | row_8
+  9 | row_9
+ 10 | row_10
+(10 rows)

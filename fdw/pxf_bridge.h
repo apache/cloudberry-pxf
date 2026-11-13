@@ -49,6 +49,14 @@ typedef struct PxfFdwScanState
 	PxfOptions *options;
 	CopyFromState	cstate;
 	ProjectionInfo *projectionInfo;
+
+	/*
+	 * Gang-parallel scan: the virtual segment reported to PXF in place of
+	 * the physical one (see InitGangParallelState in pxf_fdw.c).
+	 */
+	bool		gang_parallel;
+	int			virtual_seg_id;
+	int			virtual_seg_count;
 } PxfFdwScanState;
 
 /*

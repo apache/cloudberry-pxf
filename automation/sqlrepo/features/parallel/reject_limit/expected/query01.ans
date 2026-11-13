@@ -1,0 +1,42 @@
+-- @description query01 for PXF parallel scan with a segment reject limit - the limit is counted per segment, so the scan is not parallel
+-- start_matchsubs
+--
+-- m/ERROR:\s*(S|s)egment reject limit reached/
+-- s/ERROR:\s*(S|s)egment reject limit reached.*/ERROR: segment reject limit reached/
+--
+-- m/CONTEXT:\s*Last error was/
+-- s/CONTEXT:.*/GP_IGNORE:/
+--
+-- m/CONTEXT:\s*External table/
+-- s/CONTEXT:.*/GP_IGNORE:/
+--
+-- end_matchsubs
+SET optimizer = off;
+SET
+SET enable_parallel = true;
+SET
+SET max_parallel_workers_per_gather = 4;
+SET
+SELECT pxf_parallel_scan_count('SELECT count(*) FROM pxf_parallel_reject_3');
+ pxf_parallel_scan_count
+-------------------------
+                       0
+(1 row)
+
+-- 12 files with one malformed row each: on up to 3 segments each segment reads
+-- at least 4 malformed rows, more than the limit of 3
+SELECT count(*) FROM pxf_parallel_reject_3;
+ERROR:  segment reject limit reached, aborting operation
+DETAIL:  Last error was: invalid input syntax for type integer: "bad", column id
+CONTEXT:  Foreign table pxf_parallel_reject_3, record 303 of /pr61ci/parallel_bad_rows, column id: "bad"
+SELECT pxf_parallel_scan_count('SELECT count(*) FROM pxf_parallel_reject_20');
+ pxf_parallel_scan_count
+-------------------------
+                       0
+(1 row)
+
+SELECT count(*), sum(id) FROM pxf_parallel_reject_20;
+ count |  sum
+-------+--------
+  1200 | 720600
+(1 row)

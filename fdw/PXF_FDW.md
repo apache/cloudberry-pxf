@@ -546,3 +546,38 @@ The `format` option is optional.
 The `format` option can be added if not present.
 The `format` option can be altered when present.
 The `format` option can be dropped when present.
+
+# Parallel Scan
+
+On Cloudberry, a PXF foreign table can be scanned by several gang workers per
+segment. Each worker reports a separate virtual segment to PXF, so the
+fragments that a segment reads are split among its workers.
+
+Parallel scan is off by default. Enable it with the `enable_parallel` option
+on the foreign server or on the foreign table. A value set on the table
+overrides the value set on the server.
+
+    CREATE SERVER hdfs_server FOREIGN DATA WRAPPER hdfs_pxf_fdw
+        OPTIONS ( config 'default', enable_parallel 'true' );
+
+    CREATE FOREIGN TABLE hdfs_small_table ( id int, val text )
+        SERVER hdfs_server
+        OPTIONS ( resource '/data/small', format 'csv', enable_parallel 'false' );
+
+The planner considers a parallel scan only when the session also has
+`enable_parallel = on`, `max_parallel_workers_per_gather > 0` and
+`optimizer = off`. It uses `max_parallel_workers_per_gather` workers per
+segment, as PXF does not know the size of the data when the query is planned.
+
+A table is not scanned in parallel when:
+
+- it has a `reject_limit`. The segment reject limit is counted by each
+  process, so parallel workers would accept more rejected rows than the limit.
+- it is a partition, a `UNION ALL` member or part of a subquery. These scans
+  may run under a Parallel Append, which runs each child in only some of the
+  workers.
+
+Each segment opens one connection to PXF per worker, so a parallel scan with
+W workers sends W times as many concurrent requests to the PXF server. Size
+the PXF server threads and memory accordingly. A parallel scan of a small
+table can be slower than a plain scan.

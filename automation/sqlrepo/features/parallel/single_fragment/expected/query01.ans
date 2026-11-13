@@ -1,0 +1,13 @@
+-- @description query01 for PXF parallel scan single fragment - count with excess workers
+
+SET optimizer = off;
+SET
+SET enable_parallel = true;
+SET
+SET max_parallel_workers_per_gather = 4;
+SET
+SELECT count(*) FROM pxf_parallel_single_frag;
+ count
+-------
+   100
+(1 row)
