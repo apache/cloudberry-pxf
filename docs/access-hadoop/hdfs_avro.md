@@ -125,7 +125,9 @@ You can specify an Avro schema on both read and write operations to HDFS. You ca
 | writable   | yes | PXF uses the specified schema. |
 | writable   | no | PXF creates the Avro schema based on the external table definition. |
 
-When you provide the Avro schema file to PXF, the file must reside in the same location on each Apache Cloudberry host **or** the file may reside on the Hadoop file system. PXF first searches for an absolute file path on the Apache Cloudberry hosts. If PXF does not find the schema file there, it searches for the file relative to the PXF classpath. If PXF cannot find the schema file locally, it searches for the file on HDFS.
+When you provide the Avro schema file to PXF, the file may reside on the Hadoop file system or in the PXF classpath on every Apache Cloudberry host. For a relative schema path, PXF first searches the PXF classpath. If PXF cannot find the schema file there, or if the schema path is absolute, it resolves the path using the file system configured by `SERVER`.
+
+PXF does not open an absolute `SCHEMA` path directly on the local file system of the PXF host. It treats the path as relative to the server's `pxf.fs.basePath`, or to the configured file system root when no base path is set. For example, with `pxf.fs.basePath=/data`, `SCHEMA=/schemas/example.avsc` refers to `/data/schemas/example.avsc` on the configured file system. Schema paths must not contain parent-directory (`..`) components or the dollar sign (`$`).
 
 The `$PXF_BASE/conf` directory is in the PXF classpath. PXF can locate an Avro schema file that you add to this directory on every Apache Cloudberry host.
 
@@ -165,7 +167,7 @@ The `hdfs:avro` profile supports the following \<custom-option\>s:
 | COLLECTION_DELIM | The delimiter character(s) placed between entries in a top-level array, map, or record field when PXF maps an Avro complex data type to a text column. The default is the comma (`,`) character. (Read)|
 | MAPKEY_DELIM | The delimiter character(s) placed between the key and value of a map entry when PXF maps an Avro complex data type to a text column. The default is the colon `:` character. (Read)|
 | RECORDKEY_DELIM | The delimiter character(s) placed between the field name and value of a record entry when PXF maps an Avro complex data type to a text column. The default is the colon `:` character. (Read)|
-| SCHEMA | The absolute path to the Avro schema file on the Apache Cloudberry host or on HDFS, or the relative path to the schema file on the host. (Read and Write)|
+| SCHEMA | The path to the Avro schema file on the configured file system, resolved relative to `pxf.fs.basePath` (or the file system root), or a relative path in the PXF classpath. Absolute paths are not opened directly on the PXF host. (Read and Write)|
 | IGNORE_MISSING_PATH | A Boolean value that specifies the action to take when \<path-to-hdfs-file\> is missing or invalid. The default value is `false`, PXF returns an error in this situation. When the value is `true`, PXF ignores missing path errors and returns an empty fragment. (Read) |
 
 The PXF `hdfs:avro` profile supports encoding- and compression-related write options. You specify these write options in the `CREATE WRITABLE EXTERNAL TABLE` `LOCATION` clause. The `hdfs:avro` profile supports the following custom write options:

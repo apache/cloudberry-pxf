@@ -175,6 +175,8 @@ public final class AvroUtilities {
     private Schema readOrGenerateAvroSchema(RequestContext context, HcfsType hcfsType, String userProvidedSchemaFile) throws IOException {
         // user-provided schema trumps everything
         if (userProvidedSchemaFile != null) {
+            // Validate before classpath lookup as well as HCFS access.
+            hcfsType.validateAndNormalizeDataSource(userProvidedSchemaFile);
             AvroSchemaFileReader schemaFileReader = schemaFileReaderFactory.getAvroSchemaFileReader(userProvidedSchemaFile);
             return schemaFileReader.readSchema(context.getConfiguration(), userProvidedSchemaFile, hcfsType, fileSearcher);
         }
@@ -300,18 +302,16 @@ public final class AvroUtilities {
 
         @Override
         public File searchForFile(String schemaName) {
+            // Absolute paths belong to the configured filesystem, not the PXF host.
+            if (new File(schemaName).isAbsolute()) {
+                return null;
+            }
             try {
-                File file = new File(schemaName);
-                if (!file.exists()) {
-                    URL url = AvroUtilities.class.getClassLoader().getResource(schemaName);
-
-                    // Testing that the schema resource exists
-                    if (url == null) {
-                        return null;
-                    }
-                    file = new File(URLDecoder.decode(url.getPath(), "UTF-8"));
+                URL url = AvroUtilities.class.getClassLoader().getResource(schemaName);
+                if (url == null) {
+                    return null;
                 }
-                return file;
+                return new File(URLDecoder.decode(url.getPath(), "UTF-8"));
             } catch (UnsupportedEncodingException e) {
                 LOG.info(e.toString());
                 return null;

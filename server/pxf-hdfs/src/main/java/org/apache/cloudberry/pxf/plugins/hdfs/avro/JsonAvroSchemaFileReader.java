@@ -16,7 +16,7 @@ public class JsonAvroSchemaFileReader implements AvroSchemaFileReader {
     @Override
     public Schema readSchema(Configuration configuration, String schemaName, HcfsType hcfsType, AvroUtilities.FileSearcher fileSearcher) throws IOException {
         InputStream schemaStream = null;
-        // try searching local disk (full path name and relative path in classpath) first.
+        // Try searching the classpath for a relative schema name first.
         // by searching locally first we can avoid an extra call to external (fs.exists())
         try {
             File file = fileSearcher.searchForFile(schemaName);

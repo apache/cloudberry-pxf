@@ -43,6 +43,7 @@ When you read or write Avro data in an object store:
     - You must include the bucket in the schema file path. This bucket need not specify the same bucket as the Avro data file.
     - The secrets that you specify in the `SERVER` configuration must provide access to both the data file and schema file buckets.
 - The schema file path must not include spaces.
+- An absolute `SCHEMA` path is resolved in the configured object store, relative to `pxf.fs.basePath` (or the file system root). PXF does not open it directly on the local file system of the PXF host. A relative schema path is searched in the PXF classpath first.
 
 ## Creating the External Table
 

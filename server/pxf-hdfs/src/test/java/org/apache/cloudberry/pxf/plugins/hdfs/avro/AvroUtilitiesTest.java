@@ -8,9 +8,11 @@ import org.apache.cloudberry.pxf.plugins.hdfs.HcfsType;
 import org.apache.cloudberry.pxf.plugins.hdfs.utilities.PgUtilities;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import java.io.File;
+import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,6 +22,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,6 +36,9 @@ public class AvroUtilitiesTest {
     private AvroUtilities avroUtilities;
     private PgUtilities pgUtilities;
     private HcfsType hcfsType;
+
+    @TempDir
+    Path basePath;
 
 
     @BeforeEach
@@ -64,10 +70,9 @@ public class AvroUtilitiesTest {
 
     @Test
     public void testObtainSchema_OnRead_WithUserProvidedSchema_Binary_HCFS() {
-        avroUtilities = new AvroUtilities((file) -> dontFindLocalFile());
-        avroUtilities.setSchemaFileReaderFactory(avroSchemaFileReaderFactory);
         context.setRequestType(RequestContext.RequestType.READ_BRIDGE);
-        context.addOption("SCHEMA", avroDirectory + "user-provided.avro");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, avroDirectory);
+        context.addOption("SCHEMA", "/user-provided.avro");
 
         schema = avroUtilities.obtainSchema(context, hcfsType);
 
@@ -76,10 +81,9 @@ public class AvroUtilitiesTest {
 
     @Test
     public void testObtainSchema_OnRead_WithUserProvidedSchema_Binary_HCFS_Spaces() {
-        avroUtilities = new AvroUtilities((file) -> dontFindLocalFile());
-        avroUtilities.setSchemaFileReaderFactory(avroSchemaFileReaderFactory);
         context.setRequestType(RequestContext.RequestType.READ_BRIDGE);
-        context.addOption("SCHEMA", avroDirectory + "user provided.avro");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, avroDirectory);
+        context.addOption("SCHEMA", "/user provided.avro");
 
         schema = avroUtilities.obtainSchema(context, hcfsType);
 
@@ -88,10 +92,9 @@ public class AvroUtilitiesTest {
 
     @Test
     public void testObtainSchema_OnRead_WithUserProvidedSchema_Json_HCFS() {
-        avroUtilities = new AvroUtilities((file) -> dontFindLocalFile());
-        avroUtilities.setSchemaFileReaderFactory(avroSchemaFileReaderFactory);
         context.setRequestType(RequestContext.RequestType.READ_BRIDGE);
-        context.addOption("SCHEMA", avroDirectory + "user-provided.avsc");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, avroDirectory);
+        context.addOption("SCHEMA", "/user-provided.avsc");
 
         schema = avroUtilities.obtainSchema(context, hcfsType);
 
@@ -100,10 +103,9 @@ public class AvroUtilitiesTest {
 
     @Test
     public void testObtainSchema_OnRead_WithUserProvidedSchema_Json_HCFS_Spaces() {
-        avroUtilities = new AvroUtilities((file) -> dontFindLocalFile());
-        avroUtilities.setSchemaFileReaderFactory(avroSchemaFileReaderFactory);
         context.setRequestType(RequestContext.RequestType.READ_BRIDGE);
-        context.addOption("SCHEMA", avroDirectory + "user provided.avsc");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, avroDirectory);
+        context.addOption("SCHEMA", "/user provided.avsc");
 
         schema = avroUtilities.obtainSchema(context, hcfsType);
 
@@ -114,40 +116,36 @@ public class AvroUtilitiesTest {
     public void testObtainSchema_OnRead_WithUserProvidedSchema_Binary_FullPathToLocalFile() {
         context.setRequestType(RequestContext.RequestType.READ_BRIDGE);
         context.addOption("SCHEMA", avroDirectory + "user-provided.avro");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, basePath.toString());
 
-        schema = avroUtilities.obtainSchema(context, hcfsType);
-
-        verifySchema(schema, "user_provided_schema");
+        assertSchemaFileNotFound();
     }
 
     @Test
     public void testObtainSchema_OnRead_WithUserProvidedSchema_Binary_FullPathToLocalFile_Spaces() {
         context.setRequestType(RequestContext.RequestType.READ_BRIDGE);
         context.addOption("SCHEMA", avroDirectory + "user provided.avro");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, basePath.toString());
 
-        schema = avroUtilities.obtainSchema(context, hcfsType);
-
-        verifySchema(schema, "user_provided_schema");
+        assertSchemaFileNotFound();
     }
 
     @Test
     public void testObtainSchema_OnRead_WithUserProvidedSchema_Json_FullPathToLocalFile() {
         context.setRequestType(RequestContext.RequestType.READ_BRIDGE);
         context.addOption("SCHEMA", avroDirectory + "user-provided.avsc");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, basePath.toString());
 
-        schema = avroUtilities.obtainSchema(context, hcfsType);
-
-        verifySchema(schema, "user_provided_schema");
+        assertSchemaFileNotFound();
     }
 
     @Test
     public void testObtainSchema_OnRead_WithUserProvidedSchema_Json_FullPathToLocalFile_Spaces() {
         context.setRequestType(RequestContext.RequestType.READ_BRIDGE);
         context.addOption("SCHEMA", avroDirectory + "user provided.avsc");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, basePath.toString());
 
-        schema = avroUtilities.obtainSchema(context, hcfsType);
-
-        verifySchema(schema, "user_provided_schema");
+        assertSchemaFileNotFound();
     }
 
     @Test
@@ -230,6 +228,19 @@ public class AvroUtilitiesTest {
         assertEquals("Failed to obtain Avro schema from 'user provided.avsc'", e.getMessage());
     }
 
+    @Test
+    public void testObtainSchema_RejectsTraversalBeforeClasspathLookup() {
+        context.setRequestType(RequestContext.RequestType.READ_BRIDGE);
+        context.addOption("SCHEMA", "avro/../avro/user-provided.avsc");
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> avroUtilities.obtainSchema(context, hcfsType));
+
+        assertInstanceOf(IllegalArgumentException.class, exception.getCause());
+        assertEquals("the provided path 'avro/../avro/user-provided.avsc' is invalid. Relative paths are not allowed by PXF",
+                exception.getCause().getMessage());
+    }
+
     /* WRITE PATH */
 
     @Test
@@ -244,10 +255,9 @@ public class AvroUtilitiesTest {
 
     @Test
     public void testObtainSchema_OnWrite_WithUserProvidedSchema_Binary_HCFS() {
-        avroUtilities = new AvroUtilities((file) -> dontFindLocalFile());
-        avroUtilities.setSchemaFileReaderFactory(avroSchemaFileReaderFactory);
         context.setRequestType(RequestContext.RequestType.WRITE_BRIDGE);
-        context.addOption("SCHEMA", avroDirectory + "user-provided.avro");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, avroDirectory);
+        context.addOption("SCHEMA", "/user-provided.avro");
         context.setDataSource(avroDirectory);
 
         schema = avroUtilities.obtainSchema(context, hcfsType);
@@ -257,10 +267,9 @@ public class AvroUtilitiesTest {
 
     @Test
     public void testObtainSchema_OnWrite_WithUserProvidedSchema_Binary_HCFS_Spaces() {
-        avroUtilities = new AvroUtilities((file) -> dontFindLocalFile());
-        avroUtilities.setSchemaFileReaderFactory(avroSchemaFileReaderFactory);
         context.setRequestType(RequestContext.RequestType.WRITE_BRIDGE);
-        context.addOption("SCHEMA", avroDirectory + "user provided.avro");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, avroDirectory);
+        context.addOption("SCHEMA", "/user provided.avro");
         context.setDataSource(avroDirectory);
 
         schema = avroUtilities.obtainSchema(context, hcfsType);
@@ -270,10 +279,9 @@ public class AvroUtilitiesTest {
 
     @Test
     public void testObtainSchema_OnWrite_WithUserProvidedSchema_Json_HCFS() {
-        avroUtilities = new AvroUtilities((file) -> dontFindLocalFile());
-        avroUtilities.setSchemaFileReaderFactory(avroSchemaFileReaderFactory);
         context.setRequestType(RequestContext.RequestType.WRITE_BRIDGE);
-        context.addOption("SCHEMA", avroDirectory + "user-provided.avsc");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, avroDirectory);
+        context.addOption("SCHEMA", "/user-provided.avsc");
         context.setDataSource(avroDirectory);
 
         schema = avroUtilities.obtainSchema(context, hcfsType);
@@ -283,10 +291,9 @@ public class AvroUtilitiesTest {
 
     @Test
     public void testObtainSchema_OnWrite_WithUserProvidedSchema_Json_HCFS_Spaces() {
-        avroUtilities = new AvroUtilities((file) -> dontFindLocalFile());
-        avroUtilities.setSchemaFileReaderFactory(avroSchemaFileReaderFactory);
         context.setRequestType(RequestContext.RequestType.WRITE_BRIDGE);
-        context.addOption("SCHEMA", avroDirectory + "user provided.avsc");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, avroDirectory);
+        context.addOption("SCHEMA", "/user provided.avsc");
         context.setDataSource(avroDirectory);
 
         schema = avroUtilities.obtainSchema(context, hcfsType);
@@ -298,40 +305,36 @@ public class AvroUtilitiesTest {
     public void testObtainSchema_OnWrite_WithUserProvidedSchema_Binary_FullPathToLocalFile() {
         context.setRequestType(RequestContext.RequestType.WRITE_BRIDGE);
         context.addOption("SCHEMA", avroDirectory + "user-provided.avro");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, basePath.toString());
 
-        schema = avroUtilities.obtainSchema(context, hcfsType);
-
-        verifySchema(schema, "user_provided_schema");
+        assertSchemaFileNotFound();
     }
 
     @Test
     public void testObtainSchema_OnWrite_WithUserProvidedSchema_Binary_FullPathToLocalFile_Spaces() {
         context.setRequestType(RequestContext.RequestType.WRITE_BRIDGE);
         context.addOption("SCHEMA", avroDirectory + "user provided.avro");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, basePath.toString());
 
-        schema = avroUtilities.obtainSchema(context, hcfsType);
-
-        verifySchema(schema, "user_provided_schema");
+        assertSchemaFileNotFound();
     }
 
     @Test
     public void testObtainSchema_OnWrite_WithUserProvidedSchema_Json_FullPathToLocalFile() {
         context.setRequestType(RequestContext.RequestType.WRITE_BRIDGE);
         context.addOption("SCHEMA", avroDirectory + "user-provided.avsc");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, basePath.toString());
 
-        schema = avroUtilities.obtainSchema(context, hcfsType);
-
-        verifySchema(schema, "user_provided_schema");
+        assertSchemaFileNotFound();
     }
 
     @Test
     public void testObtainSchema_OnWrite_WithUserProvidedSchema_Json_FullPathToLocalFile_Spaces() {
         context.setRequestType(RequestContext.RequestType.WRITE_BRIDGE);
         context.addOption("SCHEMA", avroDirectory + "user provided.avsc");
+        context.getConfiguration().set(HcfsType.CONFIG_KEY_BASE_PATH, basePath.toString());
 
-        schema = avroUtilities.obtainSchema(context, hcfsType);
-
-        verifySchema(schema, "user_provided_schema");
+        assertSchemaFileNotFound();
     }
 
     @Test
@@ -691,7 +694,10 @@ public class AvroUtilitiesTest {
         return schema;
     }
 
-    private File dontFindLocalFile() {
-        return null;
+    private void assertSchemaFileNotFound() {
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> avroUtilities.obtainSchema(context, hcfsType));
+
+        assertInstanceOf(FileNotFoundException.class, exception.getCause());
     }
 }
