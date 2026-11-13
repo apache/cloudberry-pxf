@@ -89,3 +89,11 @@ After you install the new version of PXF, perform the following procedure:
     ``` shell
     gpadmin@coordinator$ pxf cluster start
     ```
+
+## Backward-Incompatible Changes
+
+### JDBC Named Queries
+
+JDBC named query files must now reside directly in `$PXF_BASE/servers/<server_name>/`. Query names containing `/`, `\`, `:`, or null characters, and symbolic links to files outside that directory, are rejected.
+
+To migrate, copy affected SQL files into that directory, rename them as needed, and update external table `LOCATION` clauses or foreign table `resource` options to use `query:<query_name>` without the `.sql` extension or directory components. Run `pxf cluster sync` before restarting PXF. See [JDBC Named Query Configuration](../administering/configuring/jdbc-connector/jdbc_cfg.md#jdbc-named-query-configuration).

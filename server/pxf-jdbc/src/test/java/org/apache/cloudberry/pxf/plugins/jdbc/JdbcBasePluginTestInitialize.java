@@ -31,6 +31,8 @@ import org.apache.cloudberry.pxf.plugins.jdbc.utils.ConnectionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.internal.util.reflection.FieldReader;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -590,6 +592,30 @@ public class JdbcBasePluginTestInitialize {
 
         assertEquals("foo", getInternalState(plugin, "queryName"));
         assertNull(getInternalState(plugin, "tableName"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"report_2026-11", "report.v2", "monthly report", "résumé", "..report"})
+    public void testDatasourceIsQueryWithValidFileName(String queryName) throws Exception {
+        plugin.setRequestContext(makeContextWithDataSource(makeConfiguration(), "query:" + queryName));
+        plugin.afterPropertiesSet();
+
+        assertEquals(queryName, getInternalState(plugin, "queryName"));
+        assertNull(getInternalState(plugin, "tableName"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "../other-server/report", "../../report", "nested/report", "./report", "/tmp/report",
+            "..\\other-server\\report", "nested\\report", "C:\\queries\\report", "\\\\host\\queries\\report",
+            "C:report", "C:/queries/report", "\\report", "\\\\?\\C:\\queries\\report",
+            "\\\\.\\C:\\queries\\report", "report:stream", "report.sql::$DATA", "report\0ignored"
+    })
+    public void testInitializationFailsWhenQueryNameContainsPathCharacters(String queryName) {
+        plugin.setRequestContext(makeContextWithDataSource(makeConfiguration(), "query:" + queryName));
+
+        Exception ex = assertThrows(IllegalArgumentException.class, plugin::afterPropertiesSet);
+        assertEquals("Invalid query name: " + queryName, ex.getMessage());
     }
 
     @Test

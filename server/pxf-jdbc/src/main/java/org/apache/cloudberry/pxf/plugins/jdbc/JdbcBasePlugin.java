@@ -221,6 +221,11 @@ public class JdbcBasePlugin extends BasePlugin {
             if (StringUtils.isBlank(queryName)) {
                 throw new IllegalArgumentException(String.format("Query name is not provided in data source [%s]", dataSource));
             }
+            // A named query is a file name within the selected server configuration, not a path.
+            // Check both Unix and Windows syntax, including drive-relative paths and NTFS streams.
+            if (StringUtils.containsAny(queryName, "/\\:\0")) {
+                throw new IllegalArgumentException("Invalid query name: " + queryName);
+            }
             LOG.debug("Query name is {}", queryName);
         } else {
             tableName = dataSource;

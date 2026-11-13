@@ -328,6 +328,8 @@ You may optionally provide the ending semicolon (`;`) for the SQL statement.
 
 The Apache Cloudberry user references a named query by specifying the query file name without the extension. For example, if you define a query in a file named `report.sql`, the name of that query is `report`.
 
+The query name must be a file name without directory components. Forward slashes (`/`), backslashes (`\`), colons (`:`), and null characters are not allowed. The query file must reside directly in the selected JDBC server configuration directory. Symbolic links to query files outside that directory are not allowed.
+
 Named queries are associated with a specific JDBC server configuration. You will provide the available query names to the Apache Cloudberry users that you allow to create external tables using the server configuration.
 
 #### Referencing a Named Query
