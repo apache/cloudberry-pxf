@@ -68,6 +68,11 @@ public class TextRecordReader extends BaseRecordReader {
         parserSettings.setIgnoreLeadingWhitespaces(false);  // do not remove any whitespaces
         parserSettings.setIgnoreTrailingWhitespaces(false); // do not remove any whitespaces
         parserSettings.setMaxColumns(MAX_COLUMNS);          // align max columns with Greenplum spec
+        parserSettings.setEmptyValue("");                   // a quoted empty value is an empty string, not NULL
+        if (StringUtils.isNotEmpty(greenplumCSV.getValueOfNull())) {
+            // with a NULL marker such as \N, an unquoted empty value is an empty string too
+            parserSettings.setNullValue("");
+        }
         // we should've set maxCharsPerColumn value to 1GB (max size in GP) or larger (for multibyte UTF8 chars)
         // but Univocity tries to allocate the buffer of this size ahead of time, which is very inefficient
         // parserSettings.setMaxCharsPerColumn(Integer.MAX_VALUE);

@@ -35,12 +35,13 @@ public class GreenplumDateTime {
     /**
      * Supports date times with timezone and optional microsecond
      */
-    private static final DateTimeFormatter optionalFormatter = new DateTimeFormatterBuilder().appendOffset("+HH:mm", "Z").toFormatter();
+    private static final DateTimeFormatter optionalFormatter = new DateTimeFormatterBuilder().appendOffset("+HH:mm:ss", "Z").toFormatter();
     public static final DateTimeFormatter DATETIME_WITH_TIMEZONE_FORMATTER =
             new DateTimeFormatterBuilder()
                     .parseCaseInsensitive()
                     .append(DATETIME_FORMATTER)
-                    // Make the mm optional since Greenplum will only send HH if mm == 00
+                    // Make the mm and ss optional since Greenplum will only send HH if mm == 00 and ss == 00.
+                    // Seconds appear in historical offsets, e.g. +08:05:43 for Asia/Shanghai before 1901
                     .appendOptional(optionalFormatter)
                     .toFormatter();
 }

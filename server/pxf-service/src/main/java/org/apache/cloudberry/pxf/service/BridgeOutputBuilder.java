@@ -42,6 +42,7 @@ import java.lang.reflect.Array;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -494,9 +495,16 @@ public class BridgeOutputBuilder {
                     } else if (field.type == DataType.NUMERIC.getOID() || !DataType.isTextForm(field.type)) {
                         return field.val.toString();
                     } else if (field.type == DataType.TIMESTAMP.getOID()) {
-                        return field.val instanceof String ?
-                                (String) field.val :
-                                ((Timestamp) field.val).toLocalDateTime().format(GreenplumDateTime.DATETIME_FORMATTER);
+                        if(field.val instanceof String s) {
+                            return s;
+                        }
+                        if(field.val instanceof LocalDateTime ldt) {
+                            return ldt.format(GreenplumDateTime.DATETIME_FORMATTER);
+                        }
+                        if(field.val instanceof Timestamp t) {
+                            return t.toLocalDateTime().format(GreenplumDateTime.DATETIME_FORMATTER);
+                        }
+                        return field.val.toString();
                     } else if (field.type == DataType.DATE.getOID()) {
                         return field.val.toString();
                     } else

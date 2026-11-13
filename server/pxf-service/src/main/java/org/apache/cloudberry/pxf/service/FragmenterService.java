@@ -207,13 +207,17 @@ public class FragmenterService {
      * For that reason we must include the schema name, table name, and the filter string as part
      * of the fragmenter cache key. We also include dataSource for a case where the table is recreated during
      * the same transaction (in a PLSQL function, for example) and now points to a different location.
+     * The command count is included so that the cache is shared only by the segments of one statement:
+     * a later statement in the same transaction must see the data written in between
+     * (i.e. begin; select ...; insert ...; select ...; commit).
      *
      * @param context the request context
      * @return the key for the fragmenter cache
      */
     private String getFragmenterCacheKey(RequestContext context) {
-        return String.format("%s:%s:%s:%s:%s",
+        return String.format("%s:%d:%s:%s:%s:%s",
                 context.getTransactionId(),
+                context.getGpCommandCount(),
                 context.getSchemaName(),
                 context.getTableName(),
                 context.getDataSource(),

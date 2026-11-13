@@ -1,8 +1,10 @@
 package org.apache.cloudberry.pxf.service.serde;
 
 import org.apache.cloudberry.pxf.api.OneField;
+import org.apache.cloudberry.pxf.api.io.DataType;
 import org.apache.cloudberry.pxf.api.model.GreenplumCSV;
 import org.apache.cloudberry.pxf.api.model.RequestContext;
+import org.apache.cloudberry.pxf.api.utilities.ColumnDescriptor;
 import org.apache.cloudberry.pxf.plugins.hdfs.utilities.PgUtilities;
 import org.apache.cloudberry.pxf.service.GPDataGenerator;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,12 +13,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,6 +53,40 @@ public class TextRecordReaderTest {
     @Test
     public void testReadPipeCSVFile() throws Exception {
         runScenario(GPDataGenerator.FORMAT.CSV_PIPE);
+    }
+
+    @Test
+    public void testReadEmptyStringAndNullCSV() throws Exception {
+        // a quoted empty value is an empty string, an unquoted one is NULL
+        assertEmptyStringAndNull(',', '"', "", "1,\"\",\n");
+    }
+
+    @Test
+    public void testReadEmptyStringAndNullText() throws Exception {
+        // with the \N marker an empty value is an empty string
+        assertEmptyStringAndNull('\t', '"', "\\N", "1\t\t\\N\n");
+    }
+
+    private void assertEmptyStringAndNull(char delimiter, char quote, String nullValue, String data) throws Exception {
+        when(mockRequestContext.getDatabaseEncoding()).thenReturn(StandardCharsets.UTF_8);
+        when(mockRequestContext.getGreenplumCSV()).thenReturn(mockGreenplumCSV);
+        when(mockGreenplumCSV.getNewline()).thenReturn("\n");
+        when(mockGreenplumCSV.getDelimiter()).thenReturn(delimiter);
+        when(mockGreenplumCSV.getQuote()).thenReturn(quote);
+        when(mockGreenplumCSV.getEscape()).thenReturn(quote);
+        when(mockGreenplumCSV.getValueOfNull()).thenReturn(nullValue);
+        when(mockRequestContext.getTupleDescription()).thenReturn(List.of(
+                new ColumnDescriptor("id", DataType.INTEGER.getOID(), 0, "int4", null),
+                new ColumnDescriptor("s", DataType.TEXT.getOID(), 1, "text", null),
+                new ColumnDescriptor("t", DataType.TEXT.getOID(), 2, "text", null)));
+        reader = new TextRecordReader(mockRequestContext, new PgUtilities());
+
+        DataInput input = new DataInputStream(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
+        List<OneField> record = reader.readRecord(input);
+        assertEquals(1, record.get(0).val);
+        assertEquals("", record.get(1).val);
+        assertNull(record.get(2).val);
+        assertNull(reader.readRecord(input));
     }
 
     /**

@@ -63,6 +63,7 @@ typedef struct PxfFdwModifyState
 	StringInfoData uri;			/* rest endpoint URI for modify */
 	Relation	relation;
 	PxfOptions *options;		/* FDW options */
+	MemoryContextCallback abort_callback;	/* closes the connection on abort */
 } PxfFdwModifyState;
 
 /* Clean up churl related data structures from the context */
