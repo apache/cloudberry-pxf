@@ -14,9 +14,41 @@ export SKIP_FDW_PACKAGE_REASON
 SOURCE_EXTENSION_DIR = external-table
 TARGET_EXTENSION_DIR = gpextable
 
-LICENSE ?= ASL 2.0
+# License expression for the BINARY packages.  PXF itself is Apache-2.0, but the
+# packages bundle the PXF server's whole runtime classpath, so the package-level
+# tag has to cover every license in package/licensing/bundled-components.tsv.
+# generate-binary-license.py --check verifies this stays in sync.
+LICENSE ?= Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND MIT AND EDL-1.0 AND CC0-1.0 AND LicenseRef-Public-Domain AND (EPL-2.0 OR GPL-2.0-with-classpath-exception)
 VENDOR  ?= Apache Cloudberry (Incubating)
 RELEASE ?= 1
+
+# Apache compliance files shipped inside the binary packages.  The -binary
+# variants describe what is actually installed under GPHOME (the PXF server
+# application JAR bundles ~144 third-party components); the plain LICENSE and
+# NOTICE at the repository root describe the source release instead.  They are
+# installed under their plain names so the package carries a LICENSE, a NOTICE
+# and a licenses/ directory that describe the package itself.
+BINARY_COMPLIANCE_FILES = LICENSE-binary:LICENSE NOTICE-binary:NOTICE DISCLAIMER:DISCLAIMER
+BINARY_LICENSES_DIR     = licenses-binary
+
+# $(call install-compliance-files,<destination directory>)
+define install-compliance-files
+	set -e ;\
+	for mapping in $(BINARY_COMPLIANCE_FILES); do \
+		src=$${mapping%%:*} ; dst=$${mapping##*:} ;\
+		if [[ ! -f "$${src}" ]]; then \
+			echo "Error: required compliance file $${src} not found; run 'python3 package/licensing/generate-binary-license.py --generate'" >&2 ;\
+			exit 1 ;\
+		fi ;\
+		cp -a "$${src}" "$(1)/$${dst}" ;\
+	done ;\
+	if [[ ! -d "$(BINARY_LICENSES_DIR)" ]]; then \
+		echo "Error: required directory $(BINARY_LICENSES_DIR) not found" >&2 ;\
+		exit 1 ;\
+	fi ;\
+	rm -rf "$(1)/licenses" ;\
+	cp -a "$(BINARY_LICENSES_DIR)" "$(1)/licenses"
+endef
 
 default: all
 
@@ -115,7 +147,7 @@ endif
 	cp -a server/build/stage/* build/stage/$${PXF_PACKAGE_NAME} ;\
 	echo $$(git rev-parse --verify HEAD) > build/stage/$${PXF_PACKAGE_NAME}/commit.sha ;\
 	cp package/install_binary build/stage/$${PXF_PACKAGE_NAME}/install_component ;\
-	cp NOTICE DISCLAIMER LICENSE build/stage/$${PXF_PACKAGE_NAME}/ ;\
+	$(call install-compliance-files,build/stage/$${PXF_PACKAGE_NAME}) ;\
 	echo "===> PXF staging is complete <==="
 
 tar: stage
@@ -185,6 +217,7 @@ deb: stage
 	fi ;\
 	cp -a cli/build/stage/* build/debbuild/usr/local/cloudberry-pxf ;\
 	cp -a server/build/stage/* build/debbuild/usr/local/cloudberry-pxf ;\
+	$(call install-compliance-files,build/debbuild/usr/local/cloudberry-pxf) ;\
 	echo $$(git rev-parse --verify HEAD) > build/debbuild/usr/local/cloudberry-pxf/commit.sha ;\
 	mkdir build/debbuild/DEBIAN ;\
 	cp -a package/DEBIAN/* build/debbuild/DEBIAN/ ;\
