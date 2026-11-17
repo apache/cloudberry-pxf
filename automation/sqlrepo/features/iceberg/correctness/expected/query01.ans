@@ -1,0 +1,130 @@
+-- start_ignore
+-- end_ignore
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+
+-- @description query01 for the correctness issues reported in apache/cloudberry-pxf#126, through PXF external tables
+INSERT INTO pxf_iceberg_corr_s_w VALUES (1, ''), (2, 'éa'), (3, 'z'), (4, NULL);
+INSERT 0 4
+
+-- an IN list that contains NULL is not pushed down
+SELECT id FROM pxf_iceberg_corr_s_r WHERE id IN (1, NULL) ORDER BY id;
+ id
+----
+  1
+(1 row)
+
+-- strings are compared by the collation of the column, not by code point
+CREATE TEMP TABLE corr_s_heap AS SELECT * FROM pxf_iceberg_corr_s_r DISTRIBUTED RANDOMLY;
+SELECT 4
+
+SELECT (SELECT count(*) FROM pxf_iceberg_corr_s_r WHERE s >= 'é') = (SELECT count(*) FROM corr_s_heap WHERE s >= 'é') AS same_count;
+ same_count
+------------
+ t
+(1 row)
+
+SELECT (SELECT count(*) FROM pxf_iceberg_corr_s_r WHERE s < 'é') = (SELECT count(*) FROM corr_s_heap WHERE s < 'é') AS same_count;
+ same_count
+------------
+ t
+(1 row)
+
+-- with filter pushdown off, a column used only in WHERE is still read
+SET gp_external_enable_filter_pushdown = off;
+SET
+
+SELECT id FROM pxf_iceberg_corr_s_r WHERE s = 'z';
+ id
+----
+  3
+(1 row)
+
+RESET gp_external_enable_filter_pushdown;
+RESET
+
+-- a transaction reads the rows it has inserted
+BEGIN;
+BEGIN
+
+SELECT count(*) FROM pxf_iceberg_corr_s_r WHERE s = 'own';
+ count
+-------
+     0
+(1 row)
+
+INSERT INTO pxf_iceberg_corr_s_w VALUES (10, 'own');
+INSERT 0 1
+
+SELECT count(*) FROM pxf_iceberg_corr_s_r WHERE s = 'own';
+ count
+-------
+     1
+(1 row)
+
+COMMIT;
+COMMIT
+
+-- int4 into an Iceberg long column
+INSERT INTO pxf_iceberg_corr_n_w (id, l) VALUES (1, 5);
+INSERT 0 1
+
+SELECT id, l FROM pxf_iceberg_corr_n_r WHERE id = 1;
+ id | l
+----+---
+  1 | 5
+(1 row)
+
+-- time zone offsets with seconds
+SET timezone = 'Asia/Shanghai';
+SET
+
+INSERT INTO pxf_iceberg_corr_n_w (id, tsz) VALUES (2, '1582-10-15 12:00:00+00');
+INSERT 0 1
+
+SELECT id, tsz FROM pxf_iceberg_corr_n_r WHERE id = 2;
+ id |             tsz
+----+------------------------------
+  2 | 1582-10-15 20:05:43+08:05:43
+(1 row)
+
+RESET timezone;
+RESET
+
+-- NaN is greater than any other value; files with NaN are not skipped by a pushed down comparison
+INSERT INTO pxf_iceberg_corr_n_w (id, d) VALUES (6, 'NaN');
+INSERT 0 1
+
+INSERT INTO pxf_iceberg_corr_n_w (id, d) VALUES (7, 'NaN'), (8, -5);
+INSERT 0 2
+
+SELECT string_agg(id::text, ',' ORDER BY id) FROM pxf_iceberg_corr_n_r WHERE d > 0;
+ string_agg
+------------
+ 6,7
+(1 row)
+
+-- a float8 value that doesn't fit into an Iceberg float fails the INSERT, and none of its rows are committed
+INSERT INTO pxf_iceberg_corr_n_w (id, f) SELECT g, CASE WHEN g = 500 THEN 1e300 ELSE 1 END FROM generate_series(100, 1000) g;
+ERROR:  PXF server error : value out of range: overflow (1.0E300 does not fit into an Iceberg float)
+
+SELECT count(*) FROM pxf_iceberg_corr_n_r WHERE id >= 100;
+ count
+-------
+     0
+(1 row)
+

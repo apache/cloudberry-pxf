@@ -42,8 +42,17 @@ SELECT id FROM pxf_iceberg_fdw_types WHERE b IS NULL ORDER BY id;
 SELECT id FROM pxf_iceberg_fdw_types WHERE dec > 100;
 
 -- bytea values of Iceberg binary and fixed columns; an empty value is not NULL
+SET bytea_output=hex;
+
 INSERT INTO pxf_iceberg_fdw_bin VALUES (1, '\x00ff80', '\x0001ff80'), (2, '', '\xdeadbeef'), (3, NULL, NULL);
 
 SELECT * FROM pxf_iceberg_fdw_bin ORDER BY id;
 
 SELECT id FROM pxf_iceberg_fdw_bin WHERE bin = '' ORDER BY id;
+
+-- an empty string is not NULL, on write and on read
+INSERT INTO pxf_iceberg_fdw_customer VALUES (2000, '', NULL, 0);
+
+SELECT id, first_name = '' AS empty_name, last_name IS NULL AS null_name FROM pxf_iceberg_fdw_customer WHERE id = 2000;
+
+SELECT count(*) FROM pxf_iceberg_fdw_customer WHERE first_name = '';
