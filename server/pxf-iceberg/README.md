@@ -6,20 +6,28 @@ An Apache Iceberg connector for PXF, ported from
 [GreengageDB/pxf](https://github.com/GreengageDB/pxf) (`server/pxf-iceberg`).
 Covers:
 - Reading (Parquet, ORC, Avro formats via format-specific ReaderFactory impls)
-- Writing (Parquet only, via WriterFactory)
+- Writing (Parquet and Avro, following the table's `write.format.default`)
 - Supported catalog types: Hive Metastore, REST
 - Predicate pushdown and column projection during fragmentation
 - Iceberg branch support for reads and writes
 
 Writes are committed per PXF host: each PXF instance appends the data files produced by its
-local segments to the Iceberg table once all of them have finished writing. The Greengage
-"master-commit" protocol (`ext_protocol_version 'v1'`), which commits all files in a single
-snapshot from the coordinator, is not supported yet.
+local segments to the Iceberg table once all of them have finished writing. If a segment on the
+host fails or is cancelled, none of the files written on that host are committed, and they are
+deleted. The Greengage "master-commit" protocol (`ext_protocol_version 'v1'`), which commits all
+files in a single snapshot from the coordinator, is not supported yet.
 
 Known limitations:
-- An `INSERT` is not atomic: each PXF host commits its own snapshot, and PXF has no way to tell a
-  plugin that a write failed, so a failed or cancelled `INSERT` may leave some of its rows in the table.
-- Only Parquet data files are written.
+- Writes do not follow the database transaction. The data is committed to Iceberg when the
+  segments finish writing, before the transaction commits, so `ROLLBACK`, `ROLLBACK TO SAVEPOINT`
+  or an error later in the transaction does not remove it.
+- An `INSERT` is not atomic: each PXF host commits its own snapshot, so concurrent readers may see
+  part of an `INSERT`. When the `INSERT` fails, the rows of the hosts that already committed stay
+  in the table.
+- Every scan reads the latest snapshot of the table, also within a `REPEATABLE READ` transaction.
+- Tables with `write.format.default=orc` are written as Parquet, with a warning in the PXF log:
+  Iceberg's ORC writer needs the "nohive" `orc-core`, which conflicts with the one PXF ships.
+  Iceberg records the format of every data file, so other engines still read them.
 
 There are few ways to define Cloudberry tables that will be used for work with Iceberg. 
 
@@ -124,4 +132,21 @@ There are few options that help to configure working with Iceberg data source:
 | s3_access_key_id       | S3 access key id (in case if s3 is used to keep data)                                                                                                                                                                                                            | iceberg.param.s3.access-key-id                                      |
 | s3_secret_access_key   | S3 secret access key (in case if s3 is used to keep data)                                                                                                                                                                                                        | iceberg.param.s3.secret-access-key                                  |
 | aws_region             | AWS region (in case if s3 is used to keep data)                                                                                                                                                                                                                  | iceberg.param.client.region                                         |
+
+Any other Iceberg catalog property can be set in the server configuration with the
+`iceberg.param.` prefix.
+
+**Data on S3 with the Hive Metastore catalog.** The Hive Metastore catalog uses Hadoop's
+`FileSystem` by default, which has no implementation for the `s3://` scheme that Spark and other
+engines usually write in table locations. Set the file IO to `S3FileIO` in the server
+configuration, e.g. `$PXF_BASE/servers/<server>/iceberg-site.xml`:
+
+```xml
+<property>
+    <name>iceberg.param.io-impl</name>
+    <value>org.apache.iceberg.aws.s3.S3FileIO</value>
+</property>
+```
+
+The REST catalog uses `S3FileIO` automatically when the `warehouse` is on S3.
 
