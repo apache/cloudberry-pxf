@@ -16,6 +16,8 @@
 -- under the License.
 
 -- @description query01 for writing and reading Iceberg binary and fixed columns as bytea through PXF external tables
+SET bytea_output=hex;
+
 INSERT INTO pxf_iceberg_bin_w VALUES
   (1, '\x00ff80', '\x0001ff80'),
   (2, '', '\xdeadbeef'),

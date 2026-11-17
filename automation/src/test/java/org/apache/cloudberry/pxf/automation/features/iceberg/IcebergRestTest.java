@@ -52,6 +52,10 @@ public class IcebergRestTest extends BaseFeature {
             "ts timestamp, tstz timestamptz, s text, t time, u uuid";
     private static final String EVENTS_FIELDS = "id int, region text, amount float8";
     private static final String BIN_FIELDS = "id int, bin bytea, fix bytea";
+    private static final String CORR_S_FIELDS = "id int, s text";
+    // written as float8 and int4 into Iceberg float and long columns
+    private static final String CORR_N_WRITE_FIELDS = "id int, f float8, d float8, l int4, tsz timestamptz";
+    private static final String CORR_N_READ_FIELDS = "id int, f real, d float8, l bigint, tsz timestamptz";
 
     private static final String CUSTOMER_SCHEMA = "{\"type\":\"struct\",\"schema-id\":0,\"fields\":[" +
             field(1, "id", "int") + "," +
@@ -79,6 +83,15 @@ public class IcebergRestTest extends BaseFeature {
             field(1, "id", "int") + "," +
             field(2, "bin", "binary") + "," +
             field(3, "fix", "fixed[4]") + "]}";
+    private static final String CORR_S_SCHEMA = "{\"type\":\"struct\",\"schema-id\":0,\"fields\":[" +
+            field(1, "id", "int") + "," +
+            field(2, "s", "string") + "]}";
+    private static final String CORR_N_SCHEMA = "{\"type\":\"struct\",\"schema-id\":0,\"fields\":[" +
+            field(1, "id", "int") + "," +
+            field(2, "f", "float") + "," +
+            field(3, "d", "double") + "," +
+            field(4, "l", "long") + "," +
+            field(5, "tsz", "timestamptz") + "]}";
     private static final String EVENTS_PARTITION_SPEC = "{\"spec-id\":0,\"fields\":[" +
             "{\"source-id\":2,\"field-id\":1000,\"name\":\"region\",\"transform\":\"identity\"}]}";
 
@@ -138,6 +151,22 @@ public class IcebergRestTest extends BaseFeature {
     }
 
     /**
+     * Repros of the correctness issues reported in apache/cloudberry-pxf#126: pushdown of IN lists with NULL,
+     * of string comparisons and of comparisons with NaN, columns used only in WHERE with pushdown off,
+     * a transaction reading its own inserts, int4 into long, time zone offsets with seconds, and a write that
+     * fails on a value out of range.
+     */
+    @Test(groups = {"iceberg"})
+    public void correctness() throws Exception {
+        recreateIcebergTable("corr_s", CORR_S_SCHEMA, null);
+        recreateIcebergTable("corr_n", CORR_N_SCHEMA, null);
+        createExternalTables("corr_s", CORR_S_FIELDS);
+        createExternalTables("corr_n", CORR_N_WRITE_FIELDS, CORR_N_READ_FIELDS);
+
+        runSqlTest("features/iceberg/correctness");
+    }
+
+    /**
      * Reads from and writes to Iceberg tables through pxf_fdw foreign tables.
      */
     @Test(groups = {"iceberg"})
@@ -163,6 +192,10 @@ public class IcebergRestTest extends BaseFeature {
     }
 
     private void createExternalTables(String icebergTable, String fields) throws Exception {
+        createExternalTables(icebergTable, fields, fields);
+    }
+
+    private void createExternalTables(String icebergTable, String writableFields, String readableFields) throws Exception {
         String location = String.format("pxf://%s.%s?PROFILE=iceberg&SERVER=%s", NAMESPACE, icebergTable, PXF_SERVER);
         String writable = "pxf_iceberg_" + icebergTable + "_w";
         String readable = "pxf_iceberg_" + icebergTable + "_r";
@@ -170,9 +203,9 @@ public class IcebergRestTest extends BaseFeature {
         dropIfExists("DROP EXTERNAL TABLE IF EXISTS " + writable);
         dropIfExists("DROP EXTERNAL TABLE IF EXISTS " + readable);
         gpdb.runQuery(String.format("CREATE WRITABLE EXTERNAL TABLE %s (%s) LOCATION ('%s') " +
-                "FORMAT 'CUSTOM' (FORMATTER='pxfwritable_export')", writable, fields, location));
+                "FORMAT 'CUSTOM' (FORMATTER='pxfwritable_export')", writable, writableFields, location));
         gpdb.runQuery(String.format("CREATE EXTERNAL TABLE %s (%s) LOCATION ('%s') " +
-                "FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import')", readable, fields, location));
+                "FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import')", readable, readableFields, location));
     }
 
     /**
