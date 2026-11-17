@@ -51,6 +51,7 @@ public class IcebergRestTest extends BaseFeature {
     private static final String TYPES_FIELDS = "id int, b boolean, l bigint, f real, d float8, dec numeric, dt date, " +
             "ts timestamp, tstz timestamptz, s text, t time, u uuid";
     private static final String EVENTS_FIELDS = "id int, region text, amount float8";
+    private static final String BIN_FIELDS = "id int, bin bytea, fix bytea";
 
     private static final String CUSTOMER_SCHEMA = "{\"type\":\"struct\",\"schema-id\":0,\"fields\":[" +
             field(1, "id", "int") + "," +
@@ -74,6 +75,10 @@ public class IcebergRestTest extends BaseFeature {
             field(1, "id", "int") + "," +
             field(2, "region", "string") + "," +
             field(3, "amount", "double") + "]}";
+    private static final String BIN_SCHEMA = "{\"type\":\"struct\",\"schema-id\":0,\"fields\":[" +
+            field(1, "id", "int") + "," +
+            field(2, "bin", "binary") + "," +
+            field(3, "fix", "fixed[4]") + "]}";
     private static final String EVENTS_PARTITION_SPEC = "{\"spec-id\":0,\"fields\":[" +
             "{\"source-id\":2,\"field-id\":1000,\"name\":\"region\",\"transform\":\"identity\"}]}";
 
@@ -122,12 +127,24 @@ public class IcebergRestTest extends BaseFeature {
     }
 
     /**
+     * Writes and reads Iceberg binary and fixed columns as bytea, including empty values and NULLs.
+     */
+    @Test(groups = {"iceberg"})
+    public void binaryTypes() throws Exception {
+        recreateIcebergTable("bin", BIN_SCHEMA, null);
+        createExternalTables("bin", BIN_FIELDS);
+
+        runSqlTest("features/iceberg/binary");
+    }
+
+    /**
      * Reads from and writes to Iceberg tables through pxf_fdw foreign tables.
      */
     @Test(groups = {"iceberg"})
     public void foreignTables() throws Exception {
         recreateIcebergTable("fdw_customer", CUSTOMER_SCHEMA, null);
         recreateIcebergTable("fdw_types", TYPES_SCHEMA, null);
+        recreateIcebergTable("fdw_bin", BIN_SCHEMA, null);
 
         dropIfExists("DROP FOREIGN DATA WRAPPER IF EXISTS iceberg_pxf_fdw CASCADE");
         gpdb.runQuery("CREATE FOREIGN DATA WRAPPER iceberg_pxf_fdw HANDLER pxf_fdw_handler VALIDATOR pxf_fdw_validator " +
@@ -139,6 +156,8 @@ public class IcebergRestTest extends BaseFeature {
                 "SERVER iceberg_rest_server OPTIONS (resource '" + NAMESPACE + ".fdw_customer')");
         gpdb.runQuery("CREATE FOREIGN TABLE pxf_iceberg_fdw_types (" + TYPES_FIELDS + ") " +
                 "SERVER iceberg_rest_server OPTIONS (resource '" + NAMESPACE + ".fdw_types')");
+        gpdb.runQuery("CREATE FOREIGN TABLE pxf_iceberg_fdw_bin (" + BIN_FIELDS + ") " +
+                "SERVER iceberg_rest_server OPTIONS (resource '" + NAMESPACE + ".fdw_bin')");
 
         runSqlTest("features/iceberg/fdw");
     }

@@ -40,3 +40,10 @@ SELECT * FROM pxf_iceberg_fdw_types ORDER BY id;
 SELECT id FROM pxf_iceberg_fdw_types WHERE b IS NULL ORDER BY id;
 
 SELECT id FROM pxf_iceberg_fdw_types WHERE dec > 100;
+
+-- bytea values of Iceberg binary and fixed columns; an empty value is not NULL
+INSERT INTO pxf_iceberg_fdw_bin VALUES (1, '\x00ff80', '\x0001ff80'), (2, '', '\xdeadbeef'), (3, NULL, NULL);
+
+SELECT * FROM pxf_iceberg_fdw_bin ORDER BY id;
+
+SELECT id FROM pxf_iceberg_fdw_bin WHERE bin = '' ORDER BY id;

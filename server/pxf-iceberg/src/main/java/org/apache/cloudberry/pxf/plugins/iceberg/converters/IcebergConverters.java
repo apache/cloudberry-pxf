@@ -69,7 +69,9 @@ public interface IcebergConverters {
             ),
             // string converter
             new SimpleIcebergConverter<>(Types.StringType.get(), DataType.VARCHAR, Function.identity()),
-            new SimpleIcebergConverter<>(Types.StringType.get(), DataType.TEXT, Function.identity())
+            new SimpleIcebergConverter<>(Types.StringType.get(), DataType.TEXT, Function.identity()),
+            // binary converter; fixed[n] columns get their own converter in getIcebergConverter()
+            new BytesIcebergConverter(Types.BinaryType.get())
     );
 
     Map<Pair<DataType, Type>, IcebergConverter<?>> convertersByTypes = converters.stream()
@@ -110,8 +112,14 @@ public interface IcebergConverters {
         return (short) value;
     }
 
+    /**
+     * Returns the types of the columns whose filters can be pushed down to Iceberg. Filters on bytea
+     * columns are not pushed: filter constants come as strings, which the bytes converter doesn't take.
+     */
     static EnumSet<DataType> getCloudberrySupportedTypes() {
-        return EnumSet.copyOf(convertersByTypes.keySet().stream().map(Pair::getLeft).toList());
+        EnumSet<DataType> types = EnumSet.copyOf(convertersByTypes.keySet().stream().map(Pair::getLeft).toList());
+        types.remove(DataType.BYTEA);
+        return types;
     }
 
     static IcebergConverter<?> getIcebergConverter(DataType cloudberryType, Type icebergType) {
@@ -122,6 +130,10 @@ public interface IcebergConverters {
         converter = convertersByTypeIds.get(Pair.of(cloudberryType, icebergType.typeId()));
         if(converter != null) {
             return converter;
+        }
+        if (cloudberryType == DataType.BYTEA && icebergType.typeId() == Type.TypeID.FIXED) {
+            // the converter checks the length of the fixed type on write
+            return new BytesIcebergConverter(icebergType);
         }
         return unsupportedTypeConverter;
     }
