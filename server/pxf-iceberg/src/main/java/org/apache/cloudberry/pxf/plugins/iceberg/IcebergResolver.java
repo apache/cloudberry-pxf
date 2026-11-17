@@ -16,29 +16,34 @@ import org.apache.cloudberry.pxf.plugins.iceberg.converters.IcebergConverter;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.apache.cloudberry.pxf.plugins.iceberg.converters.IcebergConverters.getIcebergConverter;
+import static org.apache.cloudberry.pxf.plugins.iceberg.converters.IcebergConverters.getReadConverter;
 import static org.apache.cloudberry.pxf.plugins.iceberg.converters.IcebergConverters.unsupportedTypeConverter;
 
 public class IcebergResolver extends BasePlugin implements Resolver {
 
+    private List<IcebergConverter<?>> readConverters;
     private List<IcebergConverter<?>> writeConverters;
 
     @Override
     public List<OneField> getFields(OneRow oneRow) {
-        Schema schema = (Schema) context.getMetadata();
+        if (readConverters == null) {
+            readConverters = getReadConverters((Schema) context.getMetadata());
+        }
         Record icebergRecord = (Record) oneRow.getData();
-        return context.getTupleDescription().stream()
-                .map(descriptor -> new OneField(
-                        descriptor.getDataType().getOID(),
-                        getIcebergConverter(
-                                descriptor.getDataType(),
-                                findType(schema, descriptor)
-                        ).convertFromIcebergToCloudberry(icebergRecord.getField(descriptor.columnName()))
-                )).toList();
+        List<ColumnDescriptor> columns = context.getTupleDescription();
+        List<OneField> fields = new ArrayList<>(columns.size());
+        for (int i = 0; i < columns.size(); i++) {
+            ColumnDescriptor descriptor = columns.get(i);
+            fields.add(new OneField(descriptor.getDataType().getOID(),
+                    readConverters.get(i).convertFromIcebergToCloudberry(icebergRecord.getField(descriptor.columnName()))));
+        }
+        return fields;
     }
 
     @Override
@@ -61,6 +66,23 @@ public class IcebergResolver extends BasePlugin implements Resolver {
             icebergRecord.setField(descriptor.columnName(), adjustDecimalScale(value, icebergField.type()));
         }
         return new OneRow(icebergRecord);
+    }
+
+    private List<IcebergConverter<?>> getReadConverters(Schema schema) {
+        return context.getTupleDescription().stream()
+                .<IcebergConverter<?>>map(descriptor -> {
+                    if (!descriptor.isProjected()) {
+                        // the scan doesn't select the column, so its value is always NULL
+                        return unsupportedTypeConverter;
+                    }
+                    try {
+                        return getReadConverter(descriptor.getDataType(), findType(schema, descriptor));
+                    } catch (UnsupportedTypeException e) {
+                        throw new UnsupportedTypeException(String.format("Column %s of type %s: %s",
+                                descriptor.columnName(), descriptor.columnTypeName(), e.getMessage()));
+                    }
+                })
+                .toList();
     }
 
     /**

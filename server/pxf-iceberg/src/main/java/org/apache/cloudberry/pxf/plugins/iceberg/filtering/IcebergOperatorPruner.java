@@ -39,6 +39,8 @@ import java.util.Map;
  *   <li>floating point values follow IEEE semantics: NaN is not counted in the file bounds and
  *   -0.0 differs from 0.0, while in Cloudberry NaN is equal to itself and greater than any
  *   other value, so no comparison is pushed</li>
+ *   <li>Iceberg can't bind a comparison of a list, map or struct column, so no operator is pushed, and
+ *   reading the column fails with an error of the resolver instead</li>
  * </ul>
  */
 public class IcebergOperatorPruner extends SupportedOperatorPruner {
@@ -69,6 +71,10 @@ public class IcebergOperatorPruner extends SupportedOperatorPruner {
         if (node instanceof OperatorNode operatorNode && !operatorNode.getOperator().isLogical()) {
             Operator operator = operatorNode.getOperator();
             Type.TypeID typeId = getColumnTypeId(operatorNode);
+            if (typeId == Type.TypeID.LIST || typeId == Type.TypeID.MAP || typeId == Type.TypeID.STRUCT) {
+                LOG.debug("Operator {} is not pushed down for {} columns", operator, typeId);
+                return null;
+            }
             if (typeId == Type.TypeID.STRING && ORDERING_OPERATORS.contains(operator)) {
                 LOG.debug("Operator {} is not pushed down for string columns", operator);
                 return null;

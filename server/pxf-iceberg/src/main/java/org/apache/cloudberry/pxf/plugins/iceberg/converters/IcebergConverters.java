@@ -5,6 +5,7 @@ import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.cloudberry.pxf.api.GreenplumDateTime;
 import org.apache.cloudberry.pxf.api.error.PxfRuntimeException;
+import org.apache.cloudberry.pxf.api.error.UnsupportedTypeException;
 import org.apache.cloudberry.pxf.api.io.DataType;
 
 import java.math.BigDecimal;
@@ -120,6 +121,27 @@ public interface IcebergConverters {
         EnumSet<DataType> types = EnumSet.copyOf(convertersByTypes.keySet().stream().map(Pair::getLeft).toList());
         types.remove(DataType.BYTEA);
         return types;
+    }
+
+    /**
+     * Returns the converter that reads values of an Iceberg column into a Cloudberry column. Besides the
+     * converters of {@link #getIcebergConverter}, it reads a list of primitive values into an array column.
+     *
+     * @throws UnsupportedTypeException for a column of an Iceberg list, map or struct, other than an
+     *                                  array column of a list of primitive values
+     */
+    static IcebergConverter<?> getReadConverter(DataType cloudberryType, Type icebergType) {
+        if (cloudberryType.isArrayType() && icebergType.isListType()
+                && icebergType.asListType().elementType().isPrimitiveType()) {
+            return new ListToArrayConverter(icebergType, cloudberryType,
+                    getIcebergConverter(cloudberryType.getTypeElem(), icebergType.asListType().elementType()));
+        }
+        if (icebergType.isNestedType()) {
+            // the generic records hold lists, maps and structs, whose toString() is no valid value of any type
+            throw new UnsupportedTypeException(String.format("Iceberg column of type %s cannot be read into a %s column; "
+                    + "only lists of primitive values can be read, into array columns", icebergType, cloudberryType));
+        }
+        return getIcebergConverter(cloudberryType, icebergType);
     }
 
     static IcebergConverter<?> getIcebergConverter(DataType cloudberryType, Type icebergType) {
