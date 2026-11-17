@@ -29,6 +29,15 @@ Known limitations:
   Iceberg's ORC writer needs the "nohive" `orc-core`, which conflicts with the one PXF ships.
   Iceberg records the format of every data file, so other engines still read them.
 
+Binary, fixed and nested types:
+- `binary` and `fixed[n]` columns are read and written as `bytea`; a value written to a `fixed[n]`
+  column must have exactly `n` bytes.
+- A `list` of primitive values is read into an array column of the element type, e.g. `int[]` or
+  `text[]`.
+- Other `list`, `map` and `struct` columns are not supported: a query that reads one of them fails.
+  The other columns of such a table can be read.
+- Nested types can't be written.
+
 There are few ways to define Cloudberry tables that will be used for work with Iceberg. 
 
 **Example of reading using external tables**
