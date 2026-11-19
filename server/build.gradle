@@ -194,9 +194,11 @@ configure(javaProjects) {
                 entry("parquet-generator")
                 entry("parquet-hadoop")
                 entry("parquet-jackson")
-                entry("parquet-pig")
                 entry("parquet-format-structures")
             }
+            // parquet-pig was removed in Parquet 1.16, the tests only use its DecimalUtils
+            dependency("org.apache.parquet:parquet-pig:1.15.2")
+            dependency("org.locationtech.jts:jts-core:1.20.0") // required by parquet-column since 1.16
 
             // Thrift dependencies
             dependency("org.apache.thrift:libfb303:0.9.3")
