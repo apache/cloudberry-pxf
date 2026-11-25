@@ -141,8 +141,8 @@ sync_jdbc_config:
 		cp $(TEMPLATES_DIR)/jdbc-site.xml $(PXF_BASE_SERVERS)/database/; \
 		sed $(SED_OPTS) "s|YOUR_DATABASE_JDBC_DRIVER_CLASS_NAME|org.postgresql.Driver|" $(PXF_BASE_SERVERS)/database/jdbc-site.xml; \
 		sed $(SED_OPTS) "s|YOUR_DATABASE_JDBC_URL|jdbc:postgresql://$(JDBC_HOST):$(JDBC_PORT)/pxfautomation|" $(PXF_BASE_SERVERS)/database/jdbc-site.xml; \
-		sed $(SED_OPTS) "s|YOUR_DATABASE_JDBC_USER||" $(PXF_BASE_SERVERS)/database/jdbc-site.xml; \
-		sed $(SED_OPTS) "s|YOUR_DATABASE_JDBC_PASSWORD||" $(PXF_BASE_SERVERS)/database/jdbc-site.xml; \
+		sed $(SED_OPTS) "s|YOUR_DATABASE_JDBC_USER|gpadmin|" $(PXF_BASE_SERVERS)/database/jdbc-site.xml; \
+		sed $(SED_OPTS) "s|YOUR_DATABASE_JDBC_PASSWORD|gpadmin|" $(PXF_BASE_SERVERS)/database/jdbc-site.xml; \
 		cp $(PXF_BASE_SERVERS)/database/jdbc-site.xml $(PXF_BASE_SERVERS)/database/testuser-user.xml; \
 		sed $(SED_OPTS) "s|pxfautomation|template1|" $(PXF_BASE_SERVERS)/database/testuser-user.xml; \
 	fi
@@ -152,8 +152,8 @@ sync_jdbc_config:
 		cp $(TEMPLATES_DIR)/jdbc-site.xml $(PXF_BASE_SERVERS)/db-session-params/; \
 		sed $(SED_OPTS) "s|YOUR_DATABASE_JDBC_DRIVER_CLASS_NAME|org.postgresql.Driver|" $(PXF_BASE_SERVERS)/db-session-params/jdbc-site.xml; \
 		sed $(SED_OPTS) "s|YOUR_DATABASE_JDBC_URL|jdbc:postgresql://$(JDBC_HOST):$(JDBC_PORT)/pxfautomation|" $(PXF_BASE_SERVERS)/db-session-params/jdbc-site.xml; \
-		sed $(SED_OPTS) "s|YOUR_DATABASE_JDBC_USER||" $(PXF_BASE_SERVERS)/db-session-params/jdbc-site.xml; \
-		sed $(SED_OPTS) "s|YOUR_DATABASE_JDBC_PASSWORD||" $(PXF_BASE_SERVERS)/db-session-params/jdbc-site.xml; \
+		sed $(SED_OPTS) "s|YOUR_DATABASE_JDBC_USER|gpadmin|" $(PXF_BASE_SERVERS)/db-session-params/jdbc-site.xml; \
+		sed $(SED_OPTS) "s|YOUR_DATABASE_JDBC_PASSWORD|gpadmin|" $(PXF_BASE_SERVERS)/db-session-params/jdbc-site.xml; \
 		sed $(SED_OPTS) "s|</configuration>|<property><name>jdbc.session.property.client_min_messages</name><value>debug1</value></property></configuration>|"  $(PXF_BASE_SERVERS)/db-session-params/jdbc-site.xml; \
 		sed $(SED_OPTS) "s|</configuration>|<property><name>jdbc.session.property.default_statistics_target</name><value>123</value></property></configuration>|"  $(PXF_BASE_SERVERS)/db-session-params/jdbc-site.xml; \
 	fi
