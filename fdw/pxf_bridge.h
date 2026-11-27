@@ -75,10 +75,16 @@ void		PxfBridgeImportStart(PxfFdwScanState *pxfsstate);
 /* Sets up data before starting export */
 void		PxfBridgeExportStart(PxfFdwModifyState *pxfmstate);
 
+/* Sets up data before starting metadata commit */
+void		PxfBridgeCommitStart(PxfFdwModifyState *pxfmstate);
+
 /* Reads data from the PXF server into the given buffer of a given size */
 int			PxfBridgeRead(void *outbuf, int minlen, int maxlen, void *extra);
 
 /* Writes data from the given buffer of a given size to the PXF server */
 int			PxfBridgeWrite(PxfFdwModifyState *context, char *databuf, int datalen);
+
+/* Reads metadata from the PXF server v1 and sends it to the coordinator */
+int PxfBridgeReceiveMetadata(PxfFdwModifyState *pxfmstate, StringInfo buf);
 
 #endif							/* _PXFBRIDGE_H */

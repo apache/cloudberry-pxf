@@ -13,6 +13,7 @@ PGXS := $(shell $(PG_CONFIG) --pgxs)
 ifndef PGXS
     $(error Make sure the Cloudberry installation binaries are in your PATH. i.e. export PATH=<path to your Cloudberry installation>/bin:$$PATH)
 endif
+PG_CPPFLAGS+=-I$(shell $(PG_CONFIG) --includedir)
 include $(PGXS)
 
 
@@ -31,3 +32,18 @@ clean-all: clean
 
 .PHONY: test
 test: install installcheck
+
+.PHONY: installcheck-http
+installcheck-http:
+	$(MAKE) installcheck REGRESS="$(REGRESS_COMMON) $(REGRESS_HTTP)"
+
+.PHONY: installcheck-https
+installcheck-https:
+	$(MAKE) installcheck REGRESS="$(REGRESS_COMMON) $(REGRESS_HTTPS)"
+
+installcheck: isolationcheck
+
+ISOLATION2_ROOT=$(pgxsdir)/src/test/isolation2
+
+isolationcheck: submake
+	make ISOLATION2_ROOT=$(ISOLATION2_ROOT) -C isolation2 isolationcheck
